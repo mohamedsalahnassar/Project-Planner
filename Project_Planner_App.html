@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Green Pulse — Planner (v20)</title>
+  <title>Project Planner (v20)</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -56,7 +56,7 @@
     <div class="d-flex align-items-center justify-content-between gap-2">
       <div class="d-flex align-items-center gap-3">
         <div>
-          <h1 class="h5 mb-0">Green Pulse — Planner <span class="text-secondary">(v20)</span></h1>
+          <h1 class="h5 mb-0">Project Planner <span class="text-secondary">(v20)</span></h1>
 
 <div class="small text-secondary">Start: <b id="startLabel">2025-08-13</b> • Efficiency: <b id="effLabel">0.8</b> md/eng/day • Local JSON persistence</div>
         </div>
@@ -305,7 +305,7 @@
   <div class="table-responsive">
     <table class="table table-hover align-middle" id="tbl-eff">
       <thead>
-        <tr><th style="width:15%">Task ID</th><th>Title</th><th style="width:10%">iOS</th><th style="width:10%">Android</th><th style="width:10%">Online</th><th style="width:10%">QA</th></tr>
+        <tr><th style="width:15%">Task ID</th><th>Title</th><th style="width:10%">BE</th><th style="width:10%">iOS</th><th style="width:10%">Android</th><th style="width:10%">Online</th><th style="width:10%">QA</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -348,7 +348,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <div class="text-secondary small me-auto">Storage key: <code>greenpulse_planner_v20</code></div>
+          <div class="text-secondary small me-auto">Storage key: <code>project_planner_v20</code></div>
           <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button class="btn btn-primary" id="btn-save-manage">Save All</button>
         </div>
@@ -438,7 +438,7 @@
 
   <script>
     /* ===================== APP CODE (v20) ===================== */
-    const STORAGE_KEY = "greenpulse_planner_v20";
+    const STORAGE_KEY = "project_planner_v20";
     const dayMs = 86400000;
 
     const THEMES = {
@@ -458,45 +458,45 @@
 
     const DEFAULT_DATA = {
       meta: { version: 20, startDate: "2025-08-13", efficiency: 0.8, theme: "Dark", rtl: false, defaultPxPerDay: 18 },
-      projects: [{ id: "proj-greenpulse", name: "Green Pulse", description: "ENBD X • EI+ • LivX ESG feature" }],
+      projects: [{ id: "proj-sample", name: "Sample Project", description: "Generic project" }],
       teams: [
         { id:"team-base", name:"Base Squad", sizes:{BE:3,iOS:2,Android:2,Online:2,QA:3} },
         { id:"team-scaled", name:"Scaled Squad", sizes:{BE:3,iOS:4,Android:4,Online:4,QA:4} }
       ],
       phases: [
         { id:"P1", name:"Phase 1", description:"Entry points + Survey/Registration + Dashboard core", order:1 },
-        { id:"P2", name:"Phase 2", description:"Content widgets + fixes + LivX", order:2 },
+        { id:"P2", name:"Phase 2", description:"Content widgets and partner integration", order:2 },
         { id:"ALL", name:"One-shot", description:"All scope in a single release", order:1 }
       ],
       proposals: [
-        { id:"prop1", projectId:"proj-greenpulse", title:"Two Phases (Base Squad)", description:"Two-phase rollout with base team", teamId:"team-base", bufferPct:12, phaseIds:["P1","P2"], pxPerDay:18, overrides:{} },
-        { id:"prop2a", projectId:"proj-greenpulse", title:"Two Phases (Scaled Squad)", description:"Two-phase rollout with scaled team", teamId:"team-scaled", bufferPct:12, phaseIds:["P1","P2"], pxPerDay:18, overrides:{} },
-        { id:"prop2b", projectId:"proj-greenpulse", title:"One‑Shot (Scaled Squad)", description:"All scope in one release, scaled team", teamId:"team-scaled", bufferPct:12, phaseIds:["ALL"], pxPerDay:18, overrides:{} }
+        { id:"prop1", projectId:"proj-sample", title:"Two Phases (Base Squad)", description:"Two-phase rollout with base team", teamId:"team-base", bufferPct:12, phaseIds:["P1","P2"], pxPerDay:18, overrides:{} },
+        { id:"prop2a", projectId:"proj-sample", title:"Two Phases (Scaled Squad)", description:"Two-phase rollout with scaled team", teamId:"team-scaled", bufferPct:12, phaseIds:["P1","P2"], pxPerDay:18, overrides:{} },
+        { id:"prop2b", projectId:"proj-sample", title:"One‑Shot (Scaled Squad)", description:"All scope in one release, scaled team", teamId:"team-scaled", bufferPct:12, phaseIds:["ALL"], pxPerDay:18, overrides:{} }
       ],
       tasks: []
     };
 
     const seedTasks = [
-      "EP1|Dashboard entry tile/banner (ENBD/EI+)", "EP2|Accounts/Transactions CTA", "EP3|Notifications/Inbox CTA", "EP4|Settings: Green Pulse toggle & consent",
+      "EP1|Dashboard entry tile/banner", "EP2|Accounts/Transactions CTA", "EP3|Notifications/Inbox CTA", "EP4|Settings: feature toggle & consent",
       "SR1|Consent soft-enable & opt-out","SR2|Registration stepper","SR3|Survey engine (CMS-driven)","SR4|Submit survey to BE & success",
       "DB1|Dashboard shell & skeleton","DB2|Monthly CO₂ summary","DB3|Category breakdown chart (CMS colors)","DB4|Trend period switcher (3/6/9/12m)",
       "DB5|Txn badges & details view","DB6|Empty/error/offline states","DB7|i18n/RTL & a11y polish","DB8|Analytics + feature flags",
-      "CT1|Recommendations (vendor→CMS map)","CT2|Tips module","CT3|Articles module","CT4|Green Pulse Journal","CT5|Deals module (if enabled)",
-      "LX1|LivX theming & layout adaptation","LX2|LivX release & monitoring",
+      "CT1|Recommendations module","CT2|Tips module","CT3|Articles module","CT4|Journal module","CT5|Deals module (if enabled)",
+      "LX1|Partner theming & layout adaptation","LX2|Partner release & monitoring",
       "AT1|Cucumber repo & smoke","AT2|Nightly & regression growth"
     ];
     DEFAULT_DATA.tasks = seedTasks.map(s=>{
       const [id, title] = s.split("|");
-      return {id, title, startDate:"", efforts:[], assignments:[{proposalId:"prop1",phaseId: id.startsWith("CT")||id.startsWith("LX")||id==="AT2"?"P2":"P1"}, {proposalId:"prop2a",phaseId: id.startsWith("CT")||id.startsWith("LX")||id==="AT2"?"P2":"P1"}, {proposalId:"prop2b",phaseId:"ALL"}]};
+      return {id, title, projectId:"proj-sample", startDate:"", efforts:[], assignments:[{proposalId:"prop1",phaseId: id.startsWith("CT")||id.startsWith("LX")||id==="AT2"?"P2":"P1"}, {proposalId:"prop2a",phaseId: id.startsWith("CT")||id.startsWith("LX")||id==="AT2"?"P2":"P1"}, {proposalId:"prop2b",phaseId:"ALL"}]};
     });
-    DEFAULT_DATA.tasks.push({id:"TBE1", title:"BE: APIs & vendor integration (Phase 1)", startDate:"", efforts:[{platform:"BE",manDays:74}], assignments:[{proposalId:"prop1",phaseId:"P1"},{proposalId:"prop2a",phaseId:"P1"}]});
-    DEFAULT_DATA.tasks.push({id:"TBE2", title:"BE: APIs & vendor integration (Phase 2)", startDate:"", efforts:[{platform:"BE",manDays:24}], assignments:[{proposalId:"prop1",phaseId:"P2"},{proposalId:"prop2a",phaseId:"P2"}]});
-    DEFAULT_DATA.tasks.push({id:"TBE3", title:"BE: APIs & vendor integration (One-shot)", startDate:"", efforts:[{platform:"BE",manDays:98}], assignments:[{proposalId:"prop2b",phaseId:"ALL"}]});
+    DEFAULT_DATA.tasks.push({id:"TBE1", title:"BE: APIs & integration (Phase 1)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:74}], assignments:[{proposalId:"prop1",phaseId:"P1"},{proposalId:"prop2a",phaseId:"P1"}]});
+    DEFAULT_DATA.tasks.push({id:"TBE2", title:"BE: APIs & integration (Phase 2)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:24}], assignments:[{proposalId:"prop1",phaseId:"P2"},{proposalId:"prop2a",phaseId:"P2"}]});
+    DEFAULT_DATA.tasks.push({id:"TBE3", title:"BE: APIs & integration (One-shot)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:98}], assignments:[{proposalId:"prop2b",phaseId:"ALL"}]});
 
     const BASELINE = {
-      "prop1": {"P1":{"iOS":70,"Android":57,"Online":52,"QA":30},"P2":{"iOS":37,"Android":30,"Online":28,"QA":30}},
-      "prop2a":{"P1":{"iOS":70,"Android":57,"Online":52,"QA":30},"P2":{"iOS":37,"Android":30,"Online":28,"QA":30}},
-      "prop2b":{"ALL":{"iOS":107,"Android":87,"Online":80,"QA":60}}
+      "prop1": {"P1":{"iOS":70,"Android":57,"Online":52,"QA":30,"BE":0},"P2":{"iOS":37,"Android":30,"Online":28,"QA":30,"BE":0}},
+      "prop2a":{"P1":{"iOS":70,"Android":57,"Online":52,"QA":30,"BE":0},"P2":{"iOS":37,"Android":30,"Online":28,"QA":30,"BE":0}},
+      "prop2b":{"ALL":{"iOS":107,"Android":87,"Online":80,"QA":60,"BE":0}}
     };
     const FE_IDS = new Set(seedTasks.map(s=> s.split("|")[0]));
 
@@ -543,6 +543,9 @@ function seedEffortsFromBaselineGlobal(){
     function daysBetween(a,b){ return Math.ceil((b-a)/dayMs); }
     function fmt(d){ return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); }
     function iso(d){ return d.toISOString().slice(0,10); }
+    function escapeHtml(s){
+      return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+    }
     function getTeam(teamId){ return state.teams.find(t=>t.id===teamId); }
     function getPhase(phaseId){ return state.phases.find(p=>p.id===phaseId); }
     
@@ -1293,7 +1296,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
       });
       shG.column(1).width(12); shG.column(2).width(10); shG.column(3).width(12); shG.column(4).width(8);
       for(let c=5;c<5+totalDays;c++) shG.column(c).width(3);
-      shG.freezePanes(2,5);
+      try{ shG.freezePanes(2,5); }catch(e){ /* some versions of XlsxPopulate may lack freezePanes */ }
     }
 
     /* ---------- Tasks CSV/XLSX Import/Export ---------- */
@@ -1504,6 +1507,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
             const m = Object.fromEntries((t.efforts||[]).map(e=> [e.platform, e.manDays]));
             const tr=document.createElement('tr');
             tr.innerHTML = `<td><code>${t.id}</code></td><td>${t.title}</td>
+              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="BE" value="${m.BE??''}"></td>
               <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="iOS" value="${m.iOS??''}"></td>
               <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="Android" value="${m.Android??''}"></td>
               <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="Online" value="${m.Online??''}"></td>
@@ -1555,7 +1559,6 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
       const form = byId('editForm'); const title = byId('editTitle'); const del = byId('editDelete');
       form.innerHTML=''; del.classList.toggle('d-none', !id);
       function field(label, inner){ return `<div><label class="form-label">${label}</label>${inner}</div>`; }
-      function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;'); }
       function val(id){ return byId(id).value.trim(); }
       function idInputHtml(value, isEdit){ return `<input id="f-id" class="form-control" value="${escapeHtml(value)}" ${isEdit?'readonly disabled':''}>`; }
       function ensureUniqueId(collection, idVal){ return !collection.some(x=> x.id===idVal); }
@@ -1697,7 +1700,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
     /* ---------- Export/Import/Reset ---------- */
     byId('btn-export').onclick = ()=>{
       const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='greenpulse_planner_v20.json'; a.click(); URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='project_planner_v20.json'; a.click(); URL.revokeObjectURL(url);
     };
     byId('file-import').onchange = (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ state=JSON.parse(r.result); save(); applyTheme(state.meta.theme||"Dark"); document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); }catch(err){ alert('Invalid JSON: '+err); } }; r.readAsText(f); };
