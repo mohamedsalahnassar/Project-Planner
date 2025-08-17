@@ -543,6 +543,9 @@ function seedEffortsFromBaselineGlobal(){
     function daysBetween(a,b){ return Math.ceil((b-a)/dayMs); }
     function fmt(d){ return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); }
     function iso(d){ return d.toISOString().slice(0,10); }
+    function escapeHtml(s){
+      return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+    }
     function getTeam(teamId){ return state.teams.find(t=>t.id===teamId); }
     function getPhase(phaseId){ return state.phases.find(p=>p.id===phaseId); }
     
@@ -1556,7 +1559,6 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
       const form = byId('editForm'); const title = byId('editTitle'); const del = byId('editDelete');
       form.innerHTML=''; del.classList.toggle('d-none', !id);
       function field(label, inner){ return `<div><label class="form-label">${label}</label>${inner}</div>`; }
-      function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;'); }
       function val(id){ return byId(id).value.trim(); }
       function idInputHtml(value, isEdit){ return `<input id="f-id" class="form-control" value="${escapeHtml(value)}" ${isEdit?'readonly disabled':''}>`; }
       function ensureUniqueId(collection, idVal){ return !collection.some(x=> x.id===idVal); }
