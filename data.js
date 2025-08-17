@@ -20,12 +20,10 @@ export function save(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
 }
 
-function replaceState(newState){
+export function replaceState(newState){
   Object.keys(state).forEach(k => delete state[k]);
   Object.assign(state, newState);
 }
-
-export { replaceState };
 
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
 export function getPhase(phaseId){ return state.phases.find(p => p.id === phaseId); }
