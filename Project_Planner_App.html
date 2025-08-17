@@ -111,7 +111,7 @@
         </div>
         <div class="d-flex align-items-center gap-2">
           <button id="btn-export-project-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Project PDF</button>
-          <button id="btn-export-project-xlsx2" /><button id="btn-open-efforts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Edit Task Efforts</button>
+          <button id="btn-export-project-xlsx-basic" /><button id="btn-open-efforts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Edit Task Efforts</button>
           <button id="btn-open-efforts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Edit Task Efforts</button><button class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Project Excel (Basic)</button>
         </div>
       </div>
@@ -697,7 +697,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
       byId('btn-back-projects').onclick = ()=> { try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); };
       byId('btn-export-project-pdf').onclick = ()=> exportProjectPDF(projectId);
-      byId('btn-export-project-xlsx2').onclick = ()=> exportProjectExcel(projectId);
+      byId('btn-export-project-xlsx-basic').onclick = ()=> exportProjectExcel(projectId);
       if(byId('btn-open-efforts')){ byId('btn-open-efforts').onclick = ()=>{ const mm=new bootstrap.Modal(byId('manageModal')); mm.show(); byId('tab-efforts').click(); byId('eff-proj').value = projectId; byId('eff-proj').dispatchEvent(new Event('change')); }; }
     }
     function planCard(p){
