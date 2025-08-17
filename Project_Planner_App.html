@@ -57,7 +57,8 @@
       <div class="d-flex align-items-center gap-3">
         <div>
           <h1 class="h5 mb-0">Green Pulse — Planner <span class="text-secondary">(v20)</span></h1>
-          <div class="small text-secondary">Start: <b id="startLabel">2025-08-13</b> • Efficiency: <b id="effLabel">0.8</b> md/eng/day • Local JSON persistence</div>
+
+<div class="small text-secondary">Start: <b id="startLabel">2025-08-13</b> • Efficiency: <b id="effLabel">0.8</b> md/eng/day • Local JSON persistence</div>
         </div>
         <div class="d-flex align-items-center gap-2">
           <span class="small text-secondary">Theme</span>
@@ -110,7 +111,8 @@
         </div>
         <div class="d-flex align-items-center gap-2">
           <button id="btn-export-project-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Project PDF</button>
-          <button id="btn-export-project-xlsx2" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Project Excel (Basic)</button>
+          <button id="btn-export-project-xlsx2" /><button id="btn-open-efforts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Edit Task Efforts</button>
+          <button id="btn-open-efforts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Edit Task Efforts</button><button class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Project Excel (Basic)</button>
         </div>
       </div>
       <div id="plansGrid" class="row g-3"></div>
@@ -190,13 +192,28 @@
         </div>
         <div class="modal-body">
           <ul class="nav nav-tabs" id="manageTabs" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link active" id="tab-projects" data-bs-toggle="tab" data-bs-target="#pane-projects" type="button" role="tab">Projects</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" id="tab-plans" data-bs-toggle="tab" data-bs-target="#pane-plans" type="button" role="tab">Delivery Plans</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" id="tab-phases" data-bs-toggle="tab" data-bs-target="#pane-phases" type="button" role="tab">Phases</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" id="tab-teams" data-bs-toggle="tab" data-bs-target="#pane-teams" type="button" role="tab">Teams</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab">Tasks</button></li>
-            <li class="nav-item ms-auto" role="presentation"><button class="nav-link" id="tab-general" data-bs-toggle="tab" data-bs-target="#pane-general" type="button" role="tab"><i class="bi bi-gear"></i> General</button></li>
-          </ul>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="tab-projects" data-bs-toggle="tab" data-bs-target="#pane-projects" type="button" role="tab">Projects</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-plans" data-bs-toggle="tab" data-bs-target="#pane-plans" type="button" role="tab">Delivery Plans</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-phases" data-bs-toggle="tab" data-bs-target="#pane-phases" type="button" role="tab">Phases</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-teams" data-bs-toggle="tab" data-bs-target="#pane-teams" type="button" role="tab">Teams</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab">Tasks</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-efforts" data-bs-toggle="tab" data-bs-target="#pane-efforts" type="button" role="tab">Efforts</button>
+  </li>
+  <li class="nav-item ms-auto" role="presentation">
+    <button class="nav-link" id="tab-general" data-bs-toggle="tab" data-bs-target="#pane-general" type="button" role="tab"><i class="bi bi-gear"></i> General</button>
+  </li>
+</ul>
           <div class="tab-content pt-3">
             <div class="tab-pane fade show active" id="pane-projects" role="tabpanel">
               <div class="d-flex justify-content-between align-items-center mb-2">
@@ -272,13 +289,30 @@
               </div>
               <div class="table-responsive">
                 <table class="table table-hover align-middle" id="tbl-tasks">
-                  <thead><tr><th style="width:30%">Title</th><th>Start</th><th>Efforts</th><th>Assignments</th><th style="width:15%">ID</th><th style="width:160px">Actions</th></tr></thead>
+                  <thead><tr><th style="width:28%">Title</th><th style="width:12%">Start</th><th style="width:18%">Project</th><th style="width:12%">Viable</th><th>Efforts</th><th style="width:15%">ID</th><th style="width:160px">Actions</th></tr></thead>
                   <tbody></tbody>
                 </table>
               </div>
             </div>
 
-            <div class="tab-pane fade" id="pane-general" role="tabpanel">
+            <div class="tab-pane fade" id="pane-efforts" role="tabpanel">
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <label class="form-label mb-0">Project</label>
+    <select id="eff-proj" class="form-select" style="max-width:240px"></select>
+    <input id="eff-search" class="form-control" placeholder="Search tasks" style="max-width:260px">
+    <button id="eff-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" id="tbl-eff">
+      <thead>
+        <tr><th style="width:15%">Task ID</th><th>Title</th><th style="width:10%">iOS</th><th style="width:10%">Android</th><th style="width:10%">Online</th><th style="width:10%">QA</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="tab-pane fade" id="pane-general" role="tabpanel">
               <div class="row g-3">
                 <div class="col-12 col-lg-6">
                   <div class="card">
@@ -466,6 +500,39 @@
     };
     const FE_IDS = new Set(seedTasks.map(s=> s.split("|")[0]));
 
+
+function seedEffortsFromBaselineGlobal(){
+  try{
+    const seen = new Set();
+    (state.proposals||[]).forEach(plan=>{
+      (plan.phaseIds||[]).forEach(phId=>{
+        const base = (BASELINE[plan.id]||{})[phId];
+        if(!base) return;
+        const tasks = (state.tasks||[]).filter(t=> t.projectId===plan.projectId
+          && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phId)
+          && FE_IDS.has(t.id));
+        const feCount = Math.max(1, tasks.length);
+        tasks.forEach(t=>{
+          if((t.efforts||[]).length) return;
+          if(seen.has(t.id)) return;
+          const ios = +(((+base.iOS||0)/feCount).toFixed(1));
+          const andr = +(((+base.Android||0)/feCount).toFixed(1));
+          const onl = +(((+base.Online||0)/feCount).toFixed(1));
+          const qa = +(((+base.QA||0)/feCount).toFixed(1));
+          t.efforts = [];
+          if(ios>0) t.efforts.push({platform:"iOS", manDays: ios});
+          if(andr>0) t.efforts.push({platform:"Android", manDays: andr});
+          if(onl>0) t.efforts.push({platform:"Online", manDays: onl});
+          if(qa>0) t.efforts.push({platform:"QA", manDays: qa});
+          seen.add(t.id);
+        });
+      });
+    });
+  }catch(e){ console.warn('seedEffortsFromBaselineGlobal failed', e); }
+}
+
+
+
     /* ---------- State ---------- */
     let state = load();
     function load(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw);}catch(e){} return structuredClone(DEFAULT_DATA); }
@@ -478,7 +545,9 @@
     function iso(d){ return d.toISOString().slice(0,10); }
     function getTeam(teamId){ return state.teams.find(t=>t.id===teamId); }
     function getPhase(phaseId){ return state.phases.find(p=>p.id===phaseId); }
-    function getProject(projectId){ return state.projects.find(p=>p.id===projectId); }
+    
+    function getProposal(id){ return (state.proposals||[]).find(p=> p.id===id); }
+function getProject(projectId){ return state.projects.find(p=>p.id===projectId); }
     function slug(s){ return (s||"").replace(/[^A-Za-z0-9]+/g,'_').slice(0,28) || 'Sheet'; }
 
     
@@ -512,38 +581,29 @@
     }
 
     /* ---------- Aggregation & Schedule ---------- */
+    
     function aggregate(plan){
       const team = getTeam(plan.teamId)?.sizes || {BE:0,iOS:0,Android:0,Online:0,QA:0};
       const buffer = (plan.bufferPct||0)/100;
       const phaseTotals = {};
-      const feCountByPhase = {P1:0,P2:0,ALL:0};
-      state.tasks.forEach(t=> t.assignments?.forEach(a=>{ if(a.proposalId===plan.id && FE_IDS.has(t.id)){ feCountByPhase[a.phaseId]=(feCountByPhase[a.phaseId]||0)+1; } }));
       for(const pid of plan.phaseIds){ phaseTotals[pid] = {BE:0,iOS:0,Android:0,Online:0,QA:0, earliest:null}; }
       state.tasks.forEach(t=>{
+        if(t.projectId !== plan.projectId) return;
         const earliestTaskStart = (t.startDate && t.startDate.trim()) ? new Date(t.startDate) : null;
         (t.assignments||[]).forEach(a=>{
           if(a.proposalId!==plan.id) return;
           const rec = phaseTotals[a.phaseId] || (phaseTotals[a.phaseId]={BE:0,iOS:0,Android:0,Online:0,QA:0,earliest:null});
-          if(Array.isArray(t.efforts) && t.efforts.length){
-            t.efforts.forEach(eff=>{
-              const md = +eff.manDays || 0; const plat = eff.platform;
-              rec[plat] = (rec[plat]||0)+md;
-              const sdate = eff.startDate && eff.startDate.trim() ? new Date(eff.startDate) : earliestTaskStart;
-              if(sdate){ rec.earliest = (!rec.earliest || sdate < rec.earliest) ? sdate : rec.earliest; }
-            });
-          } else {
-            const b = BASELINE[plan.id]?.[a.phaseId];
-            if(b){
-              const count = feCountByPhase[a.phaseId] || 1;
-              ["iOS","Android","Online","QA"].forEach(k=> rec[k] = (rec[k]||0) + (b[k]/count));
-            }
-            if(earliestTaskStart){ rec.earliest = (!rec.earliest || earliestTaskStart < rec.earliest) ? earliestTaskStart : rec.earliest; }
-          }
+          (t.efforts||[]).forEach(eff=>{
+            const md = +eff.manDays || 0; const plat = eff.platform;
+            if(plat in rec){ rec[plat] = (rec[plat]||0) + md; }
+          });
+          if(earliestTaskStart){ rec.earliest = (!rec.earliest || earliestTaskStart < rec.earliest) ? earliestTaskStart : rec.earliest; }
         });
       });
       for(const phId of Object.keys(phaseTotals)) ["BE","iOS","Android","Online","QA"].forEach(k=> phaseTotals[phId][k] = +(phaseTotals[phId][k] * (1+buffer)).toFixed(1));
-      return { team, buffer, phaseTotals, feCountByPhase };
+      return { team, buffer, phaseTotals };
     }
+
     function duration(md, eng, eff){ if(!eng||eng<=0) return 0; return Math.max(1, Math.ceil(md/(eng*eff))); }
     function computeSchedule(plan, aggr, eff){
       const planStart = new Date(state.meta.startDate);
@@ -604,34 +664,7 @@
 
     
     // Populate per-assignment efforts from BASELINE so calculations come from tasks directly.
-    function populateEffortsFromBaselinePerAssignment(){
-      let changed = false;
-      // Ensure container exists
-      state.tasks.forEach(t=>{ t.effortsByAssignment = t.effortsByAssignment || []; });
-      function hasEA(t, proposalId, phaseId, platform){
-        return (t.effortsByAssignment||[]).some(e=> e.proposalId===proposalId && e.phaseId===phaseId && e.platform===platform);
-      }
-      state.proposals.forEach(plan=>{
-        (plan.phaseIds||[]).forEach(pid=>{
-          const baseline = (BASELINE[plan.id]||{})[pid] || {};
-          // FE tasks only
-          const tasks = state.tasks.filter(tt=> (tt.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===pid) && FE_IDS.has(tt.id));
-          const count = Math.max(1, tasks.length);
-          ["iOS","Android","Online","QA"].forEach(plat=>{
-            const per = ((+baseline[plat]||0) / count);
-            if(per>0){
-              tasks.forEach(tt=>{
-                if(!hasEA(tt, plan.id, pid, plat)){
-                  tt.effortsByAssignment.push({ proposalId: plan.id, phaseId: pid, platform: plat, manDays: +per.toFixed(1), startDate: (tt.startDate||"") });
-                  changed = true;
-                }
-              });
-            }
-          });
-        });
-      });
-      if(changed){ save(); }
-    }
+    
 
     /* ---------- UI: Dashboard ---------- */
     function buildProjects(){
@@ -661,9 +694,11 @@
       const grid = byId('plansGrid'); grid.innerHTML='';
       const plans = state.proposals.filter(p=>p.projectId===projectId);
       plans.forEach(p=> grid.appendChild(planCard(p)));
-      byId('btn-back-projects').onclick = ()=> { buildProjects(); };
+      byId('btn-back-projects').onclick = ()=> { try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); };
       byId('btn-export-project-pdf').onclick = ()=> exportProjectPDF(projectId);
       byId('btn-export-project-xlsx2').onclick = ()=> exportProjectExcel(projectId);
+      if(byId('btn-open-efforts')){ byId('btn-open-efforts').onclick = ()=>{ const mm=new bootstrap.Modal(byId('manageModal')); mm.show(); byId('tab-efforts').click(); byId('eff-proj').value = projectId; byId('eff-proj').dispatchEvent(new Event('change')); }; }
     }
     function planCard(p){
       const aggr = aggregate(p);
@@ -843,37 +878,23 @@
 
     /* ---------- Breakdown ---------- */
     
+    
     function computeTaskEffortsForPhase(plan, phaseId){
-      const tasks = state.tasks.filter(t=> (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phaseId));
+      const tasks = state.tasks.filter(t=> t.projectId===plan.projectId && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phaseId));
       const rows = [];
-      const baseline = BASELINE[plan.id]?.[phaseId] || {};
-      const feTasks = tasks.filter(t=> FE_IDS.has(t.id));
-      const feCount = Math.max(1, feTasks.length);
+      const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0,total:0};
       tasks.forEach(t=>{
-        let eff = {BE:0,iOS:0,Android:0,Online:0,QA:0};
-        const ea = (t.effortsByAssignment||[]).filter(e=> e.proposalId===plan.id && e.phaseId===phaseId);
-        if(ea.length){
-          ea.forEach(e=>{ if(e.platform in eff){ eff[e.platform] += (+e.manDays||0); } });
-        } else if((t.efforts||[]).length){
-          t.efforts.forEach(e=>{ if(e.platform in eff){ eff[e.platform] += (+e.manDays||0); } });
-        } else {
-          if(FE_IDS.has(t.id)){
-            eff.iOS = (+baseline.iOS || 0) / feCount;
-            eff.Android = (+baseline.Android || 0) / feCount;
-            eff.Online = (+baseline.Online || 0) / feCount;
-            eff.QA = (+baseline.QA || 0) / feCount;
-          }
-        }
-    const total = eff.BE + eff.iOS + eff.Android + eff.Online + eff.QA;
-        if(total>0.0001){
-          rows.push({ id:t.id, title:t.title, ...Object.fromEntries(Object.entries(eff).map(([k,v])=>[k,+v.toFixed(1)])), total:+total.toFixed(1) });
-        }
+        const eff = {BE:0,iOS:0,Android:0,Online:0,QA:0};
+        (t.efforts||[]).forEach(e=>{ if(e.platform in eff){ eff[e.platform] += (+e.manDays||0); } });
+        const sum = eff.BE+eff.iOS+eff.Android+eff.Online+eff.QA;
+        rows.push({ id:t.id, title:t.title, BE:+eff.BE.toFixed(1), iOS:+eff.iOS.toFixed(1), Android:+eff.Android.toFixed(1), Online:+eff.Online.toFixed(1), QA:+eff.QA.toFixed(1), total:+sum.toFixed(1) });
+        totals.BE += eff.BE; totals.iOS += eff.iOS; totals.Android += eff.Android; totals.Online += eff.Online; totals.QA += eff.QA; totals.total += sum;
       });
-      rows.sort((a,b)=> a.title.localeCompare(b.title));
-      const totals = rows.reduce((acc,r)=>{ ['BE','iOS','Android','Online','QA','total'].forEach(k=> acc[k]=(acc[k]||0)+r[k]); return acc; }, {});
-      for(const k in totals){ totals[k]=+totals[k].toFixed(1); }
-      return { rows, totals };
+      for(const k in totals){ if(k!=='total') totals[k] = +totals[k].toFixed(1); }
+      totals.total = +totals.total.toFixed(1);
+      return {rows, totals};
     }
+
     function renderPhaseBreakdownTables(plan){
       const acc = byId('phaseBreakdown'); acc.innerHTML='';
       plan.phaseIds.forEach((phId, idx)=>{
@@ -917,64 +938,71 @@
               </div>
             </div>
           </div>`;
+        
+        // Deliverable Scope (Viable Product)
+        const scopeCard = document.createElement('div'); scopeCard.className='pdf-card mt-3';
+        const sHead = document.createElement('div'); sHead.className='pdf-h3'; sHead.textContent = 'Deliverable Scope (Viable Product)';
+        scopeCard.appendChild(sHead);
+        const sTable = document.createElement('table'); sTable.className='table table-sm table-bordered'; sTable.style.width='100%';
+        sTable.innerHTML = `<thead class="table-light"><tr><th style="width:12%">Task</th><th>Title</th></tr></thead><tbody></tbody>`;
+        const sBody = sTable.querySelector('tbody');
+        state.tasks.filter(t=> t.projectId===plan.projectId && t.viableProduct && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phId)).forEach(t=>{
+          const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${t.title}</td>`; sBody.appendChild(tr);
+        });
+        scopeCard.appendChild(sTable);
+        item.querySelector('.accordion-body').appendChild(scopeCard);
+
         acc.appendChild(item);
       });
     }
 
     /* ---------- PDF Export (unchanged) ---------- */
+    
     function buildStaticTimelineNode(plan){
       const aggr = aggregate(plan);
       const sched = computeSchedule(plan, aggr, state.meta.efficiency);
-      const pxPerDay = 12;
-      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
+      // A4 landscape content width ~1100px; respect padding used in .pdf-sheet (24px)
+      const pageWidth = 1100 - 2*24;
       const labelPad = 140;
-      const width = totalDays*pxPerDay + labelPad;
+      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
+      const pxPerDay = Math.max(3, Math.floor((pageWidth - labelPad) / totalDays));
+      const width = totalDays * pxPerDay + labelPad;
       const wrap = document.createElement('div');
-      wrap.className='pdf-card';
-      const title = document.createElement('div');
-      title.innerHTML = `<div class="pdf-h3">Timeline</div><div class="pdf-meta">${fmt(sched.chartStart)} → ${fmt(sched.chartEnd)} • ${totalDays} days</div>`;
-      wrap.appendChild(title);
-      const container = document.createElement('div'); container.style.position='relative'; container.style.height = '320px'; container.style.width = width+'px'; container.style.border='1px solid #dee2e6'; container.style.borderRadius='8px'; container.style.overflow='hidden'; container.style.marginTop='8px';
-      const ruler = document.createElement('div'); ruler.style.position='sticky'; ruler.style.top='0'; ruler.style.height='50px'; ruler.style.marginLeft=labelPad+'px'; ruler.style.borderBottom='1px solid #dee2e6'; container.appendChild(ruler);
-      const minor=7, labelEvery=14;
-      for(let d=0; d<=totalDays; d+=minor){
+      wrap.className = 'pdf-card';
+      const head = document.createElement('div'); head.className='pdf-h3'; head.textContent='Mini Gantt';
+      wrap.appendChild(head);
+      const container = document.createElement('div');
+      container.style.position='relative'; container.style.overflow='visible'; container.style.width = width+'px'; container.style.border='1px solid #333';
+      container.style.padding='0'; container.style.height = (plan.phaseIds.length*28 + 36)+'px';
+      const grid = document.createElement('div'); grid.style.position='absolute'; grid.style.left=labelPad+'px'; grid.style.top='0'; grid.style.bottom='0'; grid.style.right='0';
+      // vertical day lines every 7 days
+      for(let d=0; d<totalDays; d+=7){
         const x = labelPad + d*pxPerDay;
-        const tick = document.createElement('div'); tick.style.position='absolute'; tick.style.bottom='0'; tick.style.width='1px'; tick.style.height='12px'; tick.style.background='#c7c7c7'; tick.style.left=x+'px'; ruler.appendChild(tick);
-        if(d % labelEvery === 0){
-          const label = document.createElement('div'); label.style.position='absolute'; label.style.bottom='16px'; label.style.left=x+'px'; label.style.transform='translateX(-50%)'; label.style.fontSize='12px'; label.textContent = new Date(sched.chartStart.getTime()+d*dayMs).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-          ruler.appendChild(label);
-        }
+        const v = document.createElement('div'); v.style.position='absolute'; v.style.left=x+'px'; v.style.top='0'; v.style.bottom='0'; v.style.width='0'; v.style.borderLeft='1px dashed rgba(127,127,127,.5)';
+        container.appendChild(v);
       }
-      const lanes=[
-        {key:'BE', name:'Backend', color:getComputedStyle(document.documentElement).getPropertyValue('--be').trim()||'#9c755f'},
-        {key:'iOS', name:'iOS', color:getComputedStyle(document.documentElement).getPropertyValue('--ios').trim()||'#4e79a7'},
-        {key:'Android', name:'Android', color:getComputedStyle(document.documentElement).getPropertyValue('--android').trim()||'#59a14f'},
-        {key:'Online', name:'Online/Web', color:getComputedStyle(document.documentElement).getPropertyValue('--web').trim()||'#f28e2c'},
-        {key:'QA', name:'QA (Manual)', color:getComputedStyle(document.documentElement).getPropertyValue('--qa').trim()||'#edc948'}
-      ];
-      lanes.forEach(_=>{ const lane = document.createElement('div'); lane.style.position='relative'; lane.style.height='50px'; lane.style.borderBottom='1px dashed #dee2e6'; container.appendChild(lane); });
-      sched.phaseWindows.forEach(w=>{
-        const d0 = Math.floor((w.start - sched.chartStart)/dayMs);
-        const d1 = Math.floor((w.end - sched.chartStart)/dayMs);
-        const x = labelPad + d0*pxPerDay;
-        const wpx = Math.max(1, (d1-d0+1)*pxPerDay);
-        const tag = document.createElement('div'); tag.textContent=w.ph; tag.style.position='absolute'; tag.style.top=(50+50)+'px'; tag.style.left=x+'px'; tag.style.width=wpx+'px'; tag.style.height='18px'; tag.style.fontSize='12px'; tag.style.border='1px dashed #adb5bd'; tag.style.borderRadius='6px'; tag.style.color='#6c757d'; tag.style.display='flex'; tag.style.alignItems='center'; tag.style.padding='0 6px';
-        container.appendChild(tag);
-      });
-      let rowTop=50;
-      lanes.forEach(l=>{
-        sched.phaseWindows.forEach(w=>{
-          const li = w.lanes.find(x=>x.key===l.key);
-          const offset = Math.floor(((li.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
-          const bar = document.createElement('div'); bar.style.position='absolute'; bar.style.top=(rowTop+10)+'px'; bar.style.left=offset+'px'; bar.style.height='26px'; bar.style.borderRadius='6px'; bar.style.border='1px solid rgba(0,0,0,.15)'; bar.style.display='flex'; bar.style.alignItems='center'; bar.style.padding='0 8px'; bar.style.background=getComputedStyle(document.documentElement).getPropertyValue('--'+(l.key==='Online'?'web':l.key.toLowerCase())).trim(); bar.style.color='#000'; bar.style.fontWeight='700'; bar.style.fontSize='12px'; bar.textContent=w.ph;
-          bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px';
+      // y rows
+      plan.phaseIds.forEach((phId, idx)=>{
+        const row = document.createElement('div'); row.style.position='relative'; row.style.height='28px'; row.style.borderTop='1px solid #333';
+        const label = document.createElement('div'); label.textContent = getPhase(phId)?.name||phId; label.style.position='absolute'; label.style.left='8px'; label.style.top='4px'; label.style.width=(labelPad-16)+'px'; label.style.whiteSpace='nowrap'; label.style.overflow='hidden'; label.style.textOverflow='ellipsis';
+        row.appendChild(label);
+        const barWrap = document.createElement('div'); barWrap.style.position='absolute'; barWrap.style.left=labelPad+'px'; barWrap.style.right='0'; barWrap.style.top='3px'; barWrap.style.height='22px';
+        const seg = (sched.phaseWindows||[]).find(w => w.ph === phId);
+        if(seg){
+          const left = daysBetween(sched.chartStart, seg.start) * pxPerDay;
+          const segDays = Math.max(1, daysBetween(seg.start, seg.end) + 1);
+          const w = segDays * pxPerDay;
+          const bar = document.createElement('div');
+          bar.style.position='absolute'; bar.style.left = (labelPad + left)+'px'; bar.style.top='0'; bar.style.height='100%'; bar.style.width = w+'px';
+          bar.style.background='#4f46e5';
           container.appendChild(bar);
-        });
-        rowTop += 50;
+        }
+        container.appendChild(row);
       });
       wrap.appendChild(container);
       return wrap;
     }
+
     function buildPlanBreakdownNode(plan){
       const node = document.createElement('div');
       const title = document.createElement('div'); title.className='pdf-h2'; title.textContent = plan.title;
@@ -1034,21 +1062,37 @@
         const block = buildPlanBreakdownNode(p);
         container.appendChild(block);
       });
-      const opt = { margin: 10, filename: `${pr.name.replace(/\s+/g,'_')}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css','legacy'] } };
+      const opt = { margin: 10, filename: `${pr.name.replace(/\s+/g,'_')}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['css','legacy'] } };
       await html2pdf().from(container).set(opt).save();
     }
+    
     async function exportPlanPDF(planId){
       const p = state.proposals.find(x=>x.id===planId); if(!p) return;
       const container = document.createElement('div'); container.className='pdf-sheet';
       const h1 = document.createElement('div'); h1.className='pdf-h1'; h1.textContent = `Delivery Plan: ${p.title}`;
       const pr = getProject(p.projectId);
-      const meta = document.createElement('div'); meta.className='pdf-meta'; meta.textContent = `Project: ${pr?.name||'—'} • Team ${getTeam(p.teamId)?.name||'—'} • Buffer ${p.bufferPct||0}% • ${new Date().toLocaleString()}`;
+      const meta = document.createElement('div'); meta.className='pdf-meta'; meta.textContent = `Project: ${pr?.name||'—'} • Team: ${getTeam(p.teamId)?.name||'—'} • Phases: ${p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ')}`;
       container.appendChild(h1); container.appendChild(meta);
-      const block = buildPlanBreakdownNode(p);
-      container.appendChild(block);
-      const opt = { margin: 10, filename: `${p.title.replace(/\s+/g,'_')}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css','legacy'] } };
-      await html2pdf().from(container).set(opt).save();
+      container.appendChild(buildPlanBreakdownNode(p));
+      try{
+        if(typeof html2pdf === 'function'){
+          const opt = { margin: 10, filename: `Plan_${slug(p.title)}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['css','legacy'] } };
+          await html2pdf().from(container).set(opt).save();
+          return;
+        }
+      }catch(e){ console.warn('html2pdf failed, falling back to print', e); }
+      // Fallback: open print window
+      const w = window.open('', '_blank');
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Plan PDF</title>
+        <style>
+          @page { size: A4 landscape; margin: 10mm; }
+          body{font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;color:#111;background:#fff;}
+          .pdf-sheet{padding:0; margin:0;}
+        </style></head><body></body></html>`);
+      w.document.body.appendChild(container);
+      setTimeout(()=>{ w.focus(); w.print(); }, 250);
     }
+    
 
     /* ---------- Basic Excel Export (SheetJS) ---------- */
     async function exportProjectExcel(projectId){
@@ -1307,7 +1351,8 @@
           const at = state.tasks.findIndex(x=>x.id===id);
           if(at>=0) state.tasks[at]=t; else state.tasks.push(t);
         });
-        save(); refreshManage(); buildProjects(); toast("Tasks imported (CSV)");
+        save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); toast("Tasks imported (CSV)");
         return;
       }
       if(!await ensureXLSX()){ alert("Excel library couldn't be loaded. Use CSV export instead from Data ▸ Export Tasks (CSV)."); return; }
@@ -1334,7 +1379,8 @@
         const idx = state.tasks.findIndex(x=> x.id===id);
         if(idx>=0) state.tasks[idx] = t; else state.tasks.push(t);
       });
-      save(); refreshManage(); buildProjects(); toast("Tasks imported (Excel)");
+      save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); toast("Tasks imported (Excel)");
     }
 
     /* ---------- CRUD (Manage) with ID rules ---------- */
@@ -1353,7 +1399,8 @@
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('project', p.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete project?')){
           state.proposals.forEach(pr=>{ if(pr.projectId===p.id) pr.projectId = state.projects[0]?.id || ''; });
-          state.projects = state.projects.filter(x=>x.id!==p.id); save(); refreshManage(); buildProjects();
+          state.projects = state.projects.filter(x=>x.id!==p.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects();
         } };
         tbP.appendChild(tr);
       });
@@ -1385,7 +1432,8 @@
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('plan', p.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete plan?')){
           state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==p.id));
-          state.proposals = state.proposals.filter(x=>x.id!==p.id); save(); refreshManage(); buildProjects();
+          state.proposals = state.proposals.filter(x=>x.id!==p.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects();
         } };
         tbPl.appendChild(tr);
       });
@@ -1400,7 +1448,8 @@
           state.proposals.forEach(pr=> pr.phaseIds = (pr.phaseIds||[]).filter(id=>id!==p.id));
           state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.phaseId!==p.id));
           state.phases = state.phases.filter(x=>x.id!==p.id);
-          save(); refreshManage(); buildProjects();
+          save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects();
         } };
         tbPh.appendChild(tr);
       });
@@ -1413,7 +1462,8 @@
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('team', t.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete team?')){
           state.proposals.forEach(p=>{ if(p.teamId===t.id) p.teamId = state.teams[0]?.id || ''; });
-          state.teams = state.teams.filter(x=>x.id!==t.id); save(); refreshManage(); buildProjects();
+          state.teams = state.teams.filter(x=>x.id!==t.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects();
         } };
         tbTm.appendChild(tr);
       });
@@ -1423,10 +1473,11 @@
         const eff = (t.efforts||[]).map(e=> `${e.platform}:${e.manDays}${e.startDate? ' ('+e.startDate+')':''}`).join(', ');
         const asg = (t.assignments||[]).map(a=> `${a.proposalId}/${a.phaseId}`).join(', ');
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${t.title}</td><td>${t.startDate||''}</td><td>${eff||'-'}</td><td>${asg||'-'}</td><td><code>${t.id}</code></td>
+        tr.innerHTML = `<td>${t.title}</td><td>${t.startDate||''}</td><td>${getProject(t.projectId)?.name||'—'}</td><td>${t.viableProduct?'Yes':'No'}</td><td>${eff||'-'}</td><td><code>${t.id}</code></td>
           <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('task', t.id);
-        tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); refreshManage(); buildProjects(); } };
+        tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); } };
         tbTk.appendChild(tr);
       });
       byId('btn-add-project').onclick = ()=> openEditor('project', null);
@@ -1439,6 +1490,42 @@
       byId('search-phases').oninput = refreshManage;
       byId('search-teams').oninput = refreshManage;
       byId('search-tasks').oninput = refreshManage;
+      // Efforts tab wiring
+      const effProjSel = byId('eff-proj');
+      const effSearch = byId('eff-search');
+      const effBody = byId('tbl-eff')?.querySelector('tbody');
+      if(effBody){
+        effProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+        if(!effProjSel.value && state.projects[0]) effProjSel.value = state.projects[0].id;
+        function renderEffTbl(){
+          const pid = effProjSel.value; const q=(effSearch.value||'').toLowerCase();
+          effBody.innerHTML='';
+          state.tasks.filter(t=> t.projectId===pid && (t.title+' '+t.id).toLowerCase().includes(q)).forEach(t=>{
+            const m = Object.fromEntries((t.efforts||[]).map(e=> [e.platform, e.manDays]));
+            const tr=document.createElement('tr');
+            tr.innerHTML = `<td><code>${t.id}</code></td><td>${t.title}</td>
+              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="iOS" value="${m.iOS??''}"></td>
+              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="Android" value="${m.Android??''}"></td>
+              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="Online" value="${m.Online??''}"></td>
+              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="QA" value="${m.QA??''}"></td>`;
+            effBody.appendChild(tr);
+          });
+        }
+        effProjSel.onchange = renderEffTbl; effSearch.oninput = renderEffTbl; renderEffTbl();
+        byId('eff-save').onclick = ()=>{
+          const inputs = Array.from(effBody.querySelectorAll('input'));
+          const byTask = new Map();
+          inputs.forEach(inp=>{ const tid=inp.dataset.tid; if(!byTask.has(tid)) byTask.set(tid, []); byTask.get(tid).push(inp); });
+          byTask.forEach((arr, tid)=>{
+            const t = state.tasks.find(x=> x.id===tid); if(!t) return; const map={};
+            arr.forEach(inp=>{ const k=inp.dataset.k; const v= inp.value===''? null : Math.max(0, +inp.value); if(v!=null) map[k]=+v.toFixed(1); });
+            t.efforts = Object.entries(map).map(([platform, manDays])=>({platform, manDays}));
+          });
+          save(); toast('Efforts updated'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects();
+        };
+      }
+
       byId('gen-start').value = state.meta.startDate;
       byId('gen-eff').value = state.meta.efficiency;
       byId('gen-px').value = state.meta.defaultPxPerDay||18;
@@ -1453,13 +1540,15 @@
         state.meta.theme = byId('gen-theme').value || "Dark";
         document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr');
         applyTheme(state.meta.theme);
-        save(); buildProjects();
+        save(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects();
       };
       byId('gen-apply-px').onclick = ()=>{
         const px = Math.max(6, Math.min(44, +byId('gen-px').value || 18));
         state.proposals.forEach(p=> p.pxPerDay = px);
         state.meta.defaultPxPerDay = px;
-        save(); toast('Applied zoom to all plans'); buildProjects();
+        save(); toast('Applied zoom to all plans'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects();
       };
     }
     function openEditor(kind, id){
@@ -1484,9 +1573,11 @@
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.projects, newId)) return alert('ID already exists.');
           const obj = { id: isEdit? data.id : newId, name:val('f-name'), description:val('f-desc') };
           if(isEdit){ Object.assign(state.projects.find(x=>x.id===id), obj); } else { state.projects.push(obj); }
-          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+          save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
-        del.onclick = ()=>{ if(confirm('Delete project?')){ state.proposals.forEach(p=>{ if(p.projectId===id) p.projectId = state.projects[0]?.id || ''; }); state.projects = state.projects.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+        del.onclick = ()=>{ if(confirm('Delete project?')){ state.proposals.forEach(p=>{ if(p.projectId===id) p.projectId = state.projects[0]?.id || ''; }); state.projects = state.projects.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
       if(kind==='plan'){
         const isEdit = !!id;
@@ -1505,9 +1596,11 @@
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.proposals, newId)) return alert('ID already exists.');
           const obj = { id: isEdit? data.id : newId, projectId:val('f-project'), title:val('f-title'), description:val('f-desc'), teamId:val('f-team'), bufferPct:+val('f-buffer')||0, phaseIds: Array.from(byId('f-phases').selectedOptions).map(o=>o.value), pxPerDay:data.pxPerDay||state.meta.defaultPxPerDay||18, overrides:data.overrides||{} };
           if(isEdit){ Object.assign(state.proposals.find(x=>x.id===id), obj); } else { state.proposals.push(obj); }
-          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+          save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
-        del.onclick = ()=>{ if(confirm('Delete plan?')){ state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==id)); state.proposals = state.proposals.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+        del.onclick = ()=>{ if(confirm('Delete plan?')){ state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==id)); state.proposals = state.proposals.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
       if(kind==='phase'){
         const isEdit = !!id;
@@ -1523,9 +1616,11 @@
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.phases, newId)) return alert('ID already exists.');
           const obj = { id: isEdit? data.id : newId, name:val('f-name'), description:val('f-desc'), order:+val('f-order')||1 };
           if(isEdit){ Object.assign(state.phases.find(x=>x.id===id), obj); } else { state.phases.push(obj); }
-          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+          save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
-        del.onclick = ()=>{ if(confirm('Delete phase?')){ state.proposals.forEach(p=> p.phaseIds=(p.phaseIds||[]).filter(x=>x!==id)); state.tasks.forEach(t=> t.assignments=(t.assignments||[]).filter(a=>a.phaseId!==id)); state.phases = state.phases.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+        del.onclick = ()=>{ if(confirm('Delete phase?')){ state.proposals.forEach(p=> p.phaseIds=(p.phaseIds||[]).filter(x=>x!==id)); state.tasks.forEach(t=> t.assignments=(t.assignments||[]).filter(a=>a.phaseId!==id)); state.phases = state.phases.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
       if(kind==='team'){
         const isEdit = !!id;
@@ -1546,61 +1641,56 @@
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.teams, newId)) return alert('ID already exists.');
           const obj = { id: isEdit? data.id : newId, name:val('f-name'), sizes:{ BE:+val('f-be')||0, iOS:+val('f-ios')||0, Android:+val('f-android')||0, Online:+val('f-online')||0, QA:+val('f-qa')||0 } };
           if(isEdit){ Object.assign(state.teams.find(x=>x.id===id), obj); } else { state.teams.push(obj); }
-          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+          save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
-        del.onclick = ()=>{ if(confirm('Delete team?')){ state.proposals.forEach(p=>{ if(p.teamId===id) p.teamId = state.teams[0]?.id || ''; }); state.teams = state.teams.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+        del.onclick = ()=>{ if(confirm('Delete team?')){ state.proposals.forEach(p=>{ if(p.teamId===id) p.teamId = state.teams[0]?.id || ''; }); state.teams = state.teams.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
+      
       if(kind==='task'){
         const isEdit = !!id;
-        const data = isEdit ? state.tasks.find(x=>x.id===id) : { id:'T'+Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', efforts:[], assignments:[] };
+        const data = isEdit ? state.tasks.find(x=>x.id===id) : { id: Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', projectId: (state.projects[0]?.id||''), viableProduct:false, efforts:[], assignments:[] };
         title.textContent = isEdit? 'Edit Task' : 'Add Task';
         form.innerHTML = [
           field('Title', `<input id="f-title" class="form-control" value="${escapeHtml(data.title)}">`),
           field('Description', `<textarea id="f-desc" class="form-control" rows="3">${escapeHtml(data.description||'')}</textarea>`),
+          field('Project', `<select id="f-project" class="form-select">${state.projects.map(p=>`<option value="${p.id}" ${p.id===(data.projectId||state.projects[0]?.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select>`),
           field('Task start (optional)', `<input id="f-start" type="date" class="form-control" value="${escapeHtml(data.startDate||'')}">`),
-          `<hr><h6>Efforts</h6>
-           <div class="row g-2 align-items-end">
-             <div class="col-3">${field('Platform', `<select id="f-plat" class="form-select"><option>BE</option><option>iOS</option><option>Android</option><option>Online</option><option>QA</option></select>`)}</div>
-             <div class="col-3">${field('Man-days', `<input id="f-md" type="number" step="0.1" class="form-control">`)}</div>
-             <div class="col-4">${field('Platform start (optional)', `<input id="f-md-start" type="date" class="form-control">`)}</div>
-             <div class="col-2"><button type="button" class="btn btn-outline-secondary w-100" id="btn-eff-add"><i class="bi bi-plus-lg"></i> Add</button></div>
-           </div>
-           <div id="eff-list" class="small text-secondary"></div>`,
+          `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="f-vp" ${data.viableProduct?'checked':''}><label class="form-check-label" for="f-vp">Viable Product</label></div>`,
           `<hr><h6>Assignments</h6>
            <div class="row g-2 align-items-end">
-             <div class="col-5">${field('Delivery Plan', `<select id="f-asg-prop" class="form-select">${state.proposals.map(p=> `<option value="${p.id}">${p.title.replaceAll('<','&lt;').replaceAll('>','&gt;')}</option>`).join('')}</select>`)}</div>
-             <div class="col-5">${field('Phase', `<select id="f-asg-phase" class="form-select">${state.phases.map(ph=> `<option value="${ph.id}">${ph.name.replaceAll('<','&lt;').replaceAll('>','&gt;')}</option>`).join('')}</select>`)}</div>
+             <div class="col-5">${field('Delivery Plan', `<select id="f-asg-plan" class="form-select">${state.proposals.map(p=>`<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('')}</select>`)}</div>
+             <div class="col-5">${field('Phase', `<select id="f-asg-phase" class="form-select">${state.phases.map(ph=>`<option value="${ph.id}">${escapeHtml(ph.name)}</option>`).join('')}</select>`)}</div>
              <div class="col-2"><button type="button" class="btn btn-outline-secondary w-100" id="btn-asg-add"><i class="bi bi-plus-lg"></i> Add</button></div>
            </div>
            <div id="asg-list" class="small text-secondary"></div>`,
           field('ID', idInputHtml(data.id, isEdit)),
         ].join('');
-        const effList = byId('eff-list'), asgList = byId('asg-list');
-        function renderEff(){ effList.innerHTML = (data.efforts||[]).map((e,i)=> `<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 my-1">
-          <div>${e.platform}: <b>${e.manDays}</b> md ${e.startDate? ' • '+e.startDate:''}</div>
-          <button class="btn btn-sm btn-outline-danger" data-i="${i}">Delete</button>
-        </div>`).join('') || '<div class="text-secondary">No efforts added</div>';
-          effList.querySelectorAll('button').forEach(b=> b.onclick=()=>{ data.efforts.splice(+b.dataset.i,1); renderEff(); });
+        const asgList = byId('asg-list');
+        function renderAsg(){
+          asgList.innerHTML = (data.assignments||[]).map((a,i)=>`<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 my-1">
+            <div>${getProposal(a.proposalId)?.title||a.proposalId} • ${getPhase(a.phaseId)?.name||a.phaseId}</div>
+            <button class="btn btn-sm btn-outline-danger" data-i="${i}">Delete</button>
+          </div>`).join('') || '<div class="text-secondary">No assignments</div>';
+          Array.from(asgList.querySelectorAll('button[data-i]')).forEach(btn=> btn.onclick = ()=>{ const i=+btn.dataset.i; data.assignments.splice(i,1); renderAsg(); });
         }
-        function renderAsg(){ asgList.innerHTML = (data.assignments||[]).map((a,i)=> `<div class="d-flex justify-content-between align-items-center border rounded px-2 py-1 my-1">
-          <div>${a.proposalId} / ${a.phaseId}</div>
-          <button class="btn btn-sm btn-outline-danger" data-i="${i}">Delete</button>
-        </div>`).join('') || '<div class="text-secondary">No assignments added</div>';
-          asgList.querySelectorAll('button').forEach(b=> b.onclick=()=>{ data.assignments.splice(+b.dataset.i,1); renderAsg(); });
-        }
-        renderEff(); renderAsg();
-        byId('btn-eff-add').onclick = ()=>{
-          const e={ platform:val('f-plat'), manDays:+val('f-md')||0, startDate:val('f-md-start')||'' }; if(e.manDays<=0) return alert('Enter man-days'); data.efforts=data.efforts||[]; const idx = data.efforts.findIndex(x=>x.platform===e.platform); if(idx>=0) data.efforts[idx]=e; else data.efforts.push(e); renderEff();
+        renderAsg();
+        byId('btn-asg-add').onclick = ()=>{
+          const a={ proposalId: val('f-asg-plan'), phaseId: val('f-asg-phase') };
+          data.assignments = data.assignments||[]; data.assignments.push(a); renderAsg();
         };
-        byId('btn-asg-add').onclick = ()=>{ const a={ proposalId:val('f-asg-prop'), phaseId:val('f-asg-phase') }; data.assignments=data.assignments||[]; data.assignments.push(a); renderAsg(); };
         byId('editSave').onclick = ()=>{
           const newId = val('f-id'); if(!isEdit && state.tasks.some(x=>x.id===newId)) return alert('ID already exists.');
-          const obj = { id: isEdit? data.id : newId, title:val('f-title'), description:val('f-desc'), startDate:val('f-start'), efforts:data.efforts||[], assignments:data.assignments||[] };
+          const obj = { id: isEdit? data.id : newId, title:val('f-title'), description:val('f-desc'), startDate:byId('f-start').value, projectId: byId('f-project').value, viableProduct: !!byId('f-vp').checked, efforts:data.efforts||[], assignments:data.assignments||[] };
           if(isEdit){ Object.assign(state.tasks.find(x=>x.id===id), obj); } else { state.tasks.push(obj); }
-          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+          save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
-        del.onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+        del.onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
+    
       new bootstrap.Modal('#editModal').show();
     }
 
@@ -1609,8 +1699,10 @@
       const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
       const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='greenpulse_planner_v20.json'; a.click(); URL.revokeObjectURL(url);
     };
-    byId('file-import').onchange = (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ state=JSON.parse(r.result); save(); applyTheme(state.meta.theme||"Dark"); document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr'); buildProjects(); }catch(err){ alert('Invalid JSON: '+err); } }; r.readAsText(f); };
-    byId('btn-reset').onclick = ()=>{ if(confirm('Reset to defaults?')){ state = structuredClone(DEFAULT_DATA); save(); applyTheme(state.meta.theme||"Dark"); document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr'); buildProjects(); } };
+    byId('file-import').onchange = (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ state=JSON.parse(r.result); save(); applyTheme(state.meta.theme||"Dark"); document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); }catch(err){ alert('Invalid JSON: '+err); } }; r.readAsText(f); };
+    byId('btn-reset').onclick = ()=>{ if(confirm('Reset to defaults?')){ state = structuredClone(DEFAULT_DATA); save(); applyTheme(state.meta.theme||"Dark"); document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+      buildProjects(); } };
     byId('themeSelect').onchange = (e)=>{ state.meta.theme = e.target.value; applyTheme(state.meta.theme); save(); };
     // Data menu
     byId('exportTasksCSV').onclick = exportTasksCSV;
@@ -1640,12 +1732,19 @@
       document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr');
       byId('startLabel').textContent = state.meta.startDate;
       byId('effLabel').textContent = state.meta.efficiency;
+      
+      // Migration: ensure each task has a projectId
+      try{
+        const defaultProj = state.proposals[0]?.projectId || state.projects[0]?.id || '';
+        state.tasks.forEach(t=>{ if(!t.projectId){ t.projectId = defaultProj; } });
+        save();
+      }catch(e){}
+      try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects();
     
-      // Seed per-assignment efforts so totals are task-driven
-      populateEffortsFromBaselinePerAssignment();
-}
+      }
     initApp();
   </script>
+
 </body>
 </html>
