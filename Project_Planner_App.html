@@ -1293,7 +1293,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
       });
       shG.column(1).width(12); shG.column(2).width(10); shG.column(3).width(12); shG.column(4).width(8);
       for(let c=5;c<5+totalDays;c++) shG.column(c).width(3);
-      shG.freezePanes(2,5);
+      try{ shG.freezePanes(2,5); }catch(e){ /* some versions of XlsxPopulate may lack freezePanes */ }
     }
 
     /* ---------- Tasks CSV/XLSX Import/Export ---------- */
