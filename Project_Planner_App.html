@@ -112,7 +112,7 @@
         <div class="d-flex align-items-center gap-2">
           <button id="btn-export-project-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Project PDF</button>
           <button id="btn-open-efforts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Edit Task Efforts</button>
-          <button id="btn-export-project-xlsx2" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Project Excel (Basic)</button>
+          <button id="btn-export-project-xlsx-basic" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Project Excel (Basic)</button>
         </div>
       </div>
       <div id="plansGrid" class="row g-3"></div>
@@ -133,7 +133,7 @@
           <div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="Online" id="chkOnline" checked><label class="form-check-label" for="chkOnline"><span class="badge-lane"><span class="dot" style="background:var(--web)"></span>Web</span></label></div>
           <div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="QA" id="chkQA" checked><label class="form-check-label" for="chkQA"><span class="badge-lane"><span class="dot" style="background:var(--qa)"></span>QA</span></label></div>
           <button id="btn-export-plan-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Plan PDF</button>
-          <button id="btn-export-plan-xlsx2" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Plan Excel (Basic)</button>
+          <button id="btn-export-plan-xlsx-basic" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Plan Excel (Basic)</button>
         </div>
       </div>
 
@@ -697,7 +697,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
       byId('btn-back-projects').onclick = ()=> { try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); };
       byId('btn-export-project-pdf').onclick = ()=> exportProjectPDF(projectId);
-      byId('btn-export-project-xlsx2').onclick = ()=> exportProjectExcel(projectId);
+      byId('btn-export-project-xlsx-basic').onclick = ()=> exportProjectExcel(projectId);
       if(byId('btn-open-efforts')){ byId('btn-open-efforts').onclick = ()=>{ const mm=new bootstrap.Modal(byId('manageModal')); mm.show(); byId('tab-efforts').click(); byId('eff-proj').value = projectId; byId('eff-proj').dispatchEvent(new Event('change')); }; }
     }
     function planCard(p){
@@ -776,7 +776,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
       byId('btn-export-plan-pdf').onclick = ()=> exportPlanPDF(p.id);
-      byId('btn-export-plan-xlsx2').onclick = ()=> exportPlanExcel(p.id);
+      byId('btn-export-plan-xlsx-basic').onclick = ()=> exportPlanExcel(p.id);
     }
     function dayTicks(pxPerDay){
       if(pxPerDay >= 36) return { minor:1, labelEvery:2 };
