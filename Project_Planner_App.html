@@ -919,7 +919,7 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
                     <tr><th style="width:10%">Task</th><th>Title</th><th style="width:10%;text-align:right">BE</th><th style="width:10%;text-align:right">iOS</th><th style="width:10%;text-align:right">Android</th><th style="width:10%;text-align:right">Online</th><th style="width:10%;text-align:right">QA</th><th style="width:10%;text-align:right">Total</th></tr>
                   </thead>
                   <tbody>
-                    ${data.rows.map(r=> `<tr><td><code>${r.id}</code></td><td>${r.title}</td>
+                    ${data.rows.map(r=> `<tr><td><code>${r.id}</code></td><td>${escapeHtml(r.title)}</td>
                       <td style="text-align:right">${r.BE.toFixed(1)}</td><td style="text-align:right">${r.iOS.toFixed(1)}</td>
                       <td style="text-align:right">${r.Android.toFixed(1)}</td><td style="text-align:right">${r.Online.toFixed(1)}</td>
                       <td style="text-align:right">${r.QA.toFixed(1)}</td><td style="text-align:right">${r.total.toFixed(1)}</td></tr>`).join('')}
@@ -946,9 +946,9 @@ function getProject(projectId){ return state.projects.find(p=>p.id===projectId);
         const sTable = document.createElement('table'); sTable.className='table table-sm table-bordered'; sTable.style.width='100%';
         sTable.innerHTML = `<thead class="table-light"><tr><th style="width:12%">Task</th><th>Title</th></tr></thead><tbody></tbody>`;
         const sBody = sTable.querySelector('tbody');
-        state.tasks.filter(t=> t.projectId===plan.projectId && t.viableProduct && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phId)).forEach(t=>{
-          const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${t.title}</td>`; sBody.appendChild(tr);
-        });
+          state.tasks.filter(t=> t.projectId===plan.projectId && t.viableProduct && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phId)).forEach(t=>{
+            const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${escapeHtml(t.title)}</td>`; sBody.appendChild(tr);
+          });
         scopeCard.appendChild(sTable);
         item.querySelector('.accordion-body').appendChild(scopeCard);
 
