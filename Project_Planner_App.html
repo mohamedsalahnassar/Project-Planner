@@ -51,7 +51,9 @@
     .pdf-card{border:1px solid #dee2e6; border-radius:12px; padding:16px; margin-top:12px}
     .pt-box{width:260px}
     .pt-drop{min-height:60px; max-height:300px; overflow:auto}
-    .pt-task{cursor:move; font-size:.875rem; border:1px solid var(--bs-border-color); border-radius:.25rem; padding:2px 6px; background:var(--bs-tertiary-bg)}
+    .pt-task{cursor:move; font-size:.875rem; border:1px solid var(--bs-border-color); border-radius:.25rem; padding:2px 6px; background:var(--bs-tertiary-bg); display:flex; align-items:center; gap:.25rem}
+    .pt-task.selected{outline:2px solid var(--bs-link-color); background:var(--bs-secondary-bg)}
+    .pt-task .pt-remove{cursor:pointer}
   </style>
 </head>
 <body>
@@ -1431,7 +1433,7 @@
       // Phase Tasks tab wiring
       const ptProjSel = byId('pt-proj');
       const ptBoard = byId('phaseTaskContainers');
-      let dragEl = null;
+      let dragEl = null; let dragSet = [];
       if(ptBoard){
         ptProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
         if(!ptProjSel.value && state.projects[0]) ptProjSel.value = state.projects[0].id;
@@ -1441,26 +1443,50 @@
           div.draggable=true;
           div.dataset.tid=id;
           div.dataset.origin=isPool?'pool':'phase';
-          div.textContent=title;
-          div.addEventListener('dragstart',()=> dragEl=div);
+          div.dataset.title=title;
+          const label=document.createElement('span');
+          label.textContent=title;
+          div.appendChild(label);
+          if(isPool){
+            div.addEventListener('click',e=>{ if(e.target===div||e.target===label) div.classList.toggle('selected'); });
+          }else{
+            const x=document.createElement('span');
+            x.className='pt-remove text-danger ms-auto';
+            x.innerHTML='&times;';
+            x.onclick=e=>{ e.stopPropagation(); div.remove(); };
+            div.appendChild(x);
+          }
+          div.addEventListener('dragstart',()=>{
+            dragEl=div;
+            if(div.dataset.origin==='pool'){
+              const selected=Array.from(byId('pt-pool').querySelectorAll('.pt-task.selected'));
+              dragSet= selected.length? selected : [div];
+            }else{
+              dragSet=[div];
+            }
+          });
           return div;
         }
         function initDropZone(zone){
           zone.addEventListener('dragover',e=>e.preventDefault());
           zone.addEventListener('drop',e=>{
             e.preventDefault();
-            if(!dragEl) return;
-            const tid=dragEl.dataset.tid;
+            if(!dragSet.length) return;
             if(zone.id==='pt-pool'){
-              if(dragEl.dataset.origin==='phase') dragEl.remove();
+              dragSet.forEach(el=>{ if(el.dataset.origin==='phase') el.remove(); el.classList.remove('selected'); });
             }else{
-              if(zone.querySelector(`[data-tid="${tid}"]`)) return;
-              if(dragEl.dataset.origin==='pool'){
-                zone.appendChild(createTaskElem(tid, dragEl.textContent, false));
-              }else{
-                zone.appendChild(dragEl);
-              }
+              dragSet.forEach(el=>{
+                const tid=el.dataset.tid;
+                if(zone.querySelector(`[data-tid="${tid}"]`)) return;
+                if(el.dataset.origin==='pool'){
+                  zone.appendChild(createTaskElem(tid, el.dataset.title, false));
+                }else{
+                  zone.appendChild(el);
+                }
+                el.classList.remove('selected');
+              });
             }
+            dragSet=[]; dragEl=null;
           });
         }
         function renderPhaseTasks(){
@@ -1468,12 +1494,16 @@
           ptBoard.innerHTML = '';
           const poolBox=document.createElement('div');
           poolBox.className='pt-box card shadow-sm';
-          poolBox.innerHTML='<div class="card-header">Tasks</div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
+          poolBox.innerHTML='<div class="card-header d-flex align-items-center justify-content-between"><span>Tasks</span><button class="btn btn-sm btn-outline-secondary" id="pt-select-all">Select All</button></div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
           ptBoard.appendChild(poolBox);
           const pool=byId('pt-pool');
-          getTasksByProject(pid).forEach(t=>{
-            pool.appendChild(createTaskElem(t.id, t.title, true));
-          });
+          getTasksByProject(pid).forEach(t=>{ pool.appendChild(createTaskElem(t.id, t.title, true)); });
+          poolBox.querySelector('#pt-select-all').onclick=()=>{
+            const tasks=Array.from(pool.querySelectorAll('.pt-task'));
+            const allSel=tasks.every(el=> el.classList.contains('selected'));
+            tasks.forEach(el=> el.classList.toggle('selected', !allSel));
+            poolBox.querySelector('#pt-select-all').textContent= allSel? 'Select All' : 'Clear';
+          };
           state.phases.forEach(ph=>{
             const box=document.createElement('div');
             box.className='pt-box card shadow-sm';
