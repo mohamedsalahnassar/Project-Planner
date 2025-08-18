@@ -595,7 +595,7 @@
     function getProposal(id){ return (state.proposals||[]).find(p=> p.id===id); }
     function slug(s){ return (s||"").replace(/[^A-Za-z0-9]+/g,'_').slice(0,28) || 'Sheet'; }
 
-    
+
         // Excel worksheet names must be <= 31 chars. Compose safely.
         function sheetName(base, suffix=""){
           const suf = suffix || "";
@@ -628,9 +628,9 @@
     }
 
     /* ---------- Aggregation & Schedule ---------- */
-    
+
     // Populate per-assignment efforts from BASELINE so calculations come from tasks directly.
-    
+
 
     /* ---------- UI: Dashboard ---------- */
     function buildProjects(){
@@ -848,8 +848,8 @@
     }
 
     /* ---------- Breakdown ---------- */
-    
-    
+
+
     function computeTaskEffortsForPhase(plan, phaseId){
       const tasks = getTasksByPhase(plan.projectId, phaseId);
       const rows = [];
@@ -903,7 +903,7 @@
               </div>
             </div>
           </div>`;
-        
+
         // Deliverable Scope (Viable Product)
         const scopeCard = document.createElement('div'); scopeCard.className='pdf-card mt-3';
         const sHead = document.createElement('div'); sHead.className='pdf-h3'; sHead.textContent = 'Deliverable Scope (Viable Product)';
@@ -922,7 +922,7 @@
     }
 
     /* ---------- PDF Export (unchanged) ---------- */
-    
+
     function buildStaticTimelineNode(plan){
       const aggr = aggregate(plan, state.tasks, getTeam);
       const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
@@ -1013,7 +1013,7 @@
       const opt = { margin: 10, filename: `${pr.name.replace(/\s+/g,'_')}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['css','legacy'] } };
       await html2pdf().from(container).set(opt).save();
     }
-    
+
     async function exportPlanPDF(planId){
       const p = state.proposals.find(x=>x.id===planId); if(!p) return;
       const container = document.createElement('div'); container.className='pdf-sheet';
@@ -1040,7 +1040,7 @@
       w.document.body.appendChild(container);
       setTimeout(()=>{ w.focus(); w.print(); }, 250);
     }
-    
+
 
     /* ---------- Basic Excel Export (SheetJS) ---------- */
     async function exportProjectExcel(projectId){
@@ -1762,7 +1762,7 @@
         del.onclick = ()=>{ if(confirm('Delete team?')){ state.proposals.forEach(p=>{ if(p.teamId===id) p.teamId = state.teams[0]?.id || ''; }); state.teams = state.teams.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
-      
+
       if(kind==='task'){
         const isEdit = !!id;
         const data = isEdit ? state.tasks.find(x=>x.id===id) : { id: Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', projectId: (state.projects[0]?.id||''), viableProduct:false, efforts:[], assignments:[], phaseIds:[] };
@@ -1810,7 +1810,7 @@
         del.onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
-    
+
       new bootstrap.Modal('#editModal').show();
     }
 
@@ -1859,7 +1859,7 @@
       document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr');
       byId('startLabel').textContent = state.meta.startDate;
       byId('effLabel').textContent = state.meta.efficiency;
-      
+
       // Migration: ensure each task has a projectId
       try{
         const defaultProj = state.proposals[0]?.projectId || state.projects[0]?.id || '';
@@ -1868,7 +1868,7 @@
       }catch(e){}
       try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects();
-    
+
       }
     initApp();
   </script>
