@@ -39,16 +39,38 @@ export function getProject(projectId){ return state.projects.find(p => p.id === 
 export function assignTaskToPhase(taskId, phaseId){
   const task = state.tasks.find(t => t.id === taskId);
   if(!task) return;
-  const arr = task.phaseIds || (task.phaseIds = []);
   const pid = phaseId != null ? String(phaseId) : '';
+  const arr = task.phaseIds || (task.phaseIds = []);
   if(!arr.includes(pid)) arr.push(pid);
+  const proposals = state.proposals.filter(p =>
+    String(p.projectId ?? '') === String(task.projectId ?? '') &&
+    (p.phaseIds || []).some(id => String(id) === pid)
+  );
+  task.assignments = task.assignments || [];
+  proposals.forEach(p => {
+    if(!task.assignments.some(a => a.proposalId === p.id && String(a.phaseId) === pid)){
+      task.assignments.push({proposalId: p.id, phaseId: pid});
+    }
+  });
 }
 
 export function removeTaskFromPhase(taskId, phaseId){
   const task = state.tasks.find(t => t.id === taskId);
-  if(!task || !task.phaseIds) return;
+  if(!task) return;
   const pid = phaseId != null ? String(phaseId) : '';
-  task.phaseIds = task.phaseIds.filter(id => String(id) !== pid);
+  task.phaseIds = (task.phaseIds || []).filter(id => String(id) !== pid);
+  const projIds = state.proposals
+    .filter(p => String(p.projectId ?? '') === String(task.projectId ?? ''))
+    .map(p => p.id);
+  task.assignments = (task.assignments || []).filter(a =>
+    !(projIds.includes(a.proposalId) && String(a.phaseId) === pid)
+  );
+}
+
+export function getTaskPhaseIds(task){
+  const set = new Set((task.phaseIds || []).map(id => String(id)));
+  (task.assignments || []).forEach(a => set.add(String(a.phaseId)));
+  return Array.from(set);
 }
 
 export function getTasksByPhase(projectId, phaseId){
@@ -56,7 +78,7 @@ export function getTasksByPhase(projectId, phaseId){
   const phid = phaseId != null ? String(phaseId) : '';
   return state.tasks.filter(t =>
     String(t.projectId ?? '') === pid &&
-    (t.phaseIds || []).some(id => String(id) === phid)
+    getTaskPhaseIds(t).some(id => id === phid)
   );
 }
 
