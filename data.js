@@ -28,3 +28,21 @@ export function replaceState(newState){
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
 export function getPhase(phaseId){ return state.phases.find(p => p.id === phaseId); }
 export function getProject(projectId){ return state.projects.find(p => p.id === projectId); }
+
+// Task ↔ Phase linking helpers
+export function assignTaskToPhase(taskId, phaseId){
+  const task = state.tasks.find(t => t.id === taskId);
+  if(!task) return;
+  const arr = task.phaseIds || (task.phaseIds = []);
+  if(!arr.includes(phaseId)) arr.push(phaseId);
+}
+
+export function removeTaskFromPhase(taskId, phaseId){
+  const task = state.tasks.find(t => t.id === taskId);
+  if(!task || !task.phaseIds) return;
+  task.phaseIds = task.phaseIds.filter(id => id !== phaseId);
+}
+
+export function getTasksByPhase(projectId, phaseId){
+  return state.tasks.filter(t => t.projectId === projectId && (t.phaseIds || []).includes(phaseId));
+}

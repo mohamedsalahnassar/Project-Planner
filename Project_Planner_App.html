@@ -208,6 +208,9 @@
     <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab">Tasks</button>
   </li>
   <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-phase-tasks" data-bs-toggle="tab" data-bs-target="#pane-phase-tasks" type="button" role="tab">Phase Tasks</button>
+  </li>
+  <li class="nav-item" role="presentation">
     <button class="nav-link" id="tab-efforts" data-bs-toggle="tab" data-bs-target="#pane-efforts" type="button" role="tab">Efforts</button>
   </li>
   <li class="nav-item ms-auto" role="presentation">
@@ -293,6 +296,15 @@
                   <tbody></tbody>
                 </table>
               </div>
+            </div>
+
+            <div class="tab-pane fade" id="pane-phase-tasks" role="tabpanel">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <label class="form-label mb-0">Project</label>
+                <select id="pt-proj" class="form-select" style="max-width:240px"></select>
+                <button id="pt-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
+              </div>
+              <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3"></div>
             </div>
 
             <div class="tab-pane fade" id="pane-efforts" role="tabpanel">
