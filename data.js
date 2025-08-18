@@ -35,6 +35,22 @@ export function replaceState(newState){
   Object.assign(state, newState);
 }
 
+export function removeEffortType(key){
+  const list = state.meta.effortTypes || [];
+  const idx = list.indexOf(key);
+  if(idx === -1) return;
+  list.splice(idx, 1);
+  state.tasks.forEach(t => {
+    t.efforts = (t.efforts || []).filter(e => e.platform !== key);
+  });
+  state.teams.forEach(tm => {
+    if(tm.sizes) delete tm.sizes[key];
+  });
+  state.proposals.forEach(p => {
+    if(p.overrides) Object.values(p.overrides).forEach(o => { delete o[key]; });
+  });
+}
+
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
 export function getPhase(phaseId){ return state.phases.find(p => p.id === phaseId); }
 export function getProject(projectId){ return state.projects.find(p => p.id === projectId); }

@@ -314,6 +314,7 @@
     <select id="eff-proj" class="form-select" style="max-width:240px"></select>
     <input id="eff-search" class="form-control" placeholder="Search tasks" style="max-width:260px">
     <button id="eff-add-type" class="btn btn-secondary btn-sm"><i class="bi bi-plus-lg"></i> Add Effort Type</button>
+    <button id="eff-remove-type" class="btn btn-outline-danger btn-sm"><i class="bi bi-dash-lg"></i> Remove Effort Type</button>
     <button id="eff-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
   </div>
   <div class="table-responsive">
@@ -451,7 +452,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType } from './data.js';
       load();
     /* ===================== APP CODE (v20) ===================== */
     const STORAGE_KEY = "project_planner_v20";
@@ -1575,6 +1576,14 @@
             state.teams.forEach(tm=> tm.sizes[key]=tm.sizes[key]||0);
             save(); refreshManage(); renderEffTbl();
           }
+        };
+        byId('eff-remove-type').onclick = ()=>{
+          const name = prompt('Effort type key to remove?');
+          if(!name) return; const key = name.trim(); if(!key) return;
+          if(!effortTypes().includes(key)) return;
+          if(!confirm(`Remove effort type "${key}"?`)) return;
+          removeEffortType(key);
+          save(); refreshManage(); renderEffTbl();
         };
       }
 
