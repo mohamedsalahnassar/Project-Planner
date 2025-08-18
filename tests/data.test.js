@@ -58,3 +58,18 @@ test('getTasksByProject filters tasks by project', () => {
   assert.equal(res.length, 1);
   assert.equal(res[0].id, 1);
 });
+
+test('getTasksByProject matches numeric and string ids', () => {
+  replaceState({
+    projects: [],
+    proposals: [],
+    tasks: [{id:1, projectId:1}, {id:2, projectId:'2'}],
+    teams: [],
+    phases: [],
+    meta: {},
+  });
+  assert.equal(getTasksByProject(1).length, 1);
+  const res = getTasksByProject('2');
+  assert.equal(res.length, 1);
+  assert.equal(res[0].id, 2);
+});

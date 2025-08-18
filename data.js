@@ -50,9 +50,11 @@ export function removeTaskFromPhase(taskId, phaseId){
 }
 
 export function getTasksByPhase(projectId, phaseId){
-  return state.tasks.filter(t => t.projectId === projectId && (t.phaseIds || []).includes(phaseId));
+  const pid = projectId != null ? String(projectId) : '';
+  return state.tasks.filter(t => String(t.projectId ?? '') === pid && (t.phaseIds || []).includes(phaseId));
 }
 
 export function getTasksByProject(projectId){
-  return state.tasks.filter(t => t.projectId === projectId);
+  const pid = projectId != null ? String(projectId) : '';
+  return state.tasks.filter(t => String(t.projectId ?? '') === pid);
 }
