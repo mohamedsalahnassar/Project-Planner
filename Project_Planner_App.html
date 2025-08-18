@@ -1425,6 +1425,39 @@
       byId('search-phases').oninput = refreshManage;
       byId('search-teams').oninput = refreshManage;
       byId('search-tasks').oninput = refreshManage;
+      // Phase Tasks tab wiring
+      const ptProjSel = byId('pt-proj');
+      const ptContainers = byId('phaseTaskContainers');
+      if(ptContainers){
+        ptProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+        if(!ptProjSel.value && state.projects[0]) ptProjSel.value = state.projects[0].id;
+        function renderPhaseTasks(){
+          const pid = ptProjSel.value;
+          ptContainers.innerHTML = '';
+          state.phases.forEach(ph=>{
+            const box=document.createElement('div');
+            box.className='border rounded p-2';
+            box.style.minWidth='220px';
+            box.innerHTML=`<h6>${ph.name}</h6><div class="vstack gap-1" data-ph="${ph.id}"></div>`;
+            ptContainers.appendChild(box);
+          });
+          state.tasks.filter(t=> t.projectId===pid).forEach(t=>{
+            (t.phaseIds||[]).forEach(phId=>{
+              const dest=ptContainers.querySelector(`div[data-ph="${phId}"]`);
+              if(dest){
+                const item=document.createElement('div');
+                item.className='border rounded px-2 py-1 bg-body-secondary';
+                item.textContent=t.title;
+                dest.appendChild(item);
+              }
+            });
+          });
+        }
+        ptProjSel.onchange = renderPhaseTasks;
+        renderPhaseTasks();
+        const saveBtn = byId('pt-save');
+        if(saveBtn) saveBtn.onclick = ()=>{ save(); toast('Phase tasks updated'); };
+      }
       // Efforts tab wiring
       const effProjSel = byId('eff-proj');
       const effSearch = byId('eff-search');
