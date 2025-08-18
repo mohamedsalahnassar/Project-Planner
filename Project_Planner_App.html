@@ -163,9 +163,7 @@
             <div class="small text-secondary mb-2" id="detail-span"></div>
             <div class="table-responsive">
               <table id="effTable" class="table table-sm table-bordered mb-0 align-middle">
-                <thead class="table-dark">
-                  <tr><th>Phase</th><th>BE</th><th>iOS</th><th>Android</th><th>Online</th><th>QA</th></tr>
-                </thead>
+                <thead class="table-dark"></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -364,7 +362,7 @@
                       <div><label class="form-label">Theme</label>
                         <select id="gen-theme" class="form-select"></select>
                       </div>
-                      <div class="small text-secondary">Themes adjust background and platform colors (BE/iOS/Android/Web/QA). Changes persist.</div>
+                      <div class="small text-secondary">Themes adjust background and effort type colors. Changes persist.</div>
                     </div>
                   </div>
                 </div>
@@ -471,7 +469,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES } from './data.js';
       load();
     /* ===================== APP CODE (v20) ===================== */
     const STORAGE_KEY = "project_planner_v20";
@@ -504,11 +502,11 @@
     };
 
     const DEFAULT_DATA = {
-      meta: { version: 20, startDate: "2025-08-13", efficiency: 0.8, theme: "Dark", rtl: false, defaultPxPerDay: 18, effortTypes:["BE","iOS","Android","Online","QA"] },
+      meta: { version: 20, startDate: "2025-08-13", efficiency: 0.8, theme: "Dark", rtl: false, defaultPxPerDay: 18, effortTypes: DEFAULT_EFFORT_TYPES.map(e=> ({...e})) },
       projects: [{ id: "proj-sample", name: "Sample Project", description: "Generic project" }],
       teams: [
-        { id:"team-base", name:"Base Squad", sizes:{BE:3,iOS:2,Android:2,Online:2,QA:3} },
-        { id:"team-scaled", name:"Scaled Squad", sizes:{BE:3,iOS:4,Android:4,Online:4,QA:4} }
+        { id:"team-base", name:"Base Squad", sizes:Object.fromEntries(DEFAULT_EFFORT_TYPES.map(e=>[e.key, {BE:3,iOS:2,Android:2,Online:2,QA:3}[e.key]||0])) },
+        { id:"team-scaled", name:"Scaled Squad", sizes:Object.fromEntries(DEFAULT_EFFORT_TYPES.map(e=>[e.key, {BE:3,iOS:4,Android:4,Online:4,QA:4}[e.key]||0])) }
       ],
       phases: [
         { id:"P1", name:"Phase 1", description:"Entry points + Survey/Registration + Dashboard core", order:1 },
@@ -713,6 +711,8 @@
       byId('detail-buffer').textContent = p.bufferPct||0;
       const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
       byId('detail-span').textContent = `${fmt(sched.chartStart)} → ${fmt(sched.chartEnd)} • ${totalDays} days`;
+      const th = `<tr><th>Phase</th>${effortTypes().map(k=>`<th>${effortTypeTitle(k)}</th>`).join('')}</tr>`;
+      byId('effTable').querySelector('thead').innerHTML = th;
       const tb = byId('effTable').querySelector('tbody'); tb.innerHTML = '';
       p.phaseIds.forEach(pid=>{
         const t = aggr.phaseTotals[pid] || {};
@@ -974,35 +974,17 @@
         const card = document.createElement('div'); card.className='pdf-card';
         const head = document.createElement('div'); head.className='pdf-h3'; head.textContent = `Phase: ${ph?.name||phId}`; card.appendChild(head);
         const tbl = document.createElement('table'); tbl.style.width='100%'; tbl.className='table table-sm table-bordered';
-        tbl.innerHTML = `<thead class="table-light"><tr>
-            <th style="width:10%">Task</th><th>Title</th>
-            <th style="width:10%;text-align:right">BE</th>
-            <th style="width:10%;text-align:right">iOS</th>
-            <th style="width:10%;text-align:right">Android</th>
-            <th style="width:10%;text-align:right">Online</th>
-            <th style="width:10%;text-align:right">QA</th>
-            <th style="width:10%;text-align:right">Total</th>
-          </tr></thead><tbody></tbody>`;
+        const ths = effortTypes().map(t=>`<th style=\"width:10%;text-align:right\">${effortTypeTitle(t)}</th>`).join('');
+        tbl.innerHTML = `<thead class=\"table-light\"><tr><th style=\"width:10%\">Task</th><th>Title</th>${ths}<th style=\"width:10%;text-align:right\">Total</th></tr></thead><tbody></tbody>`;
         const tb = tbl.querySelector('tbody');
         data.rows.forEach(r=>{
-          const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${r.id}</code></td><td>${r.title}</td>
-            <td style="text-align:right">${r.BE.toFixed(1)}</td>
-            <td style="text-align:right">${r.iOS.toFixed(1)}</td>
-            <td style="text-align:right">${r.Android.toFixed(1)}</td>
-            <td style="text-align:right">${r.Online.toFixed(1)}</td>
-            <td style="text-align:right">${r.QA.toFixed(1)}</td>
-            <td style="text-align:right">${r.total.toFixed(1)}</td>`;
+          const cells = effortTypes().map(t=>`<td style=\"text-align:right\">${r[t].toFixed(1)}</td>`).join('');
+          const tr=document.createElement('tr');
+          tr.innerHTML = `<td><code>${r.id}</code></td><td>${r.title}</td>${cells}<td style=\"text-align:right\">${r.total.toFixed(1)}</td>`;
           tb.appendChild(tr);
         });
-        const tf = document.createElement('tfoot'); tf.innerHTML = `<tr class="table-secondary">
-          <th colspan="2" class="text-end">Phase totals</th>
-          <th style="text-align:right">${data.totals.BE.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.iOS.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.Android.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.Online.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.QA.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.total.toFixed(1)}</th>
-        </tr>`;
+        const totalsCells = effortTypes().map(t=>`<th style=\"text-align:right\">${data.totals[t].toFixed(1)}</th>`).join('');
+        const tf = document.createElement('tfoot'); tf.innerHTML = `<tr class=\"table-secondary\"><th colspan=\"2\" class=\"text-end\">Phase totals</th>${totalsCells}<th style=\"text-align:right\">${data.totals.total.toFixed(1)}</th></tr>`;
         tbl.appendChild(tf);
         card.appendChild(tbl);
         node.appendChild(card);
@@ -1123,10 +1105,8 @@
 
     /* ---------- Styled Excel Export (XlsxPopulate + Chart.js) ---------- */
     function platColorHex(role){
-      const get = (v)=> getComputedStyle(document.documentElement).getPropertyValue(v).trim().replace('#','');
-      const map = { BE:'--be', iOS:'--ios', Android:'--android', Online:'--web', QA:'--qa' };
-      const hex = get(map[role]) || '888888';
-      return '#'+hex;
+      const c = effortTypeColor(role) || '#888';
+      return c.startsWith('#') ? c : ('#'+c);
     }
     async function exportProjectExcelStyled(projectId){
       if(!await ensureXPOP()){ alert("Could not load XlsxPopulate."); return; }
@@ -1242,7 +1222,7 @@
             const cell = shG.cell(4 + i + 1, gr); // (col,row) is 1-based; col 5 = first date column
           }
           // Fill colored cells for the bar
-          const laneColor = platColorHex(li.key==='Online'?'Online':li.key);
+          const laneColor = platColorHex(li.key);
           for(let i=startIdx;i<startIdx+li.days;i++){
             const col = 5 + i; // A=1 -> 5 is first date column
             shG.cell(gr, col).style({ fill: laneColor, border:true });
@@ -1257,12 +1237,14 @@
 
     /* ---------- Tasks CSV/XLSX Import/Export ---------- */
     function tasksToRows(){
-      const rows = [["id","title","description","startDate","be_md","be_start","ios_md","ios_start","android_md","android_start","online_md","online_start","qa_md","qa_start","assignments"]];
+      const header = ["id","title","description","startDate", ...effortTypes().flatMap(k=>[k.toLowerCase()+"_md", k.toLowerCase()+"_start"]), "assignments"];
+      const rows = [header];
       state.tasks.forEach(t=>{
-        const eff = {BE:{},iOS:{},Android:{},Online:{},QA:{}};
+        const eff = Object.fromEntries(effortTypes().map(k=>[k,{}]));
         (t.efforts||[]).forEach(e=>{ eff[e.platform]={ md:e.manDays||"", start:e.startDate||"" }; });
         const asg = (t.assignments||[]).map(a=> `${a.proposalId}:${a.phaseId}`).join(";");
-        rows.push([t.id, t.title, t.description||"", t.startDate||"", eff.BE.md||"", eff.BE.start||"", eff.iOS.md||"", eff.iOS.start||"", eff.Android.md||"", eff.Android.start||"", eff.Online.md||"", eff.Online.start||"", eff.QA.md||"", eff.QA.start||"", asg]);
+        const cells = effortTypes().flatMap(k=>[eff[k].md||"", eff[k].start||""]);
+        rows.push([t.id, t.title, t.description||"", t.startDate||"", ...cells, asg]);
       });
       return rows;
     }
