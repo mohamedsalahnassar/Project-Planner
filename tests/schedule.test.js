@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { aggregate, computeSchedule } from '../schedule.js';
+import { state, removeEffortType } from '../data.js';
 
 const dayMs = 86400000;
 function dummyPhase(id){ return {id, order:1}; }
@@ -62,3 +63,25 @@ test('computeSchedule supports QA after FE rule', () => {
     const diffDays = Math.round((ios.start - be.start)/dayMs);
     assert.strictEqual(diffDays, 2);
   });
+
+test('computeSchedule handles custom effort types', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1']};
+  const tasks = [{projectId:1, startDate:'2024-01-01', phaseIds:['p1'], efforts:[{platform:'DevOps', manDays:6}]}];
+  const aggr = aggregate(plan, tasks, () => ({sizes:{BE:1,DevOps:2}}));
+  const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
+  const lane = sched.phaseWindows[0].lanes.find(l=> l.key==='DevOps');
+  assert.ok(lane);
+  assert.strictEqual(lane.days, 3);
+});
+
+test('removeEffortType purges data', () => {
+  state.meta.effortTypes = ['BE','DevOps'];
+  state.tasks = [{efforts:[{platform:'BE',manDays:1},{platform:'DevOps',manDays:2}]}];
+  state.teams = [{sizes:{BE:1,DevOps:2}}];
+  state.proposals = [{overrides:{p1:{BE:'2024-01-01',DevOps:'2024-01-02'}}}];
+  removeEffortType('DevOps');
+  assert.deepStrictEqual(state.meta.effortTypes, ['BE']);
+  assert.deepStrictEqual(state.tasks[0].efforts, [{platform:'BE',manDays:1}]);
+  assert.deepStrictEqual(state.teams[0].sizes, {BE:1});
+  assert.deepStrictEqual(state.proposals[0].overrides.p1, {BE:'2024-01-01'});
+});

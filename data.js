@@ -5,7 +5,11 @@ export const state = {
   tasks: [],
   teams: [],
   phases: [],
-  meta: { startDate: new Date().toISOString().slice(0,10), efficiency: 1 }
+  meta: {
+    startDate: new Date().toISOString().slice(0,10),
+    efficiency: 1,
+    effortTypes: ['BE','iOS','Android','Online','QA']
+  }
 };
 
 export function load(){
@@ -29,6 +33,22 @@ export function save(){
 export function replaceState(newState){
   Object.keys(state).forEach(k => delete state[k]);
   Object.assign(state, newState);
+}
+
+export function removeEffortType(key){
+  const list = state.meta.effortTypes || [];
+  const idx = list.indexOf(key);
+  if(idx === -1) return;
+  list.splice(idx, 1);
+  state.tasks.forEach(t => {
+    t.efforts = (t.efforts || []).filter(e => e.platform !== key);
+  });
+  state.teams.forEach(tm => {
+    if(tm.sizes) delete tm.sizes[key];
+  });
+  state.proposals.forEach(p => {
+    if(p.overrides) Object.values(p.overrides).forEach(o => { delete o[key]; });
+  });
 }
 
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
