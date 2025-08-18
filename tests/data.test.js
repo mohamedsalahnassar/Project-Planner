@@ -38,12 +38,14 @@ test('assignTaskToPhase handles multiple phases without duplicates', () => {
   assignTaskToPhase(1, 'p1');
   assignTaskToPhase(1, 'p1'); // duplicate ignored
   assignTaskToPhase(1, 'p2');
-  assert.deepEqual(state.tasks[0].phaseIds, ['p1','p2']);
+  assignTaskToPhase(1, 3); // numeric id stored as string
+  assert.deepEqual(state.tasks[0].phaseIds, ['p1','p2','3']);
   removeTaskFromPhase(1, 'p1');
+  removeTaskFromPhase(1, 3); // accepts numeric removal
   assert.deepEqual(state.tasks[0].phaseIds, ['p2']);
   const res = getTasksByPhase(2, 'p2');
   assert.equal(res.length, 1);
-});
+  });
 
 test('getTasksByProject filters tasks by project', () => {
   replaceState({
@@ -72,4 +74,24 @@ test('getTasksByProject matches numeric and string ids', () => {
   const res = getTasksByProject('2');
   assert.equal(res.length, 1);
   assert.equal(res[0].id, 2);
+});
+
+test('getTasksByPhase matches numeric and string ids', () => {
+  replaceState({
+    projects: [],
+    proposals: [],
+    tasks: [
+      {id:1, projectId:1, phaseIds:[1]},
+      {id:2, projectId:'1', phaseIds:['2']},
+    ],
+    teams: [],
+    phases: [],
+    meta: {},
+  });
+  const r1 = getTasksByPhase(1, '1');
+  assert.equal(r1.length, 1);
+  assert.equal(r1[0].id, 1);
+  const r2 = getTasksByPhase('1', 2);
+  assert.equal(r2.length, 1);
+  assert.equal(r2[0].id, 2);
 });

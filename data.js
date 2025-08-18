@@ -40,18 +40,24 @@ export function assignTaskToPhase(taskId, phaseId){
   const task = state.tasks.find(t => t.id === taskId);
   if(!task) return;
   const arr = task.phaseIds || (task.phaseIds = []);
-  if(!arr.includes(phaseId)) arr.push(phaseId);
+  const pid = phaseId != null ? String(phaseId) : '';
+  if(!arr.includes(pid)) arr.push(pid);
 }
 
 export function removeTaskFromPhase(taskId, phaseId){
   const task = state.tasks.find(t => t.id === taskId);
   if(!task || !task.phaseIds) return;
-  task.phaseIds = task.phaseIds.filter(id => id !== phaseId);
+  const pid = phaseId != null ? String(phaseId) : '';
+  task.phaseIds = task.phaseIds.filter(id => String(id) !== pid);
 }
 
 export function getTasksByPhase(projectId, phaseId){
   const pid = projectId != null ? String(projectId) : '';
-  return state.tasks.filter(t => String(t.projectId ?? '') === pid && (t.phaseIds || []).includes(phaseId));
+  const phid = phaseId != null ? String(phaseId) : '';
+  return state.tasks.filter(t =>
+    String(t.projectId ?? '') === pid &&
+    (t.phaseIds || []).some(id => String(id) === phid)
+  );
 }
 
 export function getTasksByProject(projectId){
