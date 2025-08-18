@@ -456,7 +456,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase } from './data.js';
       load();
     /* ===================== APP CODE (v20) ===================== */
     const STORAGE_KEY = "project_planner_v20";
@@ -534,9 +534,7 @@
       (plan.phaseIds||[]).forEach(phId=>{
         const base = (BASELINE[plan.id]||{})[phId];
         if(!base) return;
-        const tasks = (state.tasks||[]).filter(t=> t.projectId===plan.projectId
-          && (t.phaseIds||[]).includes(phId)
-          && FE_IDS.has(t.id));
+        const tasks = getTasksByPhase(plan.projectId, phId).filter(t=> FE_IDS.has(t.id));
         const feCount = Math.max(1, tasks.length);
         tasks.forEach(t=>{
           if((t.efforts||[]).length) return;
@@ -820,7 +818,7 @@
     
     
     function computeTaskEffortsForPhase(plan, phaseId){
-      const tasks = state.tasks.filter(t=> t.projectId===plan.projectId && (t.phaseIds||[]).includes(phaseId));
+      const tasks = getTasksByPhase(plan.projectId, phaseId);
       const rows = [];
       const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0,total:0};
       tasks.forEach(t=>{
@@ -886,7 +884,7 @@
         const sTable = document.createElement('table'); sTable.className='table table-sm table-bordered'; sTable.style.width='100%';
         sTable.innerHTML = `<thead class="table-light"><tr><th style="width:12%">Task</th><th>Title</th></tr></thead><tbody></tbody>`;
         const sBody = sTable.querySelector('tbody');
-          state.tasks.filter(t=> t.projectId===plan.projectId && t.viableProduct && (t.phaseIds||[]).includes(phId)).forEach(t=>{
+          getTasksByPhase(plan.projectId, phId).filter(t=> t.viableProduct).forEach(t=>{
             const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${escapeHtml(t.title)}</td>`; sBody.appendChild(tr);
           });
         scopeCard.appendChild(sTable);
