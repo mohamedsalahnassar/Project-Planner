@@ -5,7 +5,11 @@ export const state = {
   tasks: [],
   teams: [],
   phases: [],
-  meta: { startDate: new Date().toISOString().slice(0,10), efficiency: 1 }
+  meta: {
+    startDate: new Date().toISOString().slice(0,10),
+    efficiency: 1,
+    effortTypes: ['BE','iOS','Android','Online','QA']
+  }
 };
 
 export function load(){

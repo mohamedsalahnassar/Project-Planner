@@ -62,3 +62,13 @@ test('computeSchedule supports QA after FE rule', () => {
     const diffDays = Math.round((ios.start - be.start)/dayMs);
     assert.strictEqual(diffDays, 2);
   });
+
+test('computeSchedule handles custom effort types', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1']};
+  const tasks = [{projectId:1, startDate:'2024-01-01', phaseIds:['p1'], efforts:[{platform:'DevOps', manDays:6}]}];
+  const aggr = aggregate(plan, tasks, () => ({sizes:{BE:1,DevOps:2}}));
+  const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
+  const lane = sched.phaseWindows[0].lanes.find(l=> l.key==='DevOps');
+  assert.ok(lane);
+  assert.strictEqual(lane.days, 3);
+});
