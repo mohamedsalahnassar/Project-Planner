@@ -9,6 +9,7 @@ struct PhaseTotals {
     var earliest: Date? = nil
 }
 
+@MainActor
 struct Aggregation {
     var team: Team
     var buffer: Double
@@ -21,6 +22,7 @@ struct LaneWindow {
     let days: Int
 }
 
+@MainActor
 struct PhaseWindow {
     let phase: Phase
     let start: Date
@@ -28,12 +30,14 @@ struct PhaseWindow {
     let lanes: [LaneWindow]
 }
 
+@MainActor
 struct ScheduleResult {
     let chartStart: Date
     let chartEnd: Date
     let phaseWindows: [PhaseWindow]
 }
 
+@MainActor
 func aggregate(plan: Plan, tasks: [Task]) -> Aggregation? {
     guard let team = plan.team else { return nil }
     let buffer = (plan.bufferPct) / 100.0
@@ -84,6 +88,7 @@ private func addDays(_ d: Date, _ n: Int) -> Date {
     Calendar.current.date(byAdding: .day, value: n, to: d) ?? d
 }
 
+@MainActor
 func computeSchedule(plan: Plan, aggr: Aggregation, efficiency: Double, startDate: Date, stagger: Int = 5) -> ScheduleResult {
     let planStart = startDate
     let phases = (plan.phases ?? []).sorted { $0.order < $1.order }

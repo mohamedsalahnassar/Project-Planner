@@ -48,6 +48,7 @@ struct PlanDTO: Codable {
 
 // MARK: - JSON Export/Import
 
+@MainActor
 func exportProjects(context: NSManagedObjectContext, to url: URL) throws {
     let req: NSFetchRequest<Project> = Project.fetchRequest()
     let projects = try context.fetch(req)
@@ -92,6 +93,7 @@ func exportProjects(context: NSManagedObjectContext, to url: URL) throws {
     try data.write(to: url)
 }
 
+@MainActor
 func importProjects(context: NSManagedObjectContext, from url: URL) throws {
     let data = try Data(contentsOf: url)
     let dtos = try JSONDecoder().decode([ProjectDTO].self, from: data)
@@ -154,6 +156,7 @@ func importProjects(context: NSManagedObjectContext, from url: URL) throws {
 
 // MARK: - CSV Export/Import
 
+@MainActor
 func exportProjectsCSV(context: NSManagedObjectContext, to url: URL) throws {
     let req: NSFetchRequest<Project> = Project.fetchRequest()
     let projects = try context.fetch(req)
@@ -173,6 +176,7 @@ func exportProjectsCSV(context: NSManagedObjectContext, to url: URL) throws {
     try csv.data(using: .utf8)?.write(to: url)
 }
 
+@MainActor
 func importProjectsCSV(context: NSManagedObjectContext, from url: URL) throws {
     let data = try String(contentsOf: url)
     let lines = data.split(separator: "\n")
@@ -201,6 +205,7 @@ func importProjectsCSV(context: NSManagedObjectContext, from url: URL) throws {
     try context.save()
 }
 
+@MainActor
 private func fetchOrCreateProject(named: String, context: NSManagedObjectContext) -> Project {
     let fetch: NSFetchRequest<Project> = Project.fetchRequest()
     fetch.predicate = NSPredicate(format: "name == %@", named)
@@ -210,6 +215,7 @@ private func fetchOrCreateProject(named: String, context: NSManagedObjectContext
     return p
 }
 
+@MainActor
 private func fetchOrCreateTask(named: String, project: Project, context: NSManagedObjectContext) -> Task {
     let fetch: NSFetchRequest<Task> = Task.fetchRequest()
     fetch.predicate = NSPredicate(format: "name == %@ AND project == %@", named, project)
@@ -219,6 +225,7 @@ private func fetchOrCreateTask(named: String, project: Project, context: NSManag
     return t
 }
 
+@MainActor
 private func fetchOrCreatePhase(named: String, project: Project, context: NSManagedObjectContext) -> Phase {
     let fetch: NSFetchRequest<Phase> = Phase.fetchRequest()
     fetch.predicate = NSPredicate(format: "name == %@ AND project == %@", named, project)
@@ -230,6 +237,7 @@ private func fetchOrCreatePhase(named: String, project: Project, context: NSMana
 
 // MARK: - Schedule CSV
 
+@MainActor
 func exportSchedule(schedule: ScheduleResult, to url: URL) throws {
     var csv = "Phase,Lane,Start,Days\n"
     let df = ISO8601DateFormatter()

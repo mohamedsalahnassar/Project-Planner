@@ -1,6 +1,7 @@
 import CoreData
 
 @objc(Phase)
+@MainActor
 public class Phase: NSManagedObject, Identifiable {
     @nonobjc public class func fetchRequest() -> NSFetchRequest<Phase> {
         NSFetchRequest<Phase>(entityName: "Phase")

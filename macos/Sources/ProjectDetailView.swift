@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreData
 
+@MainActor
 struct ProjectDetailView: View {
     @ObservedObject var project: Project
     @Environment(\.managedObjectContext) private var context

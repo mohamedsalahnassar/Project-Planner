@@ -4,6 +4,7 @@ import CoreData
 import AppKit
 #endif
 
+@MainActor
 struct PlanDetailView: View {
     @ObservedObject var plan: Plan
     @Environment(\.managedObjectContext) private var context
