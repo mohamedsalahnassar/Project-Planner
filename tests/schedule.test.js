@@ -35,11 +35,23 @@ test('computeSchedule supports QA after FE rule', () => {
   assert.strictEqual(diffDays, ios.days);
 });
 
-test('computeSchedule respects overrides', () => {
-  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], overrides:{'p1':{QA:'2024-01-10'}}};
-  const tasks = sampleTasks();
-  const aggr = aggregate(plan, tasks, getTeam);
-  const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
-  const qa = sched.phaseWindows[0].lanes.find(l=>l.key==='QA');
-  assert.strictEqual(qa.start.toISOString().slice(0,10), '2024-01-10');
-});
+  test('computeSchedule respects overrides', () => {
+    const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], overrides:{'p1':{QA:'2024-01-10'}}};
+    const tasks = sampleTasks();
+    const aggr = aggregate(plan, tasks, getTeam);
+    const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
+    const qa = sched.phaseWindows[0].lanes.find(l=>l.key==='QA');
+    assert.strictEqual(qa.start.toISOString().slice(0,10), '2024-01-10');
+  });
+
+  test('computeSchedule allows custom stagger days', () => {
+    const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1']};
+    const tasks = sampleTasks();
+    const aggr = aggregate(plan, tasks, getTeam);
+    const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01', {staggerDays:2});
+    const lanes = sched.phaseWindows[0].lanes;
+    const ios = lanes.find(l=>l.key==='iOS');
+    const be = lanes.find(l=>l.key==='BE');
+    const diffDays = Math.round((ios.start - be.start)/dayMs);
+    assert.strictEqual(diffDays, 2);
+  });
