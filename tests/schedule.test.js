@@ -9,7 +9,7 @@ function sampleTasks(){
   return [{
     projectId:1,
     startDate:'2024-01-01',
-    assignments:[{proposalId:1, phaseId:'p1'}],
+    phaseIds:['p1'],
     efforts:[{platform:'BE', manDays:10},{platform:'QA', manDays:2},{platform:'iOS', manDays:4}]
   }];
 }
