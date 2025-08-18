@@ -11,6 +11,7 @@ export function importPlanJSON(json){
 
 export function validateColumns(row, required){
   const missing = required.filter(col => !(col in row));
-  if(missing.length) console.warn(`Missing columns: ${missing.join(', ')}`);
-  return missing;
+  if(missing.length){
+    throw new Error(`Missing columns: ${missing.join(', ')}`);
+  }
 }

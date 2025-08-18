@@ -12,12 +12,18 @@ export function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) Object.assign(state, JSON.parse(raw));
-  }catch(e){}
+  }catch(e){
+    console.error('Failed to load saved state', e);
+  }
   return state;
 }
 
 export function save(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    console.error('Failed to save state', e);
+  }
 }
 
 export function replaceState(newState){

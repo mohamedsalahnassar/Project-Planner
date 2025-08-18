@@ -23,6 +23,8 @@ export function aggregate(plan, tasks, getTeam){
 function duration(md, eng, eff){ if(!eng||eng<=0) return 0; return Math.max(1, Math.ceil(md/(eng*eff))); }
 function addDays(d, n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
 
+export const DEFAULT_STAGGER_DAYS = 5;
+
 export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}){
   const planStart = new Date(startDate);
   const phases = plan.phaseIds.map(id=> getPhase(id)).filter(Boolean).sort((a,b)=>(a.order||0)-(b.order||0));
@@ -35,6 +37,7 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
   ];
   const lanes = options.lanes || defaultLanes;
   const qaRule = options.qaStart || 'half'; // 'half' or 'afterFE'
+  const stagger = options.staggerDays ?? DEFAULT_STAGGER_DAYS;
   const phaseWindows = [];
   let prevEnd = null;
   for(const ph of phases){
@@ -47,9 +50,9 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
     const webDays = duration(totals.Online, aggr.team.Online, eff);
     const feMax = Math.max(iosDays, andDays, webDays);
     let beStart = phStart;
-    let iosStart = addDays(phStart, 5);
-    let andStart = addDays(phStart, 5);
-    let webStart = addDays(phStart, 5);
+    let iosStart = addDays(phStart, stagger);
+    let andStart = addDays(phStart, stagger);
+    let webStart = addDays(phStart, stagger);
     let qaStart = qaRule==='afterFE' ? addDays(iosStart, feMax) : addDays(iosStart, Math.floor(feMax*0.5));
     const o = plan.overrides?.[ph.id] || {};
     if(o.BE) beStart = new Date(o.BE);

@@ -1276,7 +1276,12 @@
           out.push(cur); return out;
         });
         const headers = rows.shift().map(h=>h.trim().toLowerCase());
-        validateColumns(Object.fromEntries(headers.map(h=>[h,true])), ['id','title','assignments']);
+        try{
+          validateColumns(Object.fromEntries(headers.map(h=>[h,true])), ['id','title','assignments']);
+        }catch(err){
+          alert(err.message);
+          return;
+        }
         const idx = (k)=> headers.indexOf(k);
         rows.forEach(cols=>{
           if(!cols.length) return;
