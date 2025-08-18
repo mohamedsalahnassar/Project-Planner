@@ -708,9 +708,17 @@
           <td>${(t.QA||0).toFixed(1)}</td>`;
         tb.appendChild(tr);
       });
+      document.querySelectorAll('.lane-filter').forEach(chk=>{
+        chk.checked = !(p.hiddenLanes||[]).includes(chk.value);
+        chk.onchange = ()=>{
+          p.hiddenLanes = Array.from(document.querySelectorAll('.lane-filter'))
+            .filter(x=>!x.checked).map(x=>x.value);
+          save();
+          drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+        };
+      });
       drawGantt(p, sched);
       renderPhaseBreakdownTables(p);
-      document.querySelectorAll('.lane-filter').forEach(chk=> chk.onchange = ()=> drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate)));
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
       byId('btn-export-plan-pdf').onclick = ()=> exportPlanPDF(p.id);
