@@ -4,6 +4,7 @@ import CoreData
 import AppKit
 #endif
 
+@MainActor
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var context
     @FetchRequest(entity: Project.entity(), sortDescriptors: []) var projects: FetchedResults<Project>

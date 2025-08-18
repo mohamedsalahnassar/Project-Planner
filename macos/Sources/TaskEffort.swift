@@ -1,6 +1,7 @@
 import CoreData
 
 @objc(TaskEffort)
+@MainActor
 public class TaskEffort: NSManagedObject, Identifiable {
     @nonobjc public class func fetchRequest() -> NSFetchRequest<TaskEffort> {
         NSFetchRequest<TaskEffort>(entityName: "TaskEffort")

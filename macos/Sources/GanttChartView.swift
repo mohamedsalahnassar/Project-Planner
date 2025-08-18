@@ -3,6 +3,7 @@ import SwiftUI
 import Charts
 #endif
 
+@MainActor
 struct GanttChartView: View {
     let schedule: ScheduleResult
 

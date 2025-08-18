@@ -2,6 +2,7 @@ import SwiftUI
 import CoreData
 
 @main
+@MainActor
 struct ProjectPlannerMacApp: App {
     let persistenceController = PersistenceController.shared
 
