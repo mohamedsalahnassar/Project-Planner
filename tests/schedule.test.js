@@ -75,12 +75,15 @@ test('computeSchedule handles custom effort types', () => {
 });
 
 test('removeEffortType purges data', () => {
-  state.meta.effortTypes = ['BE','DevOps'];
+  state.meta.effortTypes = [
+    {key:'BE', title:'BE', color:'#000'},
+    {key:'DevOps', title:'DevOps', color:'#111'}
+  ];
   state.tasks = [{efforts:[{platform:'BE',manDays:1},{platform:'DevOps',manDays:2}]}];
   state.teams = [{sizes:{BE:1,DevOps:2}}];
   state.proposals = [{overrides:{p1:{BE:'2024-01-01',DevOps:'2024-01-02'}}}];
   removeEffortType('DevOps');
-  assert.deepStrictEqual(state.meta.effortTypes, ['BE']);
+  assert.deepStrictEqual(state.meta.effortTypes, [{key:'BE', title:'BE', color:'#000'}]);
   assert.deepStrictEqual(state.tasks[0].efforts, [{platform:'BE',manDays:1}]);
   assert.deepStrictEqual(state.teams[0].sizes, {BE:1});
   assert.deepStrictEqual(state.proposals[0].overrides.p1, {BE:'2024-01-01'});

@@ -20,7 +20,7 @@
     .mini-timeline{border-radius:.5rem;border:1px solid var(--bs-border-color); overflow:hidden}
     .mini-phase{height:8px;background:var(--bs-border-color);opacity:.6; position:relative}
     .mini-platforms{height:8px;display:flex}
-    .seg-ios{background:var(--ios)} .seg-android{background:var(--android)} .seg-web{background:var(--web)} .seg-be{background:var(--be)} .seg-qa{background:var(--qa)}
+    .seg{height:8px}
     .gantt-wrap{border:1px solid var(--bs-border-color); border-radius:.75rem; overflow:hidden}
     .gantt-toolbar{position:sticky;top:0;z-index:2;background:var(--bs-body-bg);border-bottom:1px solid var(--bs-border-color)}
     .gantt{position:relative; height:540px; overflow:auto; cursor:grab}
@@ -37,7 +37,6 @@
     .lane{position:relative; height:64px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
     .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
     .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
-    .bar.be{background:var(--be)} .bar.ios{background:var(--ios)} .bar.android{background:var(--android)} .bar.web{background:var(--web)} .bar.qa{background:var(--qa)}
     .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
@@ -462,10 +461,15 @@
     const dayMs = 86400000;
 
     function effortTypes(){
-      const list = state.meta.effortTypes;
-      if(Array.isArray(list) && list.length) return list;
-      return state.meta.effortTypes = ['BE','iOS','Android','Online','QA'];
+      return (state.meta.effortTypes||[]).map(e=>e.key);
     }
+    function effortTypeMeta(){
+      const m={};
+      (state.meta.effortTypes||[]).forEach(e=>{m[e.key]=e;});
+      return m;
+    }
+    function effortTypeColor(k){ return effortTypeMeta()[k]?.color || '#888'; }
+    function effortTypeTitle(k){ return effortTypeMeta()[k]?.title || k; }
 
     const THEMES = {
       "Dark":     { bs:"dark", vars:{ bgStart:"#0e1e45", bgEnd:"transparent", ios:"#4e79a7", android:"#59a14f", web:"#f28e2c", be:"#9c755f", qa:"#edc948" } },
@@ -643,15 +647,13 @@
     function planCard(p){
       const aggr = aggregate(p, state.tasks, getTeam);
       const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
-      const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0};
-      Object.values(aggr.phaseTotals).forEach(pt=>{ for(const k in totals){ totals[k]+=(pt[k]||0);} });
-      for(const k in totals) totals[k] = +totals[k].toFixed(1);
-      const sumEff = totals.BE + totals.iOS + totals.Android + totals.Online + totals.QA || 1;
-      const segBE=Math.max(2,Math.round(260*(totals.BE/sumEff)));
-      const segiOS=Math.max(2,Math.round(260*(totals.iOS/sumEff)));
-      const segAndroid=Math.max(2,Math.round(260*(totals.Android/sumEff)));
-      const segWeb=Math.max(2,Math.round(260*(totals.Online/sumEff)));
-      const segQA=260-segBE-segiOS-segAndroid-segWeb;
+      const keys = effortTypes();
+      sched.lanes.forEach(l=>{ l.name = effortTypeTitle(l.key); });
+      const totals = Object.fromEntries(keys.map(k=>[k,0]));
+      Object.values(aggr.phaseTotals).forEach(pt=>{ keys.forEach(k=>{ totals[k]+=(pt[k]||0); }); });
+      keys.forEach(k=> totals[k] = +totals[k].toFixed(1));
+      const sumEff = keys.reduce((s,k)=> s+totals[k],0) || 1;
+      const seg = Object.fromEntries(keys.map(k=>[k, Math.max(2, Math.round(260*(totals[k]/sumEff)))]));
       const startStr = fmt(sched.chartStart), endStr = fmt(sched.chartEnd);
       const phases = p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ');
       const col = document.createElement('div'); col.className='col-12 col-md-6 col-xl-4';
@@ -669,20 +671,16 @@
             ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(255,255,255,.35)"><span class="position-absolute top-100 start-0 translate-middle-x" style="font-size:.65rem">${getPhase(phId)?.name||phId}</span></div>`).join('')}
           </div>
           <div class="mini-platforms">
-            <div class="seg-be" style="width:${segBE}px"></div>
-            <div class="seg-ios" style="width:${segiOS}px"></div>
-            <div class="seg-android" style="width:${segAndroid}px"></div>
-            <div class="seg-web" style="width:${segWeb}px"></div>
-            <div class="seg-qa" style="width:${Math.max(2,segQA)}px"></div>
+            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};width:${seg[k]}px"></div>`).join('')}
           </div>
         </div>
-        <div class="row row-cols-5 g-2 text-center">
-          ${['BE','iOS','Android','Online','QA'].map(k=> `<div class="col"><div class="border rounded p-2"><div class="small text-secondary">${k}</div><div class="fw-bold">${totals[k]}</div><div class="small text-secondary">md</div></div></div>`).join('')}
-        </div>
-      </div></div>`;
-      col.querySelector('.card').onclick = ()=> openDetail(p.id);
-      return col;
-    }
+          <div class="row row-cols-${keys.length} g-2 text-center">
+            ${keys.map(k=> `<div class="col"><div class="border rounded p-2"><div class="small text-secondary">${effortTypeTitle(k)}</div><div class="fw-bold">${totals[k]}</div><div class="small text-secondary">md</div></div></div>`).join('')}
+          </div>
+        </div></div>`;
+        col.querySelector('.card').onclick = ()=> openDetail(p.id);
+        return col;
+      }
 
     /* ---------- Detail ---------- */
     let currentPlanId = null;
@@ -748,7 +746,7 @@
         sched.phaseWindows.forEach(w=>{
           const li = w.lanes.find(x=>x.key===l.key);
           const offset = Math.floor(((li.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
-          const bar = document.createElement('div'); bar.className = `bar ${l.cls}`; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px';
+          const bar = document.createElement('div'); bar.className = 'bar'; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px'; bar.style.background = effortTypeColor(l.key);
           bar.textContent = w.ph; bar.title = `${l.name} • ${w.ph} • ${fmt(li.start)} (${li.days}d)`;
           bar.dataset.lane = l.key; bar.dataset.phase = w.ph;
           makeDraggableBar(bar, p, sched, li.days);
@@ -1358,12 +1356,11 @@
       const tbPl = byId('tbl-plans').querySelector('tbody'); tbPl.innerHTML='';
       state.proposals.filter(p=> (p.title+' '+p.id).toLowerCase().includes(filterPl)).forEach(p=>{
         const aggr = aggregate(p, state.tasks, getTeam);
-        const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0};
-        Object.values(aggr.phaseTotals).forEach(pt=>{ for(const k in totals){ totals[k]+=(pt[k]||0);} });
-        const sumEff = totals.BE+totals.iOS+totals.Android+totals.Online+totals.QA || 1;
-        const seg = { BE:Math.max(2,Math.round(180*(totals.BE/sumEff))), iOS:Math.max(2,Math.round(180*(totals.iOS/sumEff))),
-                      Android:Math.max(2,Math.round(180*(totals.Android/sumEff))), Online:Math.max(2,Math.round(180*(totals.Online/sumEff))) };
-        const segQA = 180 - seg.BE - seg.iOS - seg.Android - seg.Online;
+        const keys = effortTypes();
+        const totals = Object.fromEntries(keys.map(k=>[k,0]));
+        Object.values(aggr.phaseTotals).forEach(pt=>{ keys.forEach(k=>{ totals[k]+=(pt[k]||0); }); });
+        const sumEff = keys.reduce((s,k)=>s+totals[k],0) || 1;
+        const seg = Object.fromEntries(keys.map(k=>[k, Math.max(2, Math.round(180*(totals[k]/sumEff)))]));
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${p.title}</td><td>${getProject(p.projectId)?.name||'—'}</td><td>${getTeam(p.teamId)?.name||'—'}</td>
           <td>${p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ')}</td>
@@ -1372,11 +1369,7 @@
             ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(127,127,127,.6)"></div>`).join('')}
           </div>
           <div class="mini-platforms">
-            <div class="seg-be" style="width:${seg.BE}px"></div>
-            <div class="seg-ios" style="width:${seg.iOS}px"></div>
-            <div class="seg-android" style="width:${seg.Android}px"></div>
-            <div class="seg-web" style="width:${seg.Online}px"></div>
-            <div class="seg-qa" style="width:${Math.max(2,segQA)}px"></div>
+            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};width:${seg[k]}px"></div>`).join('')}
           </div></div></td>
           <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('plan', p.id);
