@@ -20,7 +20,7 @@
     .mini-timeline{border-radius:.5rem;border:1px solid var(--bs-border-color); overflow:hidden}
     .mini-phase{height:8px;background:var(--bs-border-color);opacity:.6; position:relative}
     .mini-platforms{height:8px;display:flex}
-    .seg-ios{background:var(--ios)} .seg-android{background:var(--android)} .seg-web{background:var(--web)} .seg-be{background:var(--be)} .seg-qa{background:var(--qa)}
+    .seg{height:8px}
     .gantt-wrap{border:1px solid var(--bs-border-color); border-radius:.75rem; overflow:hidden}
     .gantt-toolbar{position:sticky;top:0;z-index:2;background:var(--bs-body-bg);border-bottom:1px solid var(--bs-border-color)}
     .gantt{position:relative; height:540px; overflow:auto; cursor:grab}
@@ -37,7 +37,6 @@
     .lane{position:relative; height:64px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
     .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
     .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
-    .bar.be{background:var(--be)} .bar.ios{background:var(--ios)} .bar.android{background:var(--android)} .bar.web{background:var(--web)} .bar.qa{background:var(--qa)}
     .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
@@ -49,11 +48,14 @@
     .pdf-h3{font-size:16px; font-weight:700; margin-top:12px}
     .pdf-meta{color:#6c757d; font-size:.9rem}
     .pdf-card{border:1px solid #dee2e6; border-radius:12px; padding:16px; margin-top:12px}
-    .pt-box{width:260px}
-    .pt-drop{min-height:60px; max-height:300px; overflow:auto}
+    #phaseTaskContainers{min-height:360px}
+    .pt-box{width:260px; display:flex; flex-direction:column; height:100%}
+    .pt-pool-box{width:300px}
+    .pt-drop{flex:1; min-height:60px; overflow:auto}
     .pt-task{cursor:move; font-size:.875rem; border:1px solid var(--bs-border-color); border-radius:.25rem; padding:2px 6px; background:var(--bs-tertiary-bg); display:flex; align-items:center; gap:.25rem}
     .pt-task.selected{outline:2px solid var(--bs-link-color); background:var(--bs-secondary-bg)}
     .pt-task .pt-remove{cursor:pointer}
+    .pt-tags{display:flex; flex-wrap:wrap; gap:.25rem}
   </style>
 </head>
 <body>
@@ -132,11 +134,7 @@
           <span class="badge text-bg-secondary">Buffer <span id="detail-buffer"></span>%</span>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="BE" id="chkBE" checked><label class="form-check-label" for="chkBE"><span class="badge-lane"><span class="dot" style="background:var(--be)"></span>BE</span></label></div>
-          <div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="iOS" id="chkiOS" checked><label class="form-check-label" for="chkiOS"><span class="badge-lane"><span class="dot" style="background:var(--ios)"></span>iOS</span></label></div>
-          <div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="Android" id="chkAndroid" checked><label class="form-check-label" for="chkAndroid"><span class="badge-lane"><span class="dot" style="background:var(--android)"></span>Android</span></label></div>
-          <div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="Online" id="chkOnline" checked><label class="form-check-label" for="chkOnline"><span class="badge-lane"><span class="dot" style="background:var(--web)"></span>Web</span></label></div>
-          <div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="QA" id="chkQA" checked><label class="form-check-label" for="chkQA"><span class="badge-lane"><span class="dot" style="background:var(--qa)"></span>QA</span></label></div>
+          <div id="lane-filters" class="d-flex align-items-center gap-2"></div>
           <button id="btn-export-plan-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Plan PDF</button>
           <button id="btn-export-plan-xlsx-basic" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Plan Excel (Basic)</button>
         </div>
@@ -165,9 +163,7 @@
             <div class="small text-secondary mb-2" id="detail-span"></div>
             <div class="table-responsive">
               <table id="effTable" class="table table-sm table-bordered mb-0 align-middle">
-                <thead class="table-dark">
-                  <tr><th>Phase</th><th>BE</th><th>iOS</th><th>Android</th><th>Online</th><th>QA</th></tr>
-                </thead>
+                <thead class="table-dark"><tr id="effTableHead"></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -281,7 +277,7 @@
               </div>
               <div class="table-responsive">
                 <table class="table table-hover align-middle" id="tbl-teams">
-                  <thead><tr><th>Name</th><th>BE</th><th>iOS</th><th>Android</th><th>Online</th><th>QA</th><th style="width:15%">ID</th><th style="width:160px">Actions</th></tr></thead>
+                  <thead><tr id="teams-head"></tr></thead>
                   <tbody></tbody>
                 </table>
               </div>
@@ -309,7 +305,7 @@
                 <select id="pt-proj" class="form-select" style="max-width:240px"></select>
                 <button id="pt-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
               </div>
-              <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3 align-items-start"></div>
+              <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3 align-items-stretch"></div>
             </div>
 
             <div class="tab-pane fade" id="pane-efforts" role="tabpanel">
@@ -319,11 +315,21 @@
     <input id="eff-search" class="form-control" placeholder="Search tasks" style="max-width:260px">
     <button id="eff-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
   </div>
+  <div class="mb-3">
+    <div class="d-flex align-items-center justify-content-between mb-1">
+      <h6 class="mb-0">Effort Types</h6>
+      <button id="eff-type-add" class="btn btn-secondary btn-sm"><i class="bi bi-plus-lg"></i> Add Effort Type</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle" id="tbl-eff-types">
+        <thead><tr><th>Key</th><th>Color</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
   <div class="table-responsive">
     <table class="table table-hover align-middle" id="tbl-eff">
-      <thead>
-        <tr><th style="width:15%">Task ID</th><th>Title</th><th style="width:10%">BE</th><th style="width:10%">iOS</th><th style="width:10%">Android</th><th style="width:10%">Online</th><th style="width:10%">QA</th></tr>
-      </thead>
+      <thead><tr id="eff-head"></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -413,7 +419,7 @@
   </div>
 
   <!-- Toast -->
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+  <div class="position-fixed top-0 start-0 p-3" style="z-index:1080">
     <div id="appToast" class="toast text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body" id="toastBody">Saved</div>
@@ -456,11 +462,28 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, addEffortType, updateEffortType, removeEffortType } from './data.js';
       load();
     /* ===================== APP CODE (v20) ===================== */
     const STORAGE_KEY = "project_planner_v20";
     const dayMs = 86400000;
+
+    function effortTypes(){
+      if(!Array.isArray(state.meta.effortTypes) || !state.meta.effortTypes.length){
+        state.meta.effortTypes = [
+          {key:'BE', color:'#9c755f', frozen:true},
+          {key:'iOS', color:'#4e79a7', frozen:true},
+          {key:'Android', color:'#59a14f', frozen:true},
+          {key:'Online', color:'#f28e2c', frozen:true},
+          {key:'QA', color:'#edc948', frozen:true}
+        ];
+      }
+      return state.meta.effortTypes.map(e=>e.key);
+    }
+
+    function effortColor(key){
+      return state.meta.effortTypes.find(e=>e.key===key)?.color || '#888888';
+    }
 
     const THEMES = {
       "Dark":     { bs:"dark", vars:{ bgStart:"#0e1e45", bgEnd:"transparent", ios:"#4e79a7", android:"#59a14f", web:"#f28e2c", be:"#9c755f", qa:"#edc948" } },
@@ -478,7 +501,13 @@
     };
 
     const DEFAULT_DATA = {
-      meta: { version: 20, startDate: "2025-08-13", efficiency: 0.8, theme: "Dark", rtl: false, defaultPxPerDay: 18 },
+      meta: { version: 20, startDate: "2025-08-13", efficiency: 0.8, theme: "Dark", rtl: false, defaultPxPerDay: 18, effortTypes:[
+        {key:'BE', color:'#9c755f', frozen:true},
+        {key:'iOS', color:'#4e79a7', frozen:true},
+        {key:'Android', color:'#59a14f', frozen:true},
+        {key:'Online', color:'#f28e2c', frozen:true},
+        {key:'QA', color:'#edc948', frozen:true}
+      ] },
       projects: [{ id: "proj-sample", name: "Sample Project", description: "Generic project" }],
       teams: [
         { id:"team-base", name:"Base Squad", sizes:{BE:3,iOS:2,Android:2,Online:2,QA:3} },
@@ -539,15 +568,12 @@
         tasks.forEach(t=>{
           if((t.efforts||[]).length) return;
           if(seen.has(t.id)) return;
-          const ios = +(((+base.iOS||0)/feCount).toFixed(1));
-          const andr = +(((+base.Android||0)/feCount).toFixed(1));
-          const onl = +(((+base.Online||0)/feCount).toFixed(1));
-          const qa = +(((+base.QA||0)/feCount).toFixed(1));
-          t.efforts = [];
-          if(ios>0) t.efforts.push({platform:"iOS", manDays: ios});
-          if(andr>0) t.efforts.push({platform:"Android", manDays: andr});
-          if(onl>0) t.efforts.push({platform:"Online", manDays: onl});
-          if(qa>0) t.efforts.push({platform:"QA", manDays: qa});
+          const perType = {};
+          effortTypes().forEach(plat=>{
+            const val = +(((+base[plat]||0)/feCount).toFixed(1));
+            if(val>0) perType[plat]=val;
+          });
+          t.efforts = Object.entries(perType).map(([platform, manDays])=>({platform, manDays}));
           seen.add(t.id);
         });
       });
@@ -595,6 +621,8 @@
       document.documentElement.style.setProperty('--web', t.vars.web);
       document.documentElement.style.setProperty('--be', t.vars.be);
       document.documentElement.style.setProperty('--qa', t.vars.qa);
+      const map = {BE:'be', iOS:'ios', Android:'android', Online:'web', QA:'qa'};
+      state.meta.effortTypes.forEach(et=>{ if(et.frozen && map[et.key]) et.color = t.vars[map[et.key]]; });
       byId('themeSelect').value = name;
       byId('gen-theme').value = name;
     }
@@ -641,15 +669,15 @@
     function planCard(p){
       const aggr = aggregate(p, state.tasks, getTeam);
       const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
-      const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0};
-      Object.values(aggr.phaseTotals).forEach(pt=>{ for(const k in totals){ totals[k]+=(pt[k]||0);} });
-      for(const k in totals) totals[k] = +totals[k].toFixed(1);
-      const sumEff = totals.BE + totals.iOS + totals.Android + totals.Online + totals.QA || 1;
-      const segBE=Math.max(2,Math.round(260*(totals.BE/sumEff)));
-      const segiOS=Math.max(2,Math.round(260*(totals.iOS/sumEff)));
-      const segAndroid=Math.max(2,Math.round(260*(totals.Android/sumEff)));
-      const segWeb=Math.max(2,Math.round(260*(totals.Online/sumEff)));
-      const segQA=260-segBE-segiOS-segAndroid-segWeb;
+      const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
+      Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+=(pt[k]||0)); });
+      effortTypes().forEach(k=> totals[k] = +totals[k].toFixed(1));
+      const sumEff = effortTypes().reduce((s,k)=> s+totals[k],0) || 1;
+      const seg = {};
+      effortTypes().forEach(k=>{ seg[k] = Math.max(2, Math.round(260*(totals[k]/sumEff))); });
+      const used = Object.values(seg).reduce((a,b)=>a+b,0);
+      const last = effortTypes()[effortTypes().length-1];
+      seg[last] += 260-used;
       const startStr = fmt(sched.chartStart), endStr = fmt(sched.chartEnd);
       const phases = p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ');
       const col = document.createElement('div'); col.className='col-12 col-md-6 col-xl-4';
@@ -667,15 +695,11 @@
             ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(255,255,255,.35)"><span class="position-absolute top-100 start-0 translate-middle-x" style="font-size:.65rem">${getPhase(phId)?.name||phId}</span></div>`).join('')}
           </div>
           <div class="mini-platforms">
-            <div class="seg-be" style="width:${segBE}px"></div>
-            <div class="seg-ios" style="width:${segiOS}px"></div>
-            <div class="seg-android" style="width:${segAndroid}px"></div>
-            <div class="seg-web" style="width:${segWeb}px"></div>
-            <div class="seg-qa" style="width:${Math.max(2,segQA)}px"></div>
+            ${effortTypes().map(k=> `<div class="seg" style="width:${seg[k]}px;background:${effortColor(k)}"></div>`).join('')}
           </div>
         </div>
-        <div class="row row-cols-5 g-2 text-center">
-          ${['BE','iOS','Android','Online','QA'].map(k=> `<div class="col"><div class="border rounded p-2"><div class="small text-secondary">${k}</div><div class="fw-bold">${totals[k]}</div><div class="small text-secondary">md</div></div></div>`).join('')}
+        <div class="row row-cols-${effortTypes().length} g-2 text-center">
+          ${effortTypes().map(k=> `<div class="col"><div class="border rounded p-2"><div class="small text-secondary">${k}</div><div class="fw-bold">${totals[k]}</div><div class="small text-secondary">md</div></div></div>`).join('')}
         </div>
       </div></div>`;
       col.querySelector('.card').onclick = ()=> openDetail(p.id);
@@ -696,21 +720,30 @@
       byId('detail-buffer').textContent = p.bufferPct||0;
       const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
       byId('detail-span').textContent = `${fmt(sched.chartStart)} → ${fmt(sched.chartEnd)} • ${totalDays} days`;
+      const headRow = byId('effTableHead'); headRow.innerHTML = '<th>Phase</th>' + effortTypes().map(t=>`<th>${t}</th>`).join('');
       const tb = byId('effTable').querySelector('tbody'); tb.innerHTML = '';
       p.phaseIds.forEach(pid=>{
         const t = aggr.phaseTotals[pid] || {};
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${getPhase(pid)?.name||pid}</td>
-          <td>${(t.BE||0).toFixed(1)}</td>
-          <td>${(t.iOS||0).toFixed(1)}</td>
-          <td>${(t.Android||0).toFixed(1)}</td>
-          <td>${(t.Online||0).toFixed(1)}</td>
-          <td>${(t.QA||0).toFixed(1)}</td>`;
+        const cells = effortTypes().map(k=>`<td>${(t[k]||0).toFixed(1)}</td>`).join('');
+        tr.innerHTML = `<td>${getPhase(pid)?.name||pid}</td>${cells}`;
         tb.appendChild(tr);
+      });
+      const lf = byId('lane-filters');
+      lf.innerHTML = effortTypes().map(t=>
+        `<div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="${t}" id="chk${t}"><label class="form-check-label" for="chk${t}"><span class="badge-lane"><span class="dot" style="background:${effortColor(t)}"></span>${t}</span></label></div>`
+      ).join('');
+      document.querySelectorAll('.lane-filter').forEach(chk=>{
+        chk.checked = !(p.hiddenLanes||[]).includes(chk.value);
+        chk.onchange = ()=>{
+          p.hiddenLanes = Array.from(document.querySelectorAll('.lane-filter'))
+            .filter(x=>!x.checked).map(x=>x.value);
+          save();
+          drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+        };
       });
       drawGantt(p, sched);
       renderPhaseBreakdownTables(p);
-      document.querySelectorAll('.lane-filter').forEach(chk=> chk.onchange = ()=> drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate)));
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
       byId('btn-export-plan-pdf').onclick = ()=> exportPlanPDF(p.id);
@@ -738,7 +771,7 @@
         sched.phaseWindows.forEach(w=>{
           const li = w.lanes.find(x=>x.key===l.key);
           const offset = Math.floor(((li.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
-          const bar = document.createElement('div'); bar.className = `bar ${l.cls}`; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px';
+          const bar = document.createElement('div'); bar.className = 'bar'; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px'; bar.style.background = effortColor(l.key);
           bar.textContent = w.ph; bar.title = `${l.name} • ${w.ph} • ${fmt(li.start)} (${li.days}d)`;
           bar.dataset.lane = l.key; bar.dataset.phase = w.ph;
           makeDraggableBar(bar, p, sched, li.days);
@@ -820,15 +853,19 @@
     function computeTaskEffortsForPhase(plan, phaseId){
       const tasks = getTasksByPhase(plan.projectId, phaseId);
       const rows = [];
-      const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0,total:0};
+      const totals = Object.fromEntries(effortTypes().map(k=>[k,0])); totals.total=0;
       tasks.forEach(t=>{
-        const eff = {BE:0,iOS:0,Android:0,Online:0,QA:0};
+        const eff = Object.fromEntries(effortTypes().map(k=>[k,0]));
         (t.efforts||[]).forEach(e=>{ if(e.platform in eff){ eff[e.platform] += (+e.manDays||0); } });
-        const sum = eff.BE+eff.iOS+eff.Android+eff.Online+eff.QA;
-        rows.push({ id:t.id, title:t.title, BE:+eff.BE.toFixed(1), iOS:+eff.iOS.toFixed(1), Android:+eff.Android.toFixed(1), Online:+eff.Online.toFixed(1), QA:+eff.QA.toFixed(1), total:+sum.toFixed(1) });
-        totals.BE += eff.BE; totals.iOS += eff.iOS; totals.Android += eff.Android; totals.Online += eff.Online; totals.QA += eff.QA; totals.total += sum;
+        const sum = effortTypes().reduce((s,k)=> s+eff[k],0);
+        const row = { id:t.id, title:t.title };
+        effortTypes().forEach(k=> row[k] = +eff[k].toFixed(1));
+        row.total = +sum.toFixed(1);
+        rows.push(row);
+        effortTypes().forEach(k=> totals[k] += eff[k]);
+        totals.total += sum;
       });
-      for(const k in totals){ if(k!=='total') totals[k] = +totals[k].toFixed(1); }
+      effortTypes().forEach(k=> totals[k] = +totals[k].toFixed(1));
       totals.total = +totals.total.toFixed(1);
       return {rows, totals};
     }
@@ -854,23 +891,13 @@
               <div class="table-responsive">
                 <table class="table table-sm table-bordered align-middle">
                   <thead class="table-dark">
-                    <tr><th style="width:10%">Task</th><th>Title</th><th style="width:10%;text-align:right">BE</th><th style="width:10%;text-align:right">iOS</th><th style="width:10%;text-align:right">Android</th><th style="width:10%;text-align:right">Online</th><th style="width:10%;text-align:right">QA</th><th style="width:10%;text-align:right">Total</th></tr>
+                    <tr><th style="width:10%">Task</th><th>Title</th>${effortTypes().map(t=>`<th style=\"width:10%;text-align:right\">${t}</th>`).join('')}<th style="width:10%;text-align:right">Total</th></tr>
                   </thead>
                   <tbody>
-                    ${data.rows.map(r=> `<tr><td><code>${r.id}</code></td><td>${escapeHtml(r.title)}</td>
-                      <td style="text-align:right">${r.BE.toFixed(1)}</td><td style="text-align:right">${r.iOS.toFixed(1)}</td>
-                      <td style="text-align:right">${r.Android.toFixed(1)}</td><td style="text-align:right">${r.Online.toFixed(1)}</td>
-                      <td style="text-align:right">${r.QA.toFixed(1)}</td><td style="text-align:right">${r.total.toFixed(1)}</td></tr>`).join('')}
+                    ${data.rows.map(r=> `<tr><td><code>${r.id}</code></td><td>${escapeHtml(r.title)}</td>${effortTypes().map(t=>`<td style=\"text-align:right\">${r[t].toFixed(1)}</td>`).join('')}<td style="text-align:right">${r.total.toFixed(1)}</td></tr>`).join('')}
                   </tbody>
                   <tfoot>
-                    <tr class="table-secondary"><th colspan="2" class="text-end">Phase totals</th>
-                      <th style="text-align:right">${data.totals.BE.toFixed(1)}</th>
-                      <th style="text-align:right">${data.totals.iOS.toFixed(1)}</th>
-                      <th style="text-align:right">${data.totals.Android.toFixed(1)}</th>
-                      <th style="text-align:right">${data.totals.Online.toFixed(1)}</th>
-                      <th style="text-align:right">${data.totals.QA.toFixed(1)}</th>
-                      <th style="text-align:right">${data.totals.total.toFixed(1)}</th>
-                    </tr>
+                    <tr class="table-secondary"><th colspan="2" class="text-end">Phase totals</th>${effortTypes().map(t=>`<th style=\"text-align:right\">${data.totals[t].toFixed(1)}</th>`).join('')}<th style="text-align:right">${data.totals.total.toFixed(1)}</th></tr>
                   </tfoot>
                 </table>
               </div>
@@ -955,35 +982,18 @@
         const card = document.createElement('div'); card.className='pdf-card';
         const head = document.createElement('div'); head.className='pdf-h3'; head.textContent = `Phase: ${ph?.name||phId}`; card.appendChild(head);
         const tbl = document.createElement('table'); tbl.style.width='100%'; tbl.className='table table-sm table-bordered';
-        tbl.innerHTML = `<thead class="table-light"><tr>
-            <th style="width:10%">Task</th><th>Title</th>
-            <th style="width:10%;text-align:right">BE</th>
-            <th style="width:10%;text-align:right">iOS</th>
-            <th style="width:10%;text-align:right">Android</th>
-            <th style="width:10%;text-align:right">Online</th>
-            <th style="width:10%;text-align:right">QA</th>
-            <th style="width:10%;text-align:right">Total</th>
-          </tr></thead><tbody></tbody>`;
+        const head = `<tr><th style="width:10%">Task</th><th>Title</th>${effortTypes().map(t=>`<th style=\"width:10%;text-align:right\">${t}</th>`).join('')}<th style="width:10%;text-align:right">Total</th></tr>`;
+        tbl.innerHTML = `<thead class="table-light">${head}</thead><tbody></tbody>`;
         const tb = tbl.querySelector('tbody');
         data.rows.forEach(r=>{
-          const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${r.id}</code></td><td>${r.title}</td>
-            <td style="text-align:right">${r.BE.toFixed(1)}</td>
-            <td style="text-align:right">${r.iOS.toFixed(1)}</td>
-            <td style="text-align:right">${r.Android.toFixed(1)}</td>
-            <td style="text-align:right">${r.Online.toFixed(1)}</td>
-            <td style="text-align:right">${r.QA.toFixed(1)}</td>
-            <td style="text-align:right">${r.total.toFixed(1)}</td>`;
+          const tr=document.createElement('tr');
+          const cells = effortTypes().map(k=> `<td style="text-align:right">${r[k].toFixed(1)}</td>`).join('');
+          tr.innerHTML = `<td><code>${r.id}</code></td><td>${r.title}</td>${cells}<td style="text-align:right">${r.total.toFixed(1)}</td>`;
           tb.appendChild(tr);
         });
-        const tf = document.createElement('tfoot'); tf.innerHTML = `<tr class="table-secondary">
-          <th colspan="2" class="text-end">Phase totals</th>
-          <th style="text-align:right">${data.totals.BE.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.iOS.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.Android.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.Online.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.QA.toFixed(1)}</th>
-          <th style="text-align:right">${data.totals.total.toFixed(1)}</th>
-        </tr>`;
+        const tf = document.createElement('tfoot');
+        const totCells = effortTypes().map(k=> `<th style="text-align:right">${data.totals[k].toFixed(1)}</th>`).join('');
+        tf.innerHTML = `<tr class="table-secondary"><th colspan="2" class="text-end">Phase totals</th>${totCells}<th style="text-align:right">${data.totals.total.toFixed(1)}</th></tr>`;
         tbl.appendChild(tf);
         card.appendChild(tbl);
         node.appendChild(card);
@@ -1037,13 +1047,13 @@
       if(!await ensureXLSX()){ alert("Excel library couldn't be loaded. Use CSV export instead from Data ▸ Export Tasks (CSV)."); return; }
       const wb = XLSX.utils.book_new();
       const pr = getProject(projectId);
-      const sheet = [["Project", pr?.name||"—"], ["Generated", new Date().toLocaleString()], [""], ["Plan","Team","Phases","Buffer%","Start","End","BE","iOS","Android","Online","QA"]];
+      const sheet = [["Project", pr?.name||"—"], ["Generated", new Date().toLocaleString()], [""], ["Plan","Team","Phases","Buffer%","Start","End", ...effortTypes()]];
       state.proposals.filter(p=>p.projectId===projectId).forEach(p=>{
         const aggr = aggregate(p, state.tasks, getTeam);
         const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
-        const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0};
-        Object.values(aggr.phaseTotals).forEach(pt=>{ for(const k in totals){ totals[k]+=(pt[k]||0);} });
-        sheet.push([p.title, getTeam(p.teamId)?.name||"—", p.phaseIds.map(id=>getPhase(id)?.name||id).join(" / "), p.bufferPct||0, sched.chartStart.toISOString().slice(0,10), sched.chartEnd.toISOString().slice(0,10), totals.BE, totals.iOS, totals.Android, totals.Online, totals.QA]);
+        const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
+        Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+= (pt[k]||0)); });
+        sheet.push([p.title, getTeam(p.teamId)?.name||"—", p.phaseIds.map(id=>getPhase(id)?.name||id).join(" / "), p.bufferPct||0, sched.chartStart.toISOString().slice(0,10), sched.chartEnd.toISOString().slice(0,10), ...effortTypes().map(k=> totals[k])]);
       });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet), "Summary");
       state.proposals.filter(p=>p.projectId===projectId).forEach(p=> buildPlanSheetsForExcelBasic(wb,p));
@@ -1066,19 +1076,19 @@
         ["Buffer %", plan.bufferPct||0],
         ["Schedule", fmt(sched.chartStart)+" → "+fmt(sched.chartEnd)],
         [""],
-        ["Phase","BE","iOS","Android","Online","QA"]
+        ["Phase", ...effortTypes()]
       ];
       plan.phaseIds.forEach(pid=>{
         const t = aggr.phaseTotals[pid]||{};
-        overview.push([getPhase(pid)?.name||pid, t.BE||0, t.iOS||0, t.Android||0, t.Online||0, t.QA||0]);
+        overview.push([getPhase(pid)?.name||pid, ...effortTypes().map(k=> t[k]||0)]);
       });
       const sh_over = XLSX.utils.aoa_to_sheet(overview);
       XLSX.utils.book_append_sheet(wb, sh_over, sheetName(plan.title,"_Overview"));
-      const rows = [["Phase","Task ID","Title","BE","iOS","Android","Online","QA","Total"]];
+      const rows = [["Phase","Task ID","Title", ...effortTypes(), "Total"]];
       plan.phaseIds.forEach(pid=>{
         const data = computeTaskEffortsForPhase(plan, pid);
-        data.rows.forEach(r=> rows.push([getPhase(pid)?.name||pid, r.id, r.title, r.BE, r.iOS, r.Android, r.Online, r.QA, r.total]));
-        rows.push(["Phase totals","","", data.totals.BE, data.totals.iOS, data.totals.Android, data.totals.Online, data.totals.QA, data.totals.total]);
+        data.rows.forEach(r=> rows.push([getPhase(pid)?.name||pid, r.id, r.title, ...effortTypes().map(k=> r[k]), r.total]));
+        rows.push(["Phase totals","","", ...effortTypes().map(k=> data.totals[k]), data.totals.total]);
         rows.push([""]);
       });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), sheetName(plan.title,"_Tasks"));
@@ -1103,12 +1113,6 @@
     }
 
     /* ---------- Styled Excel Export (XlsxPopulate + Chart.js) ---------- */
-    function platColorHex(role){
-      const get = (v)=> getComputedStyle(document.documentElement).getPropertyValue(v).trim().replace('#','');
-      const map = { BE:'--be', iOS:'--ios', Android:'--android', Online:'--web', QA:'--qa' };
-      const hex = get(map[role]) || '888888';
-      return '#'+hex;
-    }
     async function exportProjectExcelStyled(projectId){
       if(!await ensureXPOP()){ alert("Could not load XlsxPopulate."); return; }
       const pr = getProject(projectId); const plans = state.proposals.filter(p=>p.projectId===projectId);
@@ -1121,30 +1125,30 @@
       sum.cell("B2").value(new Date()).style({numberFormat:"yyyy-mm-dd hh:mm"});
       sum.range("A1:B2").style({border:true});
       // Table header
-      const header = ["Plan","Team","Phases","Buffer%","Start","End","BE","iOS","Android","Online","QA","Total"];
+      const header = ["Plan","Team","Phases","Buffer%","Start","End", ...effortTypes(), "Total"];
       sum.cell("A4").value([header]).style({bold:true, fill:"FFD966", border:true});
       let r=5;
-      const totalsAll = {BE:0,iOS:0,Android:0,Online:0,QA:0};
+      const totalsAll = Object.fromEntries(effortTypes().map(k=>[k,0]));
       for(const p of plans){
         const aggr = aggregate(p, state.tasks, getTeam);
         const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
-        const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0};
-        Object.values(aggr.phaseTotals).forEach(pt=>{ for(const k in totals){ totals[k]+=(pt[k]||0);} });
-        for(const k in totals){ totalsAll[k]+=totals[k]; }
-        const row = [p.title, getTeam(p.teamId)?.name||"—", p.phaseIds.map(id=>getPhase(id)?.name||id).join(" / "), p.bufferPct||0, sched.chartStart, sched.chartEnd, totals.BE, totals.iOS, totals.Android, totals.Online, totals.QA, totals.BE+totals.iOS+totals.Android+totals.Online+totals.QA];
+        const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
+        Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+=(pt[k]||0)); });
+        effortTypes().forEach(k=> totalsAll[k]+=totals[k]);
+        const row = [p.title, getTeam(p.teamId)?.name||"—", p.phaseIds.map(id=>getPhase(id)?.name||id).join(" / "), p.bufferPct||0, sched.chartStart, sched.chartEnd, ...effortTypes().map(k=> totals[k]), effortTypes().reduce((s,k)=> s+totals[k],0)];
         sum.cell("A"+r).value([row]).style({border:true});
         sum.cell("E"+r).style({numberFormat:"yyyy-mm-dd"});
         sum.cell("F"+r).style({numberFormat:"yyyy-mm-dd"});
         r++;
       }
       sum.column("A").width(32); sum.column("B").width(20); sum.column("C").width(30);
-      for(const c of ["D","E","F","G","H","I","J","K","L"]) sum.column(c).width(14);
+      for(let i=0;i<header.length-3;i++){ const col=String.fromCharCode('D'.charCodeAt(0)+i); sum.column(col).width(14); }
       // Add a simple summary chart as image (optional)
       try{
         if(await ensureCHART()){
           const canvas = document.createElement('canvas'); canvas.width=900; canvas.height=360;
           const ctx = canvas.getContext('2d');
-          const labels = ["BE","iOS","Android","Online","QA"];
+          const labels = effortTypes();
           const data = labels.map(k=> totalsAll[k]);
           new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Man-days', data }] }, options:{ plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#222'}}, y:{ticks:{color:'#222'}}} } });
           const png = canvas.toDataURL("image/png");
@@ -1180,30 +1184,30 @@
       shO.cell("A5").value("Schedule").style({bold:true, fill:"FFE699"});
       shO.cell("B5").value(fmt(sched.chartStart)+" → "+fmt(sched.chartEnd));
       shO.range("A1:B5").style({border:true});
-      shO.cell("A7").value([["Phase","BE","iOS","Android","Online","QA","Total"]]).style({bold:true, fill:"FFD966", border:true});
+      shO.cell("A7").value([["Phase", ...effortTypes(), "Total"]]).style({bold:true, fill:"FFD966", border:true});
       let rr=8;
       plan.phaseIds.forEach(pid=>{
         const t = aggr.phaseTotals[pid]||{};
-        shO.cell("A"+rr).value([[getPhase(pid)?.name||pid, t.BE||0, t.iOS||0, t.Android||0, t.Online||0, t.QA||0, (t.BE||0)+(t.iOS||0)+(t.Android||0)+(t.Online||0)+(t.QA||0)]]).style({border:true});
+        shO.cell("A"+rr).value([[getPhase(pid)?.name||pid, ...effortTypes().map(k=> t[k]||0), effortTypes().reduce((s,k)=>s+(t[k]||0),0)]]).style({border:true});
         rr++;
       });
-      shO.column("A").width(26); for(const c of "BCDEFG") shO.column(c).width(14);
+      shO.column("A").width(26); for(let i=0;i<effortTypes().length+1;i++){ const col=String.fromCharCode('B'.charCodeAt(0)+i); shO.column(col).width(14); }
 
       // Tasks
       const shT = wb.addSheet(sheetName(plan.title,"_Tasks"));
-      shT.cell("A1").value([["Phase","Task ID","Title","BE","iOS","Android","Online","QA","Total"]]).style({bold:true, fill:"C6E0B4", border:true});
+      shT.cell("A1").value([["Phase","Task ID","Title", ...effortTypes(), "Total"]]).style({bold:true, fill:"C6E0B4", border:true});
       let tr=2;
       plan.phaseIds.forEach(pid=>{
         const data = computeTaskEffortsForPhase(plan, pid);
         data.rows.forEach(r=>{
-          shT.cell("A"+tr).value([[getPhase(pid)?.name||pid, r.id, r.title, r.BE, r.iOS, r.Android, r.Online, r.QA, r.total]]).style({border:true});
+          shT.cell("A"+tr).value([[getPhase(pid)?.name||pid, r.id, r.title, ...effortTypes().map(k=> r[k]), r.total]]).style({border:true});
           tr++;
         });
-        shT.cell("A"+tr).value([["Phase totals","","", data.totals.BE, data.totals.iOS, data.totals.Android, data.totals.Online, data.totals.QA, data.totals.total]]).style({bold:true, fill:"FCE4D6", border:true}); tr++;
+        shT.cell("A"+tr).value([["Phase totals","","", ...effortTypes().map(k=> data.totals[k]), data.totals.total]]).style({bold:true, fill:"FCE4D6", border:true}); tr++;
         tr++;
       });
       shT.column("A").width(18); shT.column("B").width(12); shT.column("C").width(48);
-      for(const c of "DEFGHI") shT.column(c).width(12);
+      for(let i=0;i<effortTypes().length+1;i++){ const col=String.fromCharCode('D'.charCodeAt(0)+i); shT.column(col).width(12); }
 
       // Gantt (colored cells)
       const shG = wb.addSheet(sheetName(plan.title,"_Gantt"));
@@ -1221,7 +1225,7 @@
             const cell = shG.cell(4 + i + 1, gr); // (col,row) is 1-based; col 5 = first date column
           }
           // Fill colored cells for the bar
-          const laneColor = platColorHex(li.key==='Online'?'Online':li.key);
+          const laneColor = effortColor(li.key);
           for(let i=startIdx;i<startIdx+li.days;i++){
             const col = 5 + i; // A=1 -> 5 is first date column
             shG.cell(gr, col).style({ fill: laneColor, border:true });
@@ -1236,12 +1240,19 @@
 
     /* ---------- Tasks CSV/XLSX Import/Export ---------- */
     function tasksToRows(){
-      const rows = [["id","title","description","startDate","be_md","be_start","ios_md","ios_start","android_md","android_start","online_md","online_start","qa_md","qa_start","assignments"]];
+      const types = effortTypes();
+      const header = ["id","title","description","startDate"];
+      types.forEach(k=>{ header.push(`${k.toLowerCase()}_md`, `${k.toLowerCase()}_start`); });
+      header.push("assignments");
+      const rows = [header];
       state.tasks.forEach(t=>{
-        const eff = {BE:{},iOS:{},Android:{},Online:{},QA:{}};
-        (t.efforts||[]).forEach(e=>{ eff[e.platform]={ md:e.manDays||"", start:e.startDate||"" }; });
+        const eff = Object.fromEntries(types.map(k=>[k,{}]));
+        (t.efforts||[]).forEach(e=>{ eff[e.platform] = { md:e.manDays||"", start:e.startDate||"" }; });
         const asg = (t.assignments||[]).map(a=> `${a.proposalId}:${a.phaseId}`).join(";");
-        rows.push([t.id, t.title, t.description||"", t.startDate||"", eff.BE.md||"", eff.BE.start||"", eff.iOS.md||"", eff.iOS.start||"", eff.Android.md||"", eff.Android.start||"", eff.Online.md||"", eff.Online.start||"", eff.QA.md||"", eff.QA.start||"", asg]);
+        const row = [t.id, t.title, t.description||"", t.startDate||""];
+        types.forEach(k=>{ row.push(eff[k].md||"", eff[k].start||""); });
+        row.push(asg);
+        rows.push(row);
       });
       return rows;
     }
@@ -1286,8 +1297,9 @@
           const get = (k)=> cols[idx(k)]||"";
           const id = get("id"); if(!id) return;
           const t = { id, title:get("title"), description:get("description"), startDate:get("startdate"), efforts:[], assignments:[] };
-          [["be","BE"],["ios","iOS"],["android","Android"],["online","Online"],["qa","QA"]].forEach(([k,plat])=>{
-            const md = parseFloat(get(k+"_md")); const sd = get(k+"_start");
+          effortTypes().forEach(plat=>{
+            const key = plat.toLowerCase();
+            const md = parseFloat(get(key+"_md")); const sd = get(key+"_start");
             if(!isNaN(md) && md>0) t.efforts.push({platform:plat, manDays:md, startDate:sd});
           });
           const asg = get("assignments").split(";").map(s=>s.trim()).filter(Boolean).map(tok=>{ const [proposalId,phaseId]=tok.split(":"); return (proposalId&&phaseId)?{proposalId,phaseId}:null; }).filter(Boolean);
@@ -1316,8 +1328,9 @@
           efforts: [],
           assignments: (map["assignments"]||"").split(";").map(s=>s.trim()).filter(Boolean).map(tok=>{ const [proposalId, phaseId] = tok.split(":"); return (proposalId&&phaseId)?{proposalId, phaseId}:null; }).filter(Boolean)
         };
-        [["be","BE"],["ios","iOS"],["android","Android"],["online","Online"],["qa","QA"]].forEach(([k,plat])=>{
-          const md = parseFloat(map[k+"_md"]); const sd = map[k+"_start"]||"";
+        effortTypes().forEach(plat=>{
+          const key = plat.toLowerCase();
+          const md = parseFloat(map[key+"_md"]); const sd = map[key+"_start"]||"";
           if(!isNaN(md) && md>0){ t.efforts.push({ platform:plat, manDays: md, startDate: sd }); }
         });
         const idx = state.tasks.findIndex(x=> x.id===id);
@@ -1352,12 +1365,13 @@
       const tbPl = byId('tbl-plans').querySelector('tbody'); tbPl.innerHTML='';
       state.proposals.filter(p=> (p.title+' '+p.id).toLowerCase().includes(filterPl)).forEach(p=>{
         const aggr = aggregate(p, state.tasks, getTeam);
-        const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0};
-        Object.values(aggr.phaseTotals).forEach(pt=>{ for(const k in totals){ totals[k]+=(pt[k]||0);} });
-        const sumEff = totals.BE+totals.iOS+totals.Android+totals.Online+totals.QA || 1;
-        const seg = { BE:Math.max(2,Math.round(180*(totals.BE/sumEff))), iOS:Math.max(2,Math.round(180*(totals.iOS/sumEff))),
-                      Android:Math.max(2,Math.round(180*(totals.Android/sumEff))), Online:Math.max(2,Math.round(180*(totals.Online/sumEff))) };
-        const segQA = 180 - seg.BE - seg.iOS - seg.Android - seg.Online;
+        const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
+        Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+=(pt[k]||0)); });
+        const sumEff = effortTypes().reduce((s,k)=> s+totals[k],0) || 1;
+        const seg = {};
+        effortTypes().forEach(k=>{ seg[k] = Math.max(2, Math.round(180*(totals[k]/sumEff))); });
+        const used = Object.values(seg).reduce((a,b)=>a+b,0);
+        seg[effortTypes()[effortTypes().length-1]] += 180-used;
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${p.title}</td><td>${getProject(p.projectId)?.name||'—'}</td><td>${getTeam(p.teamId)?.name||'—'}</td>
           <td>${p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ')}</td>
@@ -1366,11 +1380,7 @@
             ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(127,127,127,.6)"></div>`).join('')}
           </div>
           <div class="mini-platforms">
-            <div class="seg-be" style="width:${seg.BE}px"></div>
-            <div class="seg-ios" style="width:${seg.iOS}px"></div>
-            <div class="seg-android" style="width:${seg.Android}px"></div>
-            <div class="seg-web" style="width:${seg.Online}px"></div>
-            <div class="seg-qa" style="width:${Math.max(2,segQA)}px"></div>
+            ${effortTypes().map(k=> `<div class="seg" style="width:${seg[k]}px;background:${effortColor(k)}"></div>`).join('')}
           </div></div></td>
           <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('plan', p.id);
@@ -1399,9 +1409,12 @@
       });
       const filterTm = (byId('search-teams').value||'').toLowerCase();
       const tbTm = byId('tbl-teams').querySelector('tbody'); tbTm.innerHTML='';
+      const headTm = byId('teams-head');
+      headTm.innerHTML = '<th>Name</th>' + effortTypes().map(t=>`<th>${t}</th>`).join('') + '<th style="width:15%">ID</th><th style="width:160px">Actions</th>';
       state.teams.filter(t=> (t.name+' '+t.id).toLowerCase().includes(filterTm)).forEach(t=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${t.name}</td><td>${t.sizes.BE||0}</td><td>${t.sizes.iOS||0}</td><td>${t.sizes.Android||0}</td><td>${t.sizes.Online||0}</td><td>${t.sizes.QA||0}</td><td><code>${t.id}</code></td>
+        const cells = effortTypes().map(k=>`<td>${t.sizes[k]||0}</td>`).join('');
+        tr.innerHTML = `<td>${t.name}</td>${cells}<td><code>${t.id}</code></td>
           <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('team', t.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete team?')){
@@ -1450,10 +1463,14 @@
           div.dataset.title=title;
           const label=document.createElement('span');
           label.textContent=title;
-          div.appendChild(label);
           if(isPool){
+            const tags=document.createElement('span');
+            tags.className='pt-tags';
+            div.appendChild(tags);
+            div.appendChild(label);
             div.addEventListener('click',e=>{ if(e.target===div||e.target===label) div.classList.toggle('selected'); });
           }else{
+            div.appendChild(label);
             const x=document.createElement('span');
             x.className='pt-remove text-danger ms-auto';
             x.innerHTML='&times;';
@@ -1470,6 +1487,24 @@
             }
           });
           return div;
+        }
+        function updatePoolTags(){
+          const pool=byId('pt-pool');
+          if(!pool) return;
+          Array.from(pool.querySelectorAll('.pt-task')).forEach(el=>{
+            const tid=el.dataset.tid;
+            const tagBox=el.querySelector('.pt-tags');
+            tagBox.innerHTML='';
+            ptBoard.querySelectorAll('[data-ph]').forEach(zone=>{
+              if(zone.querySelector(`[data-tid="${tid}"]`)){
+                const phId=zone.dataset.ph;
+                const tag=document.createElement('span');
+                tag.className='badge bg-secondary me-1';
+                tag.textContent=getPhase(phId)?.name||phId;
+                tagBox.appendChild(tag);
+              }
+            });
+          });
         }
         function initDropZone(zone){
           zone.addEventListener('dragover',e=>e.preventDefault());
@@ -1491,13 +1526,14 @@
               });
             }
             dragSet=[]; dragEl=null;
+            updatePoolTags();
           });
         }
         function renderPhaseTasks(){
           const pid = ptProjSel.value;
           ptBoard.innerHTML = '';
           const poolBox=document.createElement('div');
-          poolBox.className='pt-box card shadow-sm';
+          poolBox.className='pt-box pt-pool-box card shadow-sm';
           poolBox.innerHTML='<div class="card-header d-flex align-items-center justify-content-between"><span>Tasks</span><button class="btn btn-sm btn-outline-secondary" id="pt-select-all">Select All</button></div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
           ptBoard.appendChild(poolBox);
           const pool=byId('pt-pool');
@@ -1521,6 +1557,7 @@
             });
           });
           ptBoard.querySelectorAll('.pt-drop').forEach(initDropZone);
+          updatePoolTags();
         }
         ptProjSel.onchange = renderPhaseTasks;
         renderPhaseTasks();
@@ -1543,24 +1580,32 @@
       const effProjSel = byId('eff-proj');
       const effSearch = byId('eff-search');
       const effBody = byId('tbl-eff')?.querySelector('tbody');
+      const effHead = byId('eff-head');
+      const typeBody = byId('tbl-eff-types')?.querySelector('tbody');
       if(effBody){
         effProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
         if(!effProjSel.value && state.projects[0]) effProjSel.value = state.projects[0].id;
         function renderEffTbl(){
           const pid = effProjSel.value; const q=(effSearch.value||'').toLowerCase();
+          effHead.innerHTML = '<th style="width:15%">Task ID</th><th>Title</th>' + effortTypes().map(t=>`<th style="width:10%">${t}</th>`).join('');
           effBody.innerHTML='';
           getTasksByProject(pid).filter(t=> (t.title+' '+t.id).toLowerCase().includes(q)).forEach(t=>{
             const m = Object.fromEntries((t.efforts||[]).map(e=> [e.platform, e.manDays]));
             const tr=document.createElement('tr');
-            tr.innerHTML = `<td><code>${t.id}</code></td><td>${t.title}</td>
-              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="BE" value="${m.BE??''}"></td>
-              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="iOS" value="${m.iOS??''}"></td>
-              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="Android" value="${m.Android??''}"></td>
-              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="Online" value="${m.Online??''}"></td>
-              <td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="QA" value="${m.QA??''}"></td>`;
+            const inputs = effortTypes().map(k=>`<td><input type="number" step="0.1" min="0" class="form-control form-control-sm" data-tid="${t.id}" data-k="${k}" value="${m[k]??''}"></td>`).join('');
+            tr.innerHTML = `<td><code>${t.id}</code></td><td>${t.title}</td>${inputs}`;
             effBody.appendChild(tr);
           });
         }
+        function renderTypeTbl(){
+          typeBody.innerHTML='';
+          state.meta.effortTypes.forEach(et=>{
+            const tr=document.createElement('tr');
+            tr.innerHTML = `<td>${et.key}</td><td><input type="color" class="form-control form-control-sm" data-key="${et.key}" value="${et.color}"></td><td>${et.frozen?'':`<button class="btn btn-sm btn-outline-danger" data-del="${et.key}"><i class="bi bi-trash"></i></button>`}</td>`;
+            typeBody.appendChild(tr);
+          });
+        }
+        renderTypeTbl();
         effProjSel.onchange = renderEffTbl; effSearch.oninput = renderEffTbl; renderEffTbl();
         byId('eff-save').onclick = ()=>{
           const inputs = Array.from(effBody.querySelectorAll('input'));
@@ -1573,6 +1618,28 @@
           });
           save(); toast('Efforts updated'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects();
+        };
+        byId('eff-type-add').onclick = ()=>{
+          const name = prompt('New effort type key?');
+          if(!name) return; const key = name.trim(); if(!key) return;
+          const color = prompt('Color (hex)?', '#888888') || '#888888';
+          addEffortType(key, color);
+          save(); refreshManage(); renderEffTbl(); renderTypeTbl();
+        };
+        typeBody.onchange = (e)=>{
+          if(e.target.matches('input[type="color"]')){
+            updateEffortType(e.target.dataset.key, {color:e.target.value});
+            save(); refreshManage(); renderEffTbl();
+          }
+        };
+        typeBody.onclick = (e)=>{
+          const key = e.target.dataset.del;
+          if(key){
+            if(confirm(`Remove effort type "${key}"?`)){
+              removeEffortType(key);
+              save(); refreshManage(); renderEffTbl(); renderTypeTbl();
+            }
+          }
         };
       }
 
@@ -1673,22 +1740,21 @@
       }
       if(kind==='team'){
         const isEdit = !!id;
-        const data = isEdit ? state.teams.find(x=>x.id===id) : { id:'team-'+Math.random().toString(36).slice(2,6), name:'', sizes:{BE:0,iOS:0,Android:0,Online:0,QA:0} };
+        const data = isEdit ? state.teams.find(x=>x.id===id) : { id:'team-'+Math.random().toString(36).slice(2,6), name:'', sizes:Object.fromEntries(effortTypes().map(k=>[k,0])) };
         title.textContent = isEdit? 'Edit Team' : 'Add Team';
+        const sizeInputs = effortTypes().map(k=>{
+          const fid = 'f-'+k.toLowerCase();
+          return `<div class="col">${field(k, `<input id="${fid}" class="form-control" type="number" value="${data.sizes[k]||0}">`)}</div>`;
+        }).join('');
         form.innerHTML = [
           field('Name', `<input id="f-name" class="form-control" value="${escapeHtml(data.name)}">`),
-          `<div class="row g-2">
-            <div class="col">${field('BE', `<input id="f-be" class="form-control" type="number" value="${data.sizes.BE||0}">`)}</div>
-            <div class="col">${field('iOS', `<input id="f-ios" class="form-control" type="number" value="${data.sizes.iOS||0}">`)}</div>
-            <div class="col">${field('Android', `<input id="f-android" class="form-control" type="number" value="${data.sizes.Android||0}">`)}</div>
-            <div class="col">${field('Online', `<input id="f-online" class="form-control" type="number" value="${data.sizes.Online||0}">`)}</div>
-            <div class="col">${field('QA', `<input id="f-qa" class="form-control" type="number" value="${data.sizes.QA||0}">`)}</div>
-          </div>`,
+          `<div class="row g-2">${sizeInputs}</div>`,
           field('ID', idInputHtml(data.id, isEdit)),
         ].join('');
         byId('editSave').onclick = ()=>{
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.teams, newId)) return alert('ID already exists.');
-          const obj = { id: isEdit? data.id : newId, name:val('f-name'), sizes:{ BE:+val('f-be')||0, iOS:+val('f-ios')||0, Android:+val('f-android')||0, Online:+val('f-online')||0, QA:+val('f-qa')||0 } };
+          const sizes = {}; effortTypes().forEach(k=>{ const fid='f-'+k.toLowerCase(); sizes[k] = +val(fid) || 0; });
+          const obj = { id: isEdit? data.id : newId, name:val('f-name'), sizes };
           if(isEdit){ Object.assign(state.teams.find(x=>x.id===id), obj); } else { state.teams.push(obj); }
           save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();

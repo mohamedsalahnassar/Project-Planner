@@ -5,13 +5,27 @@ export const state = {
   tasks: [],
   teams: [],
   phases: [],
-  meta: { startDate: new Date().toISOString().slice(0,10), efficiency: 1 }
+  meta: {
+    startDate: new Date().toISOString().slice(0,10),
+    efficiency: 1,
+    effortTypes: [
+      {key:'BE', color:'#9c755f', frozen:true},
+      {key:'iOS', color:'#4e79a7', frozen:true},
+      {key:'Android', color:'#59a14f', frozen:true},
+      {key:'Online', color:'#f28e2c', frozen:true},
+      {key:'QA', color:'#edc948', frozen:true}
+    ]
+  }
 };
 
 export function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) Object.assign(state, JSON.parse(raw));
+    const list = state.meta.effortTypes;
+    if(Array.isArray(list) && typeof list[0] === 'string'){
+      state.meta.effortTypes = list.map(k=>({key:k, color:'#888888', frozen:false}));
+    }
   }catch(e){
     console.error('Failed to load saved state', e);
   }
@@ -29,6 +43,42 @@ export function save(){
 export function replaceState(newState){
   Object.keys(state).forEach(k => delete state[k]);
   Object.assign(state, newState);
+}
+
+export function effortTypeKeys(){
+  return (state.meta.effortTypes||[]).map(et=>et.key);
+}
+
+export function getEffortType(key){
+  return (state.meta.effortTypes||[]).find(et=>et.key===key);
+}
+
+export function addEffortType(key, color='#888888'){
+  if(getEffortType(key)) return;
+  state.meta.effortTypes = state.meta.effortTypes || [];
+  state.meta.effortTypes.push({key, color, frozen:false});
+  state.teams.forEach(tm=>{ tm.sizes ||= {}; tm.sizes[key] = tm.sizes[key]||0; });
+}
+
+export function updateEffortType(key, props){
+  const et = getEffortType(key);
+  if(et) Object.assign(et, props);
+}
+
+export function removeEffortType(key){
+  const list = state.meta.effortTypes || [];
+  const idx = list.findIndex(et=> et.key===key && !et.frozen);
+  if(idx === -1) return;
+  list.splice(idx, 1);
+  state.tasks.forEach(t => {
+    t.efforts = (t.efforts || []).filter(e => e.platform !== key);
+  });
+  state.teams.forEach(tm => {
+    if(tm.sizes) delete tm.sizes[key];
+  });
+  state.proposals.forEach(p => {
+    if(p.overrides) Object.values(p.overrides).forEach(o => { delete o[key]; });
+  });
 }
 
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
