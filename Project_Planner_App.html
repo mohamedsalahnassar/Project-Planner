@@ -49,11 +49,14 @@
     .pdf-h3{font-size:16px; font-weight:700; margin-top:12px}
     .pdf-meta{color:#6c757d; font-size:.9rem}
     .pdf-card{border:1px solid #dee2e6; border-radius:12px; padding:16px; margin-top:12px}
-    .pt-box{width:260px}
-    .pt-drop{min-height:60px; max-height:300px; overflow:auto}
+    #phaseTaskContainers{min-height:360px}
+    .pt-box{width:260px; display:flex; flex-direction:column; height:100%}
+    .pt-pool-box{width:300px}
+    .pt-drop{flex:1; min-height:60px; overflow:auto}
     .pt-task{cursor:move; font-size:.875rem; border:1px solid var(--bs-border-color); border-radius:.25rem; padding:2px 6px; background:var(--bs-tertiary-bg); display:flex; align-items:center; gap:.25rem}
     .pt-task.selected{outline:2px solid var(--bs-link-color); background:var(--bs-secondary-bg)}
     .pt-task .pt-remove{cursor:pointer}
+    .pt-tags{display:flex; flex-wrap:wrap; gap:.25rem}
   </style>
 </head>
 <body>
@@ -309,7 +312,7 @@
                 <select id="pt-proj" class="form-select" style="max-width:240px"></select>
                 <button id="pt-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
               </div>
-              <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3 align-items-start"></div>
+              <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3 align-items-stretch"></div>
             </div>
 
             <div class="tab-pane fade" id="pane-efforts" role="tabpanel">
@@ -1458,10 +1461,14 @@
           div.dataset.title=title;
           const label=document.createElement('span');
           label.textContent=title;
-          div.appendChild(label);
           if(isPool){
+            const tags=document.createElement('span');
+            tags.className='pt-tags';
+            div.appendChild(tags);
+            div.appendChild(label);
             div.addEventListener('click',e=>{ if(e.target===div||e.target===label) div.classList.toggle('selected'); });
           }else{
+            div.appendChild(label);
             const x=document.createElement('span');
             x.className='pt-remove text-danger ms-auto';
             x.innerHTML='&times;';
@@ -1478,6 +1485,24 @@
             }
           });
           return div;
+        }
+        function updatePoolTags(){
+          const pool=byId('pt-pool');
+          if(!pool) return;
+          Array.from(pool.querySelectorAll('.pt-task')).forEach(el=>{
+            const tid=el.dataset.tid;
+            const tagBox=el.querySelector('.pt-tags');
+            tagBox.innerHTML='';
+            ptBoard.querySelectorAll('[data-ph]').forEach(zone=>{
+              if(zone.querySelector(`[data-tid="${tid}"]`)){
+                const phId=zone.dataset.ph;
+                const tag=document.createElement('span');
+                tag.className='badge bg-secondary me-1';
+                tag.textContent=getPhase(phId)?.name||phId;
+                tagBox.appendChild(tag);
+              }
+            });
+          });
         }
         function initDropZone(zone){
           zone.addEventListener('dragover',e=>e.preventDefault());
@@ -1499,13 +1524,14 @@
               });
             }
             dragSet=[]; dragEl=null;
+            updatePoolTags();
           });
         }
         function renderPhaseTasks(){
           const pid = ptProjSel.value;
           ptBoard.innerHTML = '';
           const poolBox=document.createElement('div');
-          poolBox.className='pt-box card shadow-sm';
+          poolBox.className='pt-box pt-pool-box card shadow-sm';
           poolBox.innerHTML='<div class="card-header d-flex align-items-center justify-content-between"><span>Tasks</span><button class="btn btn-sm btn-outline-secondary" id="pt-select-all">Select All</button></div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
           ptBoard.appendChild(poolBox);
           const pool=byId('pt-pool');
@@ -1529,6 +1555,7 @@
             });
           });
           ptBoard.querySelectorAll('.pt-drop').forEach(initDropZone);
+          updatePoolTags();
         }
         ptProjSel.onchange = renderPhaseTasks;
         renderPhaseTasks();
