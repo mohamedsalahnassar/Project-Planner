@@ -1,4 +1,12 @@
 export const STORAGE_KEY = 'project_planner_state';
+export const DEFAULT_EFFORT_TYPES = [
+  { key: 'iOS', title: 'iOS', color: '#4e79a7', locked: true },
+  { key: 'Android', title: 'Android', color: '#59a14f', locked: true },
+  { key: 'Online', title: 'Online', color: '#f28e2c', locked: true },
+  { key: 'BE', title: 'BE', color: '#9c755f', locked: true },
+  { key: 'QA', title: 'QA', color: '#edc948', locked: true }
+];
+
 export const state = {
   projects: [],
   proposals: [],
@@ -8,7 +16,7 @@ export const state = {
   meta: {
     startDate: new Date().toISOString().slice(0,10),
     efficiency: 1,
-    effortTypes: ['BE','iOS','Android','Online','QA']
+    effortTypes: DEFAULT_EFFORT_TYPES.map(e=> ({...e}))
   }
 };
 
@@ -16,6 +24,19 @@ export function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) Object.assign(state, JSON.parse(raw));
+    if(Array.isArray(state.meta?.effortTypes)){
+      if(typeof state.meta.effortTypes[0] === 'string'){
+        const oldList = state.meta.effortTypes;
+        state.meta.effortTypes = oldList.map(k => {
+          const def = DEFAULT_EFFORT_TYPES.find(d=>d.key===k);
+          return def ? { ...def } : { key:k, title:k, color:'#888', locked:false };
+        });
+      }
+    }else{
+      state.meta.effortTypes = [];
+    }
+    const present = new Set(state.meta.effortTypes.map(e=>e.key));
+    DEFAULT_EFFORT_TYPES.forEach(d=>{ if(!present.has(d.key)) state.meta.effortTypes.push({...d}); });
   }catch(e){
     console.error('Failed to load saved state', e);
   }
@@ -35,19 +56,35 @@ export function replaceState(newState){
   Object.assign(state, newState);
 }
 
+export function getEffortTypes(){
+  return state.meta.effortTypes || [];
+}
+
+export function addEffortType(et){
+  const list = getEffortTypes();
+  if(list.some(e=>e.key===et.key)) return;
+  list.push({key:et.key, title:et.title||et.key, color:et.color||'#888', locked:!!et.locked});
+}
+
+export function updateEffortType(key, data){
+  const list = getEffortTypes();
+  const et = list.find(e=>e.key===key);
+  if(!et) return;
+  if(data.title !== undefined) et.title = data.title;
+  if(data.color !== undefined) et.color = data.color;
+}
+
 export function removeEffortType(key){
-  const list = state.meta.effortTypes || [];
-  const idx = list.indexOf(key);
-  if(idx === -1) return;
-  list.splice(idx, 1);
-  state.tasks.forEach(t => {
-    t.efforts = (t.efforts || []).filter(e => e.platform !== key);
+  const list = getEffortTypes();
+  const idx = list.findIndex(e=>e.key===key);
+  if(idx === -1 || list[idx].locked) return;
+  list.splice(idx,1);
+  state.tasks.forEach(t=>{
+    t.efforts = (t.efforts||[]).filter(e=> e.platform !== key);
   });
-  state.teams.forEach(tm => {
-    if(tm.sizes) delete tm.sizes[key];
-  });
-  state.proposals.forEach(p => {
-    if(p.overrides) Object.values(p.overrides).forEach(o => { delete o[key]; });
+  state.teams.forEach(tm=>{ if(tm.sizes) delete tm.sizes[key]; });
+  state.proposals.forEach(p=>{
+    if(p.overrides) Object.values(p.overrides).forEach(o=>{ delete o[key]; });
   });
 }
 
