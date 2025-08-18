@@ -456,7 +456,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTasksByProject } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase } from './data.js';
       load();
     /* ===================== APP CODE (v20) ===================== */
     const STORAGE_KEY = "project_planner_v20";
@@ -534,9 +534,7 @@
       (plan.phaseIds||[]).forEach(phId=>{
         const base = (BASELINE[plan.id]||{})[phId];
         if(!base) return;
-        const tasks = (state.tasks||[]).filter(t=> t.projectId===plan.projectId
-          && (t.phaseIds||[]).includes(phId)
-          && FE_IDS.has(t.id));
+        const tasks = getTasksByPhase(plan.projectId, phId).filter(t=> FE_IDS.has(t.id));
         const feCount = Math.max(1, tasks.length);
         tasks.forEach(t=>{
           if((t.efforts||[]).length) return;
@@ -820,7 +818,7 @@
     
     
     function computeTaskEffortsForPhase(plan, phaseId){
-      const tasks = state.tasks.filter(t=> t.projectId===plan.projectId && (t.phaseIds||[]).includes(phaseId));
+      const tasks = getTasksByPhase(plan.projectId, phaseId);
       const rows = [];
       const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0,total:0};
       tasks.forEach(t=>{
@@ -886,7 +884,7 @@
         const sTable = document.createElement('table'); sTable.className='table table-sm table-bordered'; sTable.style.width='100%';
         sTable.innerHTML = `<thead class="table-light"><tr><th style="width:12%">Task</th><th>Title</th></tr></thead><tbody></tbody>`;
         const sBody = sTable.querySelector('tbody');
-          state.tasks.filter(t=> t.projectId===plan.projectId && t.viableProduct && (t.phaseIds||[]).includes(phId)).forEach(t=>{
+          getTasksByPhase(plan.projectId, phId).filter(t=> t.viableProduct).forEach(t=>{
             const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${escapeHtml(t.title)}</td>`; sBody.appendChild(tr);
           });
         scopeCard.appendChild(sTable);
@@ -1517,7 +1515,7 @@
             ptBoard.appendChild(box);
           });
           getTasksByProject(pid).forEach(t=>{
-            (t.phaseIds||[]).forEach(phId=>{
+            getTaskPhaseIds(t).forEach(phId=>{
               const dest=ptBoard.querySelector(`[data-ph="${phId}"]`);
               if(dest) dest.appendChild(createTaskElem(t.id, t.title, false));
             });
@@ -1529,7 +1527,11 @@
         const saveBtn = byId('pt-save');
         if(saveBtn) saveBtn.onclick = ()=>{
           const pid=ptProjSel.value;
-          getTasksByProject(pid).forEach(t=> t.phaseIds=[]);
+          const projPropIds = state.proposals.filter(p=>String(p.projectId??'')===String(pid)).map(p=>p.id);
+          getTasksByProject(pid).forEach(t=>{
+            t.phaseIds=[];
+            t.assignments = (t.assignments||[]).filter(a=> !projPropIds.includes(a.proposalId));
+          });
           ptBoard.querySelectorAll('[data-ph]').forEach(zone=>{
             const phId=zone.dataset.ph;
             zone.querySelectorAll('.pt-task').forEach(el=> assignTaskToPhase(el.dataset.tid, phId));
@@ -1547,7 +1549,7 @@
         function renderEffTbl(){
           const pid = effProjSel.value; const q=(effSearch.value||'').toLowerCase();
           effBody.innerHTML='';
-          state.tasks.filter(t=> t.projectId===pid && (t.title+' '+t.id).toLowerCase().includes(q)).forEach(t=>{
+          getTasksByProject(pid).filter(t=> (t.title+' '+t.id).toLowerCase().includes(q)).forEach(t=>{
             const m = Object.fromEntries((t.efforts||[]).map(e=> [e.platform, e.manDays]));
             const tr=document.createElement('tr');
             tr.innerHTML = `<td><code>${t.id}</code></td><td>${t.title}</td>
@@ -1698,6 +1700,7 @@
       if(kind==='task'){
         const isEdit = !!id;
         const data = isEdit ? state.tasks.find(x=>x.id===id) : { id: Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', projectId: (state.projects[0]?.id||''), viableProduct:false, efforts:[], assignments:[], phaseIds:[] };
+        data.phaseIds = Array.from(new Set([...(data.phaseIds||[]).map(String), ...((data.assignments||[]).map(a=>String(a.phaseId)))]));
         title.textContent = isEdit? 'Edit Task' : 'Add Task';
         form.innerHTML = [
           field('Title', `<input id="f-title" class="form-control" value="${escapeHtml(data.title)}">`),
@@ -1730,7 +1733,10 @@
         };
         byId('editSave').onclick = ()=>{
           const newId = val('f-id'); if(!isEdit && state.tasks.some(x=>x.id===newId)) return alert('ID already exists.');
-          const obj = { id: isEdit? data.id : newId, title:val('f-title'), description:val('f-desc'), startDate:byId('f-start').value, projectId: byId('f-project').value, viableProduct: !!byId('f-vp').checked, phaseIds: Array.from(byId('f-phases').selectedOptions).map(o=>o.value), efforts:data.efforts||[], assignments:data.assignments||[] };
+          const selPh = Array.from(byId('f-phases').selectedOptions).map(o=>o.value);
+          const asgPh = (data.assignments||[]).map(a=> String(a.phaseId));
+          const phaseIds = Array.from(new Set([...selPh, ...asgPh]));
+          const obj = { id: isEdit? data.id : newId, title:val('f-title'), description:val('f-desc'), startDate:byId('f-start').value, projectId: byId('f-project').value, viableProduct: !!byId('f-vp').checked, phaseIds, efforts:data.efforts||[], assignments:data.assignments||[] };
           if(isEdit){ Object.assign(state.tasks.find(x=>x.id===id), obj); } else { state.tasks.push(obj); }
           save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();

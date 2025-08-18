@@ -23,6 +23,13 @@ test('aggregate applies buffer and handles zero team members', () => {
   assert.strictEqual(aggr.team.BE, 0);
 });
 
+test('aggregate counts assignments without phaseIds', () => {
+  const plan = {id:'plan', projectId:'proj', teamId:1, phaseIds:['ph']};
+  const tasks = [{projectId:'proj', assignments:[{proposalId:'plan', phaseId:'ph'}], efforts:[{platform:'BE', manDays:5}]}];
+  const aggr = aggregate(plan, tasks, getTeam);
+  assert.strictEqual(aggr.phaseTotals['ph'].BE, 5);
+});
+
 test('computeSchedule supports QA after FE rule', () => {
   const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1']};
   const tasks = sampleTasks();

@@ -38,12 +38,14 @@ test('assignTaskToPhase handles multiple phases without duplicates', () => {
   assignTaskToPhase(1, 'p1');
   assignTaskToPhase(1, 'p1'); // duplicate ignored
   assignTaskToPhase(1, 'p2');
-  assert.deepEqual(state.tasks[0].phaseIds, ['p1','p2']);
+  assignTaskToPhase(1, 3); // numeric id stored as string
+  assert.deepEqual(state.tasks[0].phaseIds, ['p1','p2','3']);
   removeTaskFromPhase(1, 'p1');
+  removeTaskFromPhase(1, 3); // accepts numeric removal
   assert.deepEqual(state.tasks[0].phaseIds, ['p2']);
   const res = getTasksByPhase(2, 'p2');
   assert.equal(res.length, 1);
-});
+  });
 
 test('getTasksByProject filters tasks by project', () => {
   replaceState({
@@ -57,4 +59,66 @@ test('getTasksByProject filters tasks by project', () => {
   const res = getTasksByProject('a');
   assert.equal(res.length, 1);
   assert.equal(res[0].id, 1);
+});
+
+test('assignTaskToPhase synchronizes assignments with project proposals', () => {
+  replaceState({
+    projects:[{id:'p'}],
+    proposals:[{id:'plan1', projectId:'p', phaseIds:['ph1']},{id:'plan2', projectId:'p', phaseIds:['ph2']}],
+    tasks:[{id:'t1', projectId:'p'}],
+    teams:[], phases:[], meta:{},
+  });
+  assignTaskToPhase('t1','ph1');
+  assert.deepEqual(state.tasks[0].assignments, [{proposalId:'plan1', phaseId:'ph1'}]);
+  assignTaskToPhase('t1','ph2');
+  assert.equal(state.tasks[0].assignments.length,2);
+  removeTaskFromPhase('t1','ph1');
+  assert.deepEqual(state.tasks[0].assignments, [{proposalId:'plan2', phaseId:'ph2'}]);
+});
+
+test('getTasksByProject matches numeric and string ids', () => {
+  replaceState({
+    projects: [],
+    proposals: [],
+    tasks: [{id:1, projectId:1}, {id:2, projectId:'2'}],
+    teams: [],
+    phases: [],
+    meta: {},
+  });
+  assert.equal(getTasksByProject(1).length, 1);
+  const res = getTasksByProject('2');
+  assert.equal(res.length, 1);
+  assert.equal(res[0].id, 2);
+});
+
+test('getTasksByPhase matches numeric and string ids', () => {
+  replaceState({
+    projects: [],
+    proposals: [],
+    tasks: [
+      {id:1, projectId:1, phaseIds:[1]},
+      {id:2, projectId:'1', phaseIds:['2']},
+    ],
+    teams: [],
+    phases: [],
+    meta: {},
+  });
+  const r1 = getTasksByPhase(1, '1');
+  assert.equal(r1.length, 1);
+  assert.equal(r1[0].id, 1);
+  const r2 = getTasksByPhase('1', 2);
+  assert.equal(r2.length, 1);
+  assert.equal(r2[0].id, 2);
+});
+
+test('getTasksByPhase uses assignments when phaseIds missing', () => {
+  replaceState({
+    projects:[{id:'p'}],
+    proposals:[{id:'plan', projectId:'p', phaseIds:['ph']}],
+    tasks:[{id:'t', projectId:'p', assignments:[{proposalId:'plan', phaseId:'ph'}]}],
+    teams:[], phases:[], meta:{},
+  });
+  const res = getTasksByPhase('p','ph');
+  assert.equal(res.length,1);
+  assert.equal(res[0].id,'t');
 });

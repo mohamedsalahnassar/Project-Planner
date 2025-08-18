@@ -1,14 +1,18 @@
+import { getTaskPhaseIds } from './data.js';
+
 export function aggregate(plan, tasks, getTeam){
   const team = getTeam(plan.teamId)?.sizes || {BE:0,iOS:0,Android:0,Online:0,QA:0};
   const buffer = (plan.bufferPct||0)/100;
+  const planPh = (plan.phaseIds||[]).map(id=> String(id));
   const phaseTotals = {};
-  for(const pid of plan.phaseIds){ phaseTotals[pid] = {BE:0,iOS:0,Android:0,Online:0,QA:0,earliest:null}; }
+  for(const pid of planPh){ phaseTotals[pid] = {BE:0,iOS:0,Android:0,Online:0,QA:0,earliest:null}; }
   tasks.forEach(t=>{
-    if(t.projectId !== plan.projectId) return;
+    if(String(t.projectId ?? '') !== String(plan.projectId ?? '')) return;
     const earliestTaskStart = (t.startDate && t.startDate.trim()) ? new Date(t.startDate) : null;
-    (t.phaseIds||[]).forEach(phId=>{
-      if(!plan.phaseIds.includes(phId)) return;
-      const rec = phaseTotals[phId] || (phaseTotals[phId]={BE:0,iOS:0,Android:0,Online:0,QA:0,earliest:null});
+    getTaskPhaseIds(t).forEach(phId=>{
+      const pid = String(phId);
+      if(!planPh.includes(pid)) return;
+      const rec = phaseTotals[pid] || (phaseTotals[pid]={BE:0,iOS:0,Android:0,Online:0,QA:0,earliest:null});
       (t.efforts||[]).forEach(eff=>{
         const md = +eff.manDays || 0; const plat = eff.platform;
         if(plat in rec){ rec[plat] = (rec[plat]||0) + md; }
