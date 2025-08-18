@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { aggregate, computeSchedule } from '../schedule.js';
-import { state, removeEffortType } from '../data.js';
+import { state, removeEffortType, updateEffortType } from '../data.js';
 
 const dayMs = 86400000;
 function dummyPhase(id){ return {id, order:1}; }
@@ -87,4 +87,12 @@ test('removeEffortType purges data', () => {
   assert.deepStrictEqual(state.tasks[0].efforts, [{platform:'BE',manDays:1}]);
   assert.deepStrictEqual(state.teams[0].sizes, {BE:1});
   assert.deepStrictEqual(state.proposals[0].overrides.p1, {BE:'2024-01-01'});
+});
+
+test('updateEffortType changes metadata and locked prevents deletion', () => {
+  state.meta.effortTypes = [{key:'iOS', title:'iOS', color:'#111', locked:true}];
+  updateEffortType('iOS', {title:'Apple', color:'#222'});
+  assert.deepStrictEqual(state.meta.effortTypes[0], {key:'iOS', title:'Apple', color:'#222', locked:true});
+  removeEffortType('iOS');
+  assert.strictEqual(state.meta.effortTypes.length, 1);
 });
