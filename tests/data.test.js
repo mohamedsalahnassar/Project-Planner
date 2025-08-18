@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase } from '../data.js';
+import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject } from '../data.js';
 
 test('replaceState swaps state object contents', () => {
   const initial = {
@@ -43,4 +43,18 @@ test('assignTaskToPhase handles multiple phases without duplicates', () => {
   assert.deepEqual(state.tasks[0].phaseIds, ['p2']);
   const res = getTasksByPhase(2, 'p2');
   assert.equal(res.length, 1);
+});
+
+test('getTasksByProject filters tasks by project', () => {
+  replaceState({
+    projects: [],
+    proposals: [],
+    tasks: [{id:1, projectId:'a'}, {id:2, projectId:'b'}],
+    teams: [],
+    phases: [],
+    meta: {}
+  });
+  const res = getTasksByProject('a');
+  assert.equal(res.length, 1);
+  assert.equal(res[0].id, 1);
 });

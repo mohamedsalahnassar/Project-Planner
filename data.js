@@ -46,3 +46,7 @@ export function removeTaskFromPhase(taskId, phaseId){
 export function getTasksByPhase(projectId, phaseId){
   return state.tasks.filter(t => t.projectId === projectId && (t.phaseIds || []).includes(phaseId));
 }
+
+export function getTasksByProject(projectId){
+  return state.tasks.filter(t => t.projectId === projectId);
+}

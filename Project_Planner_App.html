@@ -49,6 +49,9 @@
     .pdf-h3{font-size:16px; font-weight:700; margin-top:12px}
     .pdf-meta{color:#6c757d; font-size:.9rem}
     .pdf-card{border:1px solid #dee2e6; border-radius:12px; padding:16px; margin-top:12px}
+    .pt-box{width:260px}
+    .pt-drop{min-height:60px; max-height:300px; overflow:auto}
+    .pt-task{cursor:move; font-size:.875rem; border:1px solid var(--bs-border-color); border-radius:.25rem; padding:2px 6px; background:var(--bs-tertiary-bg)}
   </style>
 </head>
 <body>
@@ -304,7 +307,7 @@
                 <select id="pt-proj" class="form-select" style="max-width:240px"></select>
                 <button id="pt-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
               </div>
-              <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3"></div>
+              <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3 align-items-start"></div>
             </div>
 
             <div class="tab-pane fade" id="pane-efforts" role="tabpanel">
@@ -451,7 +454,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTasksByProject } from './data.js';
       load();
     /* ===================== APP CODE (v20) ===================== */
     const STORAGE_KEY = "project_planner_v20";
@@ -1427,36 +1430,76 @@
       byId('search-tasks').oninput = refreshManage;
       // Phase Tasks tab wiring
       const ptProjSel = byId('pt-proj');
-      const ptContainers = byId('phaseTaskContainers');
-      if(ptContainers){
+      const ptBoard = byId('phaseTaskContainers');
+      let dragEl = null;
+      if(ptBoard){
         ptProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
         if(!ptProjSel.value && state.projects[0]) ptProjSel.value = state.projects[0].id;
+        function createTaskElem(id, title, isPool){
+          const div=document.createElement('div');
+          div.className='pt-task';
+          div.draggable=true;
+          div.dataset.tid=id;
+          div.dataset.origin=isPool?'pool':'phase';
+          div.textContent=title;
+          div.addEventListener('dragstart',()=> dragEl=div);
+          return div;
+        }
+        function initDropZone(zone){
+          zone.addEventListener('dragover',e=>e.preventDefault());
+          zone.addEventListener('drop',e=>{
+            e.preventDefault();
+            if(!dragEl) return;
+            const tid=dragEl.dataset.tid;
+            if(zone.id==='pt-pool'){
+              if(dragEl.dataset.origin==='phase') dragEl.remove();
+            }else{
+              if(zone.querySelector(`[data-tid="${tid}"]`)) return;
+              if(dragEl.dataset.origin==='pool'){
+                zone.appendChild(createTaskElem(tid, dragEl.textContent, false));
+              }else{
+                zone.appendChild(dragEl);
+              }
+            }
+          });
+        }
         function renderPhaseTasks(){
           const pid = ptProjSel.value;
-          ptContainers.innerHTML = '';
+          ptBoard.innerHTML = '';
+          const poolBox=document.createElement('div');
+          poolBox.className='pt-box card shadow-sm';
+          poolBox.innerHTML='<div class="card-header">Tasks</div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
+          ptBoard.appendChild(poolBox);
+          const pool=byId('pt-pool');
+          getTasksByProject(pid).forEach(t=>{
+            pool.appendChild(createTaskElem(t.id, t.title, true));
+          });
           state.phases.forEach(ph=>{
             const box=document.createElement('div');
-            box.className='border rounded p-2';
-            box.style.minWidth='220px';
-            box.innerHTML=`<h6>${ph.name}</h6><div class="vstack gap-1" data-ph="${ph.id}"></div>`;
-            ptContainers.appendChild(box);
+            box.className='pt-box card shadow-sm';
+            box.innerHTML=`<div class="card-header">${ph.name}</div><div class="card-body pt-drop vstack gap-1" data-ph="${ph.id}"></div>`;
+            ptBoard.appendChild(box);
           });
-          state.tasks.filter(t=> t.projectId===pid).forEach(t=>{
+          getTasksByProject(pid).forEach(t=>{
             (t.phaseIds||[]).forEach(phId=>{
-              const dest=ptContainers.querySelector(`div[data-ph="${phId}"]`);
-              if(dest){
-                const item=document.createElement('div');
-                item.className='border rounded px-2 py-1 bg-body-secondary';
-                item.textContent=t.title;
-                dest.appendChild(item);
-              }
+              const dest=ptBoard.querySelector(`[data-ph="${phId}"]`);
+              if(dest) dest.appendChild(createTaskElem(t.id, t.title, false));
             });
           });
+          ptBoard.querySelectorAll('.pt-drop').forEach(initDropZone);
         }
         ptProjSel.onchange = renderPhaseTasks;
         renderPhaseTasks();
         const saveBtn = byId('pt-save');
-        if(saveBtn) saveBtn.onclick = ()=>{ save(); toast('Phase tasks updated'); };
+        if(saveBtn) saveBtn.onclick = ()=>{
+          const pid=ptProjSel.value;
+          getTasksByProject(pid).forEach(t=> t.phaseIds=[]);
+          ptBoard.querySelectorAll('[data-ph]').forEach(zone=>{
+            const phId=zone.dataset.ph;
+            zone.querySelectorAll('.pt-task').forEach(el=> assignTaskToPhase(el.dataset.tid, phId));
+          });
+          save(); toast('Phase tasks updated');
+        };
       }
       // Efforts tab wiring
       const effProjSel = byId('eff-proj');
