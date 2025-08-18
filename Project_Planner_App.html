@@ -508,11 +508,12 @@
     ];
     DEFAULT_DATA.tasks = seedTasks.map(s=>{
       const [id, title] = s.split("|");
-      return {id, title, projectId:"proj-sample", startDate:"", efforts:[], assignments:[{proposalId:"prop1",phaseId: id.startsWith("CT")||id.startsWith("LX")||id==="AT2"?"P2":"P1"}, {proposalId:"prop2a",phaseId: id.startsWith("CT")||id.startsWith("LX")||id==="AT2"?"P2":"P1"}, {proposalId:"prop2b",phaseId:"ALL"}]};
+      const phase = id.startsWith("CT")||id.startsWith("LX")||id==="AT2"?"P2":"P1";
+      return {id, title, projectId:"proj-sample", startDate:"", efforts:[], phaseIds:[phase], assignments:[{proposalId:"prop1",phaseId: phase}, {proposalId:"prop2a",phaseId: phase}, {proposalId:"prop2b",phaseId:"ALL"}]};
     });
-    DEFAULT_DATA.tasks.push({id:"TBE1", title:"BE: APIs & integration (Phase 1)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:74}], assignments:[{proposalId:"prop1",phaseId:"P1"},{proposalId:"prop2a",phaseId:"P1"}]});
-    DEFAULT_DATA.tasks.push({id:"TBE2", title:"BE: APIs & integration (Phase 2)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:24}], assignments:[{proposalId:"prop1",phaseId:"P2"},{proposalId:"prop2a",phaseId:"P2"}]});
-    DEFAULT_DATA.tasks.push({id:"TBE3", title:"BE: APIs & integration (One-shot)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:98}], assignments:[{proposalId:"prop2b",phaseId:"ALL"}]});
+    DEFAULT_DATA.tasks.push({id:"TBE1", title:"BE: APIs & integration (Phase 1)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:74}], phaseIds:["P1"], assignments:[{proposalId:"prop1",phaseId:"P1"},{proposalId:"prop2a",phaseId:"P1"}]});
+    DEFAULT_DATA.tasks.push({id:"TBE2", title:"BE: APIs & integration (Phase 2)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:24}], phaseIds:["P2"], assignments:[{proposalId:"prop1",phaseId:"P2"},{proposalId:"prop2a",phaseId:"P2"}]});
+    DEFAULT_DATA.tasks.push({id:"TBE3", title:"BE: APIs & integration (One-shot)", projectId:"proj-sample", startDate:"", efforts:[{platform:"BE",manDays:98}], phaseIds:["ALL"], assignments:[{proposalId:"prop2b",phaseId:"ALL"}]});
 
     const BASELINE = {
       "prop1": {"P1":{"iOS":70,"Android":57,"Online":52,"QA":30,"BE":0},"P2":{"iOS":37,"Android":30,"Online":28,"QA":30,"BE":0}},
@@ -534,7 +535,7 @@
         const base = (BASELINE[plan.id]||{})[phId];
         if(!base) return;
         const tasks = (state.tasks||[]).filter(t=> t.projectId===plan.projectId
-          && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phId)
+          && (t.phaseIds||[]).includes(phId)
           && FE_IDS.has(t.id));
         const feCount = Math.max(1, tasks.length);
         tasks.forEach(t=>{
@@ -819,7 +820,7 @@
     
     
     function computeTaskEffortsForPhase(plan, phaseId){
-      const tasks = state.tasks.filter(t=> t.projectId===plan.projectId && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phaseId));
+      const tasks = state.tasks.filter(t=> t.projectId===plan.projectId && (t.phaseIds||[]).includes(phaseId));
       const rows = [];
       const totals = {BE:0,iOS:0,Android:0,Online:0,QA:0,total:0};
       tasks.forEach(t=>{
@@ -885,7 +886,7 @@
         const sTable = document.createElement('table'); sTable.className='table table-sm table-bordered'; sTable.style.width='100%';
         sTable.innerHTML = `<thead class="table-light"><tr><th style="width:12%">Task</th><th>Title</th></tr></thead><tbody></tbody>`;
         const sBody = sTable.querySelector('tbody');
-          state.tasks.filter(t=> t.projectId===plan.projectId && t.viableProduct && (t.assignments||[]).some(a=> a.proposalId===plan.id && a.phaseId===phId)).forEach(t=>{
+          state.tasks.filter(t=> t.projectId===plan.projectId && t.viableProduct && (t.phaseIds||[]).includes(phId)).forEach(t=>{
             const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${escapeHtml(t.title)}</td>`; sBody.appendChild(tr);
           });
         scopeCard.appendChild(sTable);
@@ -1691,13 +1692,14 @@
       
       if(kind==='task'){
         const isEdit = !!id;
-        const data = isEdit ? state.tasks.find(x=>x.id===id) : { id: Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', projectId: (state.projects[0]?.id||''), viableProduct:false, efforts:[], assignments:[] };
+        const data = isEdit ? state.tasks.find(x=>x.id===id) : { id: Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', projectId: (state.projects[0]?.id||''), viableProduct:false, efforts:[], assignments:[], phaseIds:[] };
         title.textContent = isEdit? 'Edit Task' : 'Add Task';
         form.innerHTML = [
           field('Title', `<input id="f-title" class="form-control" value="${escapeHtml(data.title)}">`),
           field('Description', `<textarea id="f-desc" class="form-control" rows="3">${escapeHtml(data.description||'')}</textarea>`),
           field('Project', `<select id="f-project" class="form-select">${state.projects.map(p=>`<option value="${p.id}" ${p.id===(data.projectId||state.projects[0]?.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select>`),
           field('Task start (optional)', `<input id="f-start" type="date" class="form-control" value="${escapeHtml(data.startDate||'')}">`),
+          field('Phases (multi-select)', `<select id="f-phases" class="form-select" multiple size="6">${state.phases.map(ph=>`<option value="${ph.id}" ${(data.phaseIds||[]).includes(ph.id)?'selected':''}>${escapeHtml(ph.name)}</option>`).join('')}</select>`),
           `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="f-vp" ${data.viableProduct?'checked':''}><label class="form-check-label" for="f-vp">Viable Product</label></div>`,
           `<hr><h6>Assignments</h6>
            <div class="row g-2 align-items-end">
@@ -1723,7 +1725,7 @@
         };
         byId('editSave').onclick = ()=>{
           const newId = val('f-id'); if(!isEdit && state.tasks.some(x=>x.id===newId)) return alert('ID already exists.');
-          const obj = { id: isEdit? data.id : newId, title:val('f-title'), description:val('f-desc'), startDate:byId('f-start').value, projectId: byId('f-project').value, viableProduct: !!byId('f-vp').checked, efforts:data.efforts||[], assignments:data.assignments||[] };
+          const obj = { id: isEdit? data.id : newId, title:val('f-title'), description:val('f-desc'), startDate:byId('f-start').value, projectId: byId('f-project').value, viableProduct: !!byId('f-vp').checked, phaseIds: Array.from(byId('f-phases').selectedOptions).map(o=>o.value), efforts:data.efforts||[], assignments:data.assignments||[] };
           if(isEdit){ Object.assign(state.tasks.find(x=>x.id===id), obj); } else { state.tasks.push(obj); }
           save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();

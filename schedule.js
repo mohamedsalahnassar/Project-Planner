@@ -6,9 +6,9 @@ export function aggregate(plan, tasks, getTeam){
   tasks.forEach(t=>{
     if(t.projectId !== plan.projectId) return;
     const earliestTaskStart = (t.startDate && t.startDate.trim()) ? new Date(t.startDate) : null;
-    (t.assignments||[]).forEach(a=>{
-      if(a.proposalId!==plan.id) return;
-      const rec = phaseTotals[a.phaseId] || (phaseTotals[a.phaseId]={BE:0,iOS:0,Android:0,Online:0,QA:0,earliest:null});
+    (t.phaseIds||[]).forEach(phId=>{
+      if(!plan.phaseIds.includes(phId)) return;
+      const rec = phaseTotals[phId] || (phaseTotals[phId]={BE:0,iOS:0,Android:0,Online:0,QA:0,earliest:null});
       (t.efforts||[]).forEach(eff=>{
         const md = +eff.manDays || 0; const plat = eff.platform;
         if(plat in rec){ rec[plat] = (rec[plat]||0) + md; }
