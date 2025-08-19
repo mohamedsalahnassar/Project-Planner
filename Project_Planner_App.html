@@ -45,6 +45,7 @@
     .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
     .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
     .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
+    .phase-badge{background:var(--bs-secondary);color:#fff}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
     .pdf-sheet{width:1100px; margin:0 auto; padding:24px}
@@ -358,6 +359,7 @@
                 </div>
                 <button id="pt-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
               </div>
+              <div id="phaseLegend" class="mb-2 d-flex flex-wrap gap-2 small"></div>
               <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3 align-items-stretch"></div>
             </div>
 
@@ -560,9 +562,9 @@
         { id:"team-scaled", name:"Scaled Squad", sizes:Object.fromEntries(DEFAULT_EFFORT_TYPES.map(e=>[e.key, {BE:3,iOS:4,Android:4,Online:4,QA:4}[e.key]||0])) }
       ],
       phases: [
-        { id:"P1", name:"Phase 1", description:"Entry points + Survey/Registration + Dashboard core", order:1 },
-        { id:"P2", name:"Phase 2", description:"Content widgets and partner integration", order:2 },
-        { id:"ALL", name:"One-shot", description:"All scope in a single release", order:1 }
+        { id:"P1", name:"Phase 1", description:"Entry points + Survey/Registration + Dashboard core", order:1, color:"#0d6efd" },
+        { id:"P2", name:"Phase 2", description:"Content widgets and partner integration", order:2, color:"#6610f2" },
+        { id:"ALL", name:"One-shot", description:"All scope in a single release", order:1, color:"#198754" }
       ],
       proposals: [
         { id:"prop1", projectId:"proj-sample", title:"Two Phases (Base Squad)", description:"Two-phase rollout with base team", teamId:"team-base", bufferPct:12, phaseIds:["P1","P2"], pxPerDay:18, overrides:{} },
@@ -1568,11 +1570,23 @@
       // Phase Tasks tab wiring
       const ptProjSel = byId('pt-proj');
       const ptBoard = byId('phaseTaskContainers');
+      const ptLegend = byId('phaseLegend');
       const ptBoardBtn = byId('pt-view-board');
       const ptMatrixBtn = byId('pt-view-matrix');
       let ptView = 'board';
       let dragEl = null; let dragSet = [];
       if(ptBoard){
+        function renderPhaseLegend(){
+          if(!ptLegend) return;
+          ptLegend.innerHTML='';
+          state.phases.forEach(ph=>{
+            const span=document.createElement('span');
+            span.className='badge phase-badge';
+            span.textContent=ph.name;
+            if(ph.color) span.style.backgroundColor = ph.color;
+            ptLegend.appendChild(span);
+          });
+        }
         ptProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
         if(!ptProjSel.value && state.projects[0]) ptProjSel.value = state.projects[0].id;
         function createTaskElem(id, title, isPool){
@@ -1619,9 +1633,11 @@
             ptBoard.querySelectorAll('[data-ph]').forEach(zone=>{
               if(zone.querySelector(`[data-tid="${tid}"]`)){
                 const phId=zone.dataset.ph;
+                const phase=getPhase(phId);
                 const tag=document.createElement('span');
-                tag.className='badge bg-secondary me-1';
-                tag.textContent=getPhase(phId)?.name||phId;
+                tag.className='badge phase-badge me-1';
+                tag.textContent=phase?.name||phId;
+                if(phase?.color) tag.style.backgroundColor = phase.color;
                 tagBox.appendChild(tag);
               }
             });
@@ -1651,6 +1667,7 @@
           });
         }
         function renderPhaseTasks(){
+          renderPhaseLegend();
           const pid = ptProjSel.value;
           ptBoard.className='d-flex flex-wrap gap-3 align-items-stretch';
           ptBoard.innerHTML = '';
@@ -1682,6 +1699,7 @@
           updatePoolTags();
         }
         function renderPhaseTaskMatrix(){
+          renderPhaseLegend();
           const pid = ptProjSel.value;
           ptBoard.className='table-responsive pt-matrix-wrapper';
           ptBoard.innerHTML='';
@@ -1857,17 +1875,18 @@
       }
       if(kind==='phase'){
         const isEdit = !!id;
-        const data = isEdit ? state.phases.find(x=>x.id===id) : { id:'PH'+Math.random().toString(36).slice(2,6), name:'', description:'', order:1 };
+        const data = isEdit ? state.phases.find(x=>x.id===id) : { id:'PH'+Math.random().toString(36).slice(2,6), name:'', description:'', order:1, color:'#6c757d' };
         title.textContent = isEdit? 'Edit Phase' : 'Add Phase';
         form.innerHTML = [
           field('Title', `<input id="f-name" class="form-control" value="${escapeHtml(data.name)}">`),
           field('Description', `<textarea id="f-desc" class="form-control" rows="3">${escapeHtml(data.description||'')}</textarea>`),
+          field('Color', `<input id="f-color" type="color" class="form-control form-control-color" value="${escapeHtml(data.color||'#6c757d')}">`),
           field('Order', `<input id="f-order" class="form-control" type="number" min="1" step="1" value="${data.order||1}">`),
           field('ID', idInputHtml(data.id, isEdit)),
         ].join('');
         byId('editSave').onclick = ()=>{
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.phases, newId)) return alert('ID already exists.');
-          const obj = { id: isEdit? data.id : newId, name:val('f-name'), description:val('f-desc'), order:+val('f-order')||1 };
+          const obj = { id: isEdit? data.id : newId, name:val('f-name'), description:val('f-desc'), order:+val('f-order')||1, color:byId('f-color').value };
           if(isEdit){ Object.assign(state.phases.find(x=>x.id===id), obj); } else { state.phases.push(obj); }
           save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
