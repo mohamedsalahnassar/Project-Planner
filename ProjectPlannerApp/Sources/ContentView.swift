@@ -58,6 +58,10 @@ struct ContentView: View {
         if panel.runModal() == .OK, let url = panel.url {
             try? exportProjects(context: context, to: url)
         }
+        #else
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("projects.json")
+        try? exportProjects(context: context, to: url)
         #endif
     }
 
@@ -66,6 +70,12 @@ struct ContentView: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]
         if panel.runModal() == .OK, let url = panel.url {
+            try? importProjects(context: context, from: url)
+        }
+        #else
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("projects.json")
+        if FileManager.default.fileExists(atPath: url.path) {
             try? importProjects(context: context, from: url)
         }
         #endif
@@ -79,6 +89,10 @@ struct ContentView: View {
         if panel.runModal() == .OK, let url = panel.url {
             try? exportProjectsCSV(context: context, to: url)
         }
+        #else
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("projects.csv")
+        try? exportProjectsCSV(context: context, to: url)
         #endif
     }
 
@@ -87,6 +101,12 @@ struct ContentView: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.commaSeparatedText]
         if panel.runModal() == .OK, let url = panel.url {
+            try? importProjectsCSV(context: context, from: url)
+        }
+        #else
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("projects.csv")
+        if FileManager.default.fileExists(atPath: url.path) {
             try? importProjectsCSV(context: context, from: url)
         }
         #endif
