@@ -213,6 +213,9 @@
     <button class="nav-link" id="tab-teams" data-bs-toggle="tab" data-bs-target="#pane-teams" type="button" role="tab">Teams</button>
   </li>
   <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-sprints" data-bs-toggle="tab" data-bs-target="#pane-sprints" type="button" role="tab">Sprints</button>
+  </li>
+  <li class="nav-item" role="presentation">
     <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab">Tasks</button>
   </li>
   <li class="nav-item" role="presentation">
@@ -288,6 +291,22 @@
               <div class="table-responsive">
                 <table class="table table-hover align-middle" id="tbl-teams">
                   <thead><tr id="teams-head"></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="pane-sprints" role="tabpanel">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="input-group" style="max-width:360px">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input id="search-sprints" class="form-control" placeholder="Search sprints">
+                </div>
+                <button class="btn btn-primary" id="btn-add-sprint"><i class="bi bi-plus-lg"></i> Add Sprint</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle" id="tbl-sprints">
+                  <thead><tr><th style="width:25%">Name</th><th style="width:20%">Start</th><th style="width:20%">End</th><th style="width:15%">ID</th><th style="width:160px">Actions</th></tr></thead>
                   <tbody></tbody>
                 </table>
               </div>
@@ -476,8 +495,9 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints } from './data.js';
       load();
+      ensureSprints();
     /* ===================== APP CODE (v20) ===================== */
     const STORAGE_KEY = "project_planner_v20";
     const dayMs = 86400000;
@@ -845,15 +865,14 @@
         const tag = document.createElement('div'); tag.className='phase-tag'; tag.style.left = x+'px'; tag.style.width = wpx+'px'; tag.textContent = w.ph;
         scroll.appendChild(tag);
       });
-      let sprintStart = new Date('2025-08-13');
-      let sprintIdx = 1;
-      while(sprintStart <= chartEndDate){
-        const d = Math.floor((sprintStart - chartStart)/dayMs);
+      (state.sprints||[]).forEach(sp=>{
+        const sd = new Date(sp.start);
+        if(sd < chartStart || sd > chartEndDate) return;
+        const d = Math.floor((sd - chartStart)/dayMs);
         const x = labelPad + d*pxPerDay;
         const sl = document.createElement('div'); sl.className='sprint-line'; sl.style.left = x+'px'; scroll.appendChild(sl);
-        const lbl = document.createElement('div'); lbl.className='sprint-label'; lbl.style.left = x+'px'; lbl.textContent = `Sprint ${sprintIdx}`; scroll.appendChild(lbl);
-        sprintStart.setDate(sprintStart.getDate()+14); sprintIdx++;
-      }
+        const lbl = document.createElement('div'); lbl.className='sprint-label'; lbl.style.left = x+'px'; lbl.textContent = sp.name; scroll.appendChild(lbl);
+      });
       const hoverLine = document.createElement('div'); hoverLine.className='hover-line'; scroll.appendChild(hoverLine);
       const hoverLabel = document.createElement('div'); hoverLabel.className='hover-label'; ruler.appendChild(hoverLabel);
       function handleHover(e){
@@ -1463,6 +1482,16 @@
         } };
         tbTm.appendChild(tr);
       });
+      const filterSp = (byId('search-sprints').value||'').toLowerCase();
+      const tbSp = byId('tbl-sprints').querySelector('tbody'); tbSp.innerHTML='';
+      state.sprints.filter(s=> (s.name+' '+s.id).toLowerCase().includes(filterSp)).forEach(s=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(s.name)}</td><td>${s.start}</td><td>${s.end}</td><td><code>${s.id}</code></td>`+
+          `<td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+        tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('sprint', s.id);
+        tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete sprint?')){ state.sprints = state.sprints.filter(x=>x.id!==s.id); save(); refreshManage(); } };
+        tbSp.appendChild(tr);
+      });
       const filterTk = (byId('search-tasks').value||'').toLowerCase();
       const tbTk = byId('tbl-tasks').querySelector('tbody'); tbTk.innerHTML='';
       state.tasks.filter(t=> (t.title+' '+t.id).toLowerCase().includes(filterTk)).forEach(t=>{
@@ -1494,12 +1523,14 @@
       byId('btn-add-plan').onclick = ()=> openEditor('plan', null);
       byId('btn-add-phase').onclick = ()=> openEditor('phase', null);
       byId('btn-add-team').onclick = ()=> openEditor('team', null);
+      byId('btn-add-sprint').onclick = ()=> openEditor('sprint', null);
       byId('btn-add-task').onclick = ()=> openEditor('task', null);
       byId('btn-add-effort-type').onclick = ()=> openEditor('effortType', null);
       byId('search-projects').oninput = refreshManage;
       byId('search-plans').oninput = refreshManage;
       byId('search-phases').oninput = refreshManage;
       byId('search-teams').oninput = refreshManage;
+      byId('search-sprints').oninput = refreshManage;
       byId('search-tasks').oninput = refreshManage;
       byId('search-effort-types').oninput = refreshManage;
       // Phase Tasks tab wiring
@@ -1786,6 +1817,25 @@
         };
         del.onclick = ()=>{ if(confirm('Delete team?')){ state.proposals.forEach(p=>{ if(p.teamId===id) p.teamId = state.teams[0]?.id || ''; }); state.teams = state.teams.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+      }
+
+      if(kind==='sprint'){
+        const isEdit = !!id;
+        const data = isEdit ? state.sprints.find(x=>x.id===id) : { id:'SPR'+Math.random().toString(36).slice(2,6), name:'', start:'', end:'' };
+        title.textContent = isEdit? 'Edit Sprint' : 'Add Sprint';
+        form.innerHTML = [
+          field('Name', `<input id="f-name" class="form-control" value="${escapeHtml(data.name)}">`),
+          field('Start', `<input id="f-start" type="date" class="form-control" value="${escapeHtml(data.start||'')}">`),
+          field('End', `<input id="f-end" type="date" class="form-control" value="${escapeHtml(data.end||'')}">`),
+          field('ID', idInputHtml(data.id, isEdit)),
+        ].join('');
+        byId('editSave').onclick = ()=>{
+          const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.sprints, newId)) return alert('ID already exists.');
+          const obj = { id: isEdit? data.id : newId, name: val('f-name'), start: val('f-start'), end: val('f-end') };
+          if(isEdit){ Object.assign(state.sprints.find(x=>x.id===id), obj); } else { state.sprints.push(obj); }
+          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+        };
+        del.onclick = ()=>{ if(confirm('Delete sprint?')){ state.sprints = state.sprints.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
 
       if(kind==='effortType'){
