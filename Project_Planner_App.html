@@ -61,6 +61,10 @@
     .pt-task.selected{outline:2px solid var(--bs-link-color); background:var(--bs-secondary-bg)}
     .pt-task .pt-remove{cursor:pointer}
     .pt-tags{display:flex; flex-wrap:wrap; gap:.25rem}
+    .pt-matrix-wrapper{max-height:420px;overflow:auto}
+    #phaseTaskMatrix th{position:sticky;top:0;background:var(--bs-body-bg)}
+    #phaseTaskMatrix th:first-child{position:sticky;left:0;background:var(--bs-body-bg);z-index:2}
+    #phaseTaskMatrix td:first-child{position:sticky;left:0;background:var(--bs-body-bg);z-index:1}
   </style>
 </head>
 <body>
@@ -348,6 +352,10 @@
               <div class="d-flex align-items-center gap-2 mb-2">
                 <label class="form-label mb-0">Project</label>
                 <select id="pt-proj" class="form-select" style="max-width:240px"></select>
+                <div class="btn-group" role="group">
+                  <button id="pt-view-board" class="btn btn-outline-secondary btn-sm active"><i class="bi bi-kanban"></i></button>
+                  <button id="pt-view-matrix" class="btn btn-outline-secondary btn-sm"><i class="bi bi-table"></i></button>
+                </div>
                 <button id="pt-save" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save</button>
               </div>
               <div id="phaseTaskContainers" class="d-flex flex-wrap gap-3 align-items-stretch"></div>
@@ -1560,6 +1568,9 @@
       // Phase Tasks tab wiring
       const ptProjSel = byId('pt-proj');
       const ptBoard = byId('phaseTaskContainers');
+      const ptBoardBtn = byId('pt-view-board');
+      const ptMatrixBtn = byId('pt-view-matrix');
+      let ptView = 'board';
       let dragEl = null; let dragSet = [];
       if(ptBoard){
         ptProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
@@ -1641,6 +1652,7 @@
         }
         function renderPhaseTasks(){
           const pid = ptProjSel.value;
+          ptBoard.className='d-flex flex-wrap gap-3 align-items-stretch';
           ptBoard.innerHTML = '';
           const poolBox=document.createElement('div');
           poolBox.className='pt-box pt-pool-box card shadow-sm';
@@ -1669,7 +1681,46 @@
           ptBoard.querySelectorAll('.pt-drop').forEach(initDropZone);
           updatePoolTags();
         }
-        ptProjSel.onchange = renderPhaseTasks;
+        function renderPhaseTaskMatrix(){
+          const pid = ptProjSel.value;
+          ptBoard.className='table-responsive pt-matrix-wrapper';
+          ptBoard.innerHTML='';
+          const tbl=document.createElement('table');
+          tbl.id='phaseTaskMatrix';
+          tbl.className='table table-sm table-bordered mb-0 align-middle';
+          const thead=document.createElement('thead');
+          thead.className='table-dark';
+          const headRow=document.createElement('tr');
+          headRow.innerHTML='<th>Task</th>' + state.phases.map(ph=>`<th>${ph.name}</th>`).join('');
+          thead.appendChild(headRow);
+          tbl.appendChild(thead);
+          const tbody=document.createElement('tbody');
+          const tasks=getTasksByProject(pid);
+          tasks.forEach(t=>{
+            const tr=document.createElement('tr');
+            const tdTitle=document.createElement('td');
+            tdTitle.textContent=t.title;
+            tr.appendChild(tdTitle);
+            state.phases.forEach(ph=>{
+              const td=document.createElement('td');
+              td.className='text-center';
+              const cb=document.createElement('input');
+              cb.type='checkbox';
+              cb.className='form-check-input';
+              cb.dataset.tid=t.id;
+              cb.dataset.ph=ph.id;
+              if(getTaskPhaseIds(t).includes(String(ph.id))) cb.checked=true;
+              td.appendChild(cb);
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          tbl.appendChild(tbody);
+          ptBoard.appendChild(tbl);
+        }
+        ptProjSel.onchange = ()=>{ ptView==='board'? renderPhaseTasks() : renderPhaseTaskMatrix(); };
+        ptBoardBtn.onclick = ()=>{ ptView='board'; ptBoardBtn.classList.add('active'); ptMatrixBtn.classList.remove('active'); renderPhaseTasks(); };
+        ptMatrixBtn.onclick = ()=>{ ptView='matrix'; ptMatrixBtn.classList.add('active'); ptBoardBtn.classList.remove('active'); renderPhaseTaskMatrix(); };
         renderPhaseTasks();
         const saveBtn = byId('pt-save');
         if(saveBtn) saveBtn.onclick = ()=>{
@@ -1679,10 +1730,16 @@
             t.phaseIds=[];
             t.assignments = (t.assignments||[]).filter(a=> !projPropIds.includes(a.proposalId));
           });
-          ptBoard.querySelectorAll('[data-ph]').forEach(zone=>{
-            const phId=zone.dataset.ph;
-            zone.querySelectorAll('.pt-task').forEach(el=> assignTaskToPhase(el.dataset.tid, phId));
-          });
+          if(ptView==='board'){
+            ptBoard.querySelectorAll('[data-ph]').forEach(zone=>{
+              const phId=zone.dataset.ph;
+              zone.querySelectorAll('.pt-task').forEach(el=> assignTaskToPhase(el.dataset.tid, phId));
+            });
+          }else{
+            ptBoard.querySelectorAll('input[type="checkbox"][data-tid][data-ph]:checked').forEach(cb=>{
+              assignTaskToPhase(cb.dataset.tid, cb.dataset.ph);
+            });
+          }
           save(); toast('Phase tasks updated');
         };
       }
