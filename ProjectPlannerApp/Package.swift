@@ -5,7 +5,7 @@ let package = Package(
     name: "ProjectPlannerApp",
     platforms: [
         .macOS(.v13),
-        .iOS(.v16)
+        .iOS(.v16) // iPadOS uses the iOS SDK
     ],
     products: [
         .executable(name: "ProjectPlannerApp", targets: ["ProjectPlannerApp"])
