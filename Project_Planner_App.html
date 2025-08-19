@@ -47,8 +47,6 @@
     .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
-    .detail-grid{grid-template-columns: 1.4fr 420px}
-    @media (max-width: 1200px){ .detail-grid{grid-template-columns:1fr !important} }
     .pdf-sheet{width:1100px; margin:0 auto; padding:24px}
     .pdf-h1{font-size:24px; font-weight:700}
     .pdf-h2{font-size:20px; font-weight:700; margin-top:16px}
@@ -147,32 +145,47 @@
         </div>
       </div>
 
-      <div class="detail-grid d-grid" style="gap:1rem">
-        <div class="gantt-wrap">
-          <div class="gantt-toolbar p-2 d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-              <span class="small text-secondary">Zoom</span>
-              <button class="btn btn-sm btn-outline-secondary" id="zoomMinus">−</button>
-              <input type="range" id="zoomRange" min="6" max="44" step="2" value="18" style="width:240px">
-              <button class="btn btn-sm btn-outline-secondary" id="zoomPlus">+</button>
-              <button class="btn btn-sm btn-outline-secondary" id="zoomFit">Fit</button>
-            </div>
-            <div class="small text-secondary">Drag any bar to shift dates. Click a bar to view task breakdown.</div>
+      <div class="gantt-wrap mb-3">
+        <div class="gantt-toolbar p-2 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <span class="small text-secondary">Zoom</span>
+            <button class="btn btn-sm btn-outline-secondary" id="zoomMinus">−</button>
+            <input type="range" id="zoomRange" min="6" max="44" step="2" value="18" style="width:240px">
+            <button class="btn btn-sm btn-outline-secondary" id="zoomPlus">+</button>
+            <button class="btn btn-sm btn-outline-secondary" id="zoomFit">Fit</button>
           </div>
-          <div class="gantt" id="ganttScroll">
-            <div class="content" id="ganttContent"></div>
+          <div class="small text-secondary">Drag any bar to shift dates. Click a bar to view task breakdown.</div>
+        </div>
+        <div class="gantt" id="ganttScroll">
+          <div class="content" id="ganttContent"></div>
+        </div>
+      </div>
+
+      <div class="row row-cols-1 row-cols-lg-2 g-3">
+        <div class="col">
+          <div class="card h-100">
+            <div class="card-header">Effort breakdown (totals by phase)</div>
+            <div class="card-body">
+              <div class="small text-secondary mb-2" id="detail-span"></div>
+              <div class="table-responsive">
+                <table id="effTable" class="table table-sm table-bordered mb-0 align-middle">
+                  <thead class="table-dark"></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-header">Effort breakdown (totals by phase)</div>
-          <div class="card-body">
-            <div class="small text-secondary mb-2" id="detail-span"></div>
-            <div class="table-responsive">
-              <table id="effTable" class="table table-sm table-bordered mb-0 align-middle">
-                <thead class="table-dark"></thead>
-                <tbody></tbody>
-              </table>
+        <div class="col">
+          <div class="card h-100">
+            <div class="card-header">Team capacity &amp; structure</div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table id="teamTable" class="table table-sm table-bordered mb-0 align-middle">
+                  <thead class="table-dark"><tr><th>Role</th><th>Engineers</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -750,6 +763,13 @@
         const cells = effortTypes().map(k=>`<td>${(t[k]||0).toFixed(1)}</td>`).join('');
         tr.innerHTML = `<td>${getPhase(pid)?.name||pid}</td>${cells}`;
         tb.appendChild(tr);
+      });
+      const team = getTeam(p.teamId) || {sizes:{}};
+      const tbTeam = byId('teamTable').querySelector('tbody'); tbTeam.innerHTML = '';
+      effortTypes().forEach(k=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${team.sizes?.[k]||0}</td>`;
+        tbTeam.appendChild(tr);
       });
       const lf = byId('lane-filters');
       lf.innerHTML = effortTypes().map(t=>
