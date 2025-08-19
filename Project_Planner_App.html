@@ -353,6 +353,7 @@
               <div class="d-flex align-items-center gap-2 mb-2">
                 <label class="form-label mb-0">Project</label>
                 <select id="pt-proj" class="form-select" style="max-width:240px"></select>
+                <input id="pt-search" type="search" class="form-control" placeholder="Search tasks" style="max-width:260px">
                 <div class="btn-group" role="group">
                   <button id="pt-view-board" class="btn btn-outline-secondary btn-sm active"><i class="bi bi-kanban"></i></button>
                   <button id="pt-view-matrix" class="btn btn-outline-secondary btn-sm"><i class="bi bi-table"></i></button>
@@ -1573,6 +1574,7 @@
       const ptLegend = byId('phaseLegend');
       const ptBoardBtn = byId('pt-view-board');
       const ptMatrixBtn = byId('pt-view-matrix');
+      const ptSearch = byId('pt-search');
       let ptView = 'board';
       let dragEl = null; let dragSet = [];
       if(ptBoard){
@@ -1586,6 +1588,9 @@
             if(ph.color) span.style.backgroundColor = ph.color;
             ptLegend.appendChild(span);
           });
+        }
+        function debounce(fn, delay=200){
+          let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), delay); };
         }
         ptProjSel.innerHTML = (state.projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
         if(!ptProjSel.value && state.projects[0]) ptProjSel.value = state.projects[0].id;
@@ -1669,6 +1674,8 @@
         function renderPhaseTasks(){
           renderPhaseLegend();
           const pid = ptProjSel.value;
+          const q = (ptSearch?.value || '').toLowerCase();
+          const tasks = getTasksByProject(pid).filter(t => (t.title + ' ' + t.id).toLowerCase().includes(q));
           ptBoard.className='d-flex flex-wrap gap-3 align-items-stretch';
           ptBoard.innerHTML = '';
           const poolBox=document.createElement('div');
@@ -1676,7 +1683,7 @@
           poolBox.innerHTML='<div class="card-header d-flex align-items-center justify-content-between"><span>Tasks</span><button class="btn btn-sm btn-outline-secondary" id="pt-select-all">Select All</button></div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
           ptBoard.appendChild(poolBox);
           const pool=byId('pt-pool');
-          getTasksByProject(pid).forEach(t=>{ pool.appendChild(createTaskElem(t.id, t.title, true)); });
+          tasks.forEach(t=>{ pool.appendChild(createTaskElem(t.id, t.title, true)); });
           poolBox.querySelector('#pt-select-all').onclick=()=>{
             const tasks=Array.from(pool.querySelectorAll('.pt-task'));
             const allSel=tasks.every(el=> el.classList.contains('selected'));
@@ -1689,7 +1696,7 @@
             box.innerHTML=`<div class="card-header">${ph.name}</div><div class="card-body pt-drop vstack gap-1" data-ph="${ph.id}"></div>`;
             ptBoard.appendChild(box);
           });
-          getTasksByProject(pid).forEach(t=>{
+          tasks.forEach(t=>{
             getTaskPhaseIds(t).forEach(phId=>{
               const dest=ptBoard.querySelector(`[data-ph="${phId}"]`);
               if(dest) dest.appendChild(createTaskElem(t.id, t.title, false));
@@ -1701,6 +1708,7 @@
         function renderPhaseTaskMatrix(){
           renderPhaseLegend();
           const pid = ptProjSel.value;
+          const q = (ptSearch?.value || '').toLowerCase();
           ptBoard.className='table-responsive pt-matrix-wrapper';
           ptBoard.innerHTML='';
           const tbl=document.createElement('table');
@@ -1713,7 +1721,7 @@
           thead.appendChild(headRow);
           tbl.appendChild(thead);
           const tbody=document.createElement('tbody');
-          const tasks=getTasksByProject(pid);
+          const tasks=getTasksByProject(pid).filter(t => (t.title + ' ' + t.id).toLowerCase().includes(q));
           tasks.forEach(t=>{
             const tr=document.createElement('tr');
             const tdTitle=document.createElement('td');
@@ -1739,6 +1747,9 @@
         ptProjSel.onchange = ()=>{ ptView==='board'? renderPhaseTasks() : renderPhaseTaskMatrix(); };
         ptBoardBtn.onclick = ()=>{ ptView='board'; ptBoardBtn.classList.add('active'); ptMatrixBtn.classList.remove('active'); renderPhaseTasks(); };
         ptMatrixBtn.onclick = ()=>{ ptView='matrix'; ptMatrixBtn.classList.add('active'); ptBoardBtn.classList.remove('active'); renderPhaseTaskMatrix(); };
+        if(ptSearch){
+          ptSearch.addEventListener('input', debounce(()=>{ ptView==='board'? renderPhaseTasks() : renderPhaseTaskMatrix(); }, 200));
+        }
         renderPhaseTasks();
         const saveBtn = byId('pt-save');
         if(saveBtn) saveBtn.onclick = ()=>{
