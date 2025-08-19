@@ -13,6 +13,7 @@ export const state = {
   tasks: [],
   teams: [],
   phases: [],
+  sprints: [],
   meta: {
     startDate: new Date().toISOString().slice(0,10),
     efficiency: 1,
@@ -24,6 +25,7 @@ export function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) Object.assign(state, JSON.parse(raw));
+    if(!Array.isArray(state.sprints)) state.sprints = [];
     if(Array.isArray(state.meta?.effortTypes)){
       if(typeof state.meta.effortTypes[0] === 'string'){
         const oldList = state.meta.effortTypes;
@@ -54,6 +56,7 @@ export function save(){
 export function replaceState(newState){
   Object.keys(state).forEach(k => delete state[k]);
   Object.assign(state, newState);
+  if(!Array.isArray(state.sprints)) state.sprints = [];
 }
 
 export function getEffortTypes(){
@@ -86,6 +89,34 @@ export function removeEffortType(key){
   state.proposals.forEach(p=>{
     if(p.overrides) Object.values(p.overrides).forEach(o=>{ delete o[key]; });
   });
+}
+
+const iso = d => d.toISOString().slice(0,10);
+
+export function ensureSprints(){
+  state.sprints ||= [];
+  if(state.sprints.length) return;
+  const start = Date.UTC(2025,0,1);
+  const end = Date.UTC(2026,11,31);
+  const day = 24 * 60 * 60 * 1000;
+  const quarterCounts = {};
+  for(let t=start; t<=end; t+=14*day){
+    const sStart = new Date(t);
+    const sEnd = new Date(t + 13*day);
+    const year = sStart.getUTCFullYear();
+    const yearShort = String(year).slice(2);
+    const quarter = Math.floor(sStart.getUTCMonth()/3)+1;
+    const key = `${year}-Q${quarter}`;
+    const num = (quarterCounts[key]||0)+1; quarterCounts[key]=num;
+    const name = `EVBUXCORE-Y${yearShort}-Q${quarter}-S${num}`;
+    state.sprints.push({ id:`SPR-${iso(sStart)}`, name, start: iso(sStart), end: iso(sEnd) });
+  }
+  save();
+}
+
+export function resetSprints(){
+  state.sprints = [];
+  ensureSprints();
 }
 
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
