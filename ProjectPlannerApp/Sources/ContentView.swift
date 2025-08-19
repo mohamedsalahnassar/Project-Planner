@@ -9,8 +9,24 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var context
     @FetchRequest(entity: Project.entity(), sortDescriptors: []) var projects: FetchedResults<Project>
     @State private var newProjectName: String = ""
+    @State private var selectedProject: Project?
+#if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+#endif
 
     var body: some View {
+#if os(iOS)
+        if horizontalSizeClass == .regular {
+            splitView
+        } else {
+            stackView
+        }
+#else
+        splitView
+#endif
+    }
+
+    private var stackView: some View {
         NavigationStack {
             VStack(alignment: .leading) {
                 Text("Projects").font(.largeTitle)
@@ -34,6 +50,37 @@ struct ContentView: View {
                 }
             }
             .padding()
+        }
+    }
+
+    private var splitView: some View {
+        NavigationSplitView {
+            VStack(alignment: .leading) {
+                Text("Projects").font(.largeTitle)
+                List(selection: $selectedProject) {
+                    ForEach(projects) { project in
+                        Text(project.name).tag(project as Project?)
+                    }
+                    .onDelete(perform: deleteProjects)
+                }
+                HStack {
+                    TextField("New Project", text: $newProjectName)
+                    Button("Add") { addProject() }.disabled(newProjectName.isEmpty)
+                }
+                HStack {
+                    Button("Export JSON") { exportJSON() }
+                    Button("Import JSON") { importJSON() }
+                    Button("Export CSV") { exportCSV() }
+                    Button("Import CSV") { importCSV() }
+                }
+            }
+            .padding()
+        } detail: {
+            if let project = selectedProject {
+                ProjectDetailView(project: project)
+            } else {
+                Text("Select a project")
+            }
         }
     }
 
