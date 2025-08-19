@@ -29,11 +29,18 @@
     .ruler{position:sticky; top:0; height:60px; background:linear-gradient(180deg, var(--bs-body-bg), var(--bs-body-bg) 62%, transparent); margin-left:var(--label-pad); border-bottom:1px solid var(--bs-border-color); z-index:1}
     .tick{position:absolute; bottom:0; width:1px; height:12px; background:rgba(127,127,127,.35)}
     .tick.major{height:24px; background:rgba(127,127,127,.6)}
+    .tick.week{height:18px; background:rgba(127,127,127,.5)}
     .label{position:absolute; bottom:24px; transform:translateX(-50%); font-size:.75rem; color:var(--bs-secondary-color)}
+    .week-label{position:absolute; bottom:34px; transform:translateX(-50%); font-size:.7rem; color:var(--bs-secondary-color)}
     .month{position:absolute; bottom:44px; transform:translateX(-50%); font-weight:600; color:var(--bs-body-color); font-size:.8rem}
     .grid{position:absolute; left:0; right:0; top:60px; bottom:0; pointer-events:none}
     .gridline{position:absolute; top:0; bottom:0; width:1px; background:rgba(127,127,127,.15)}
+    .gridline.week{background:rgba(127,127,127,.22)}
     .gridline.major{background:rgba(127,127,127,.28)}
+    .sprint-line{position:absolute; top:60px; bottom:0; width:2px; background:rgba(220,53,69,.4); pointer-events:none}
+    .sprint-label{position:absolute; top:60px; transform:translateX(-50%); font-size:.75rem; color:rgba(220,53,69,.9); pointer-events:none}
+    .hover-line{position:absolute; top:60px; bottom:0; width:1px; background:rgba(255,255,255,.3); pointer-events:none; display:none}
+    .hover-label{position:absolute; top:0; transform:translateX(-50%); font-size:.75rem; color:var(--bs-body-color); background:var(--bs-body-bg); border:1px solid var(--bs-border-color); padding:1px 4px; border-radius:4px; pointer-events:none; display:none}
     .lane{position:relative; height:64px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
     .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
     .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
@@ -742,11 +749,11 @@
       byId('btn-export-plan-xlsx-basic').onclick = ()=> exportPlanExcel(p.id);
     }
     function dayTicks(pxPerDay){
-      if(pxPerDay >= 36) return { minor:1, labelEvery:2 };
-      if(pxPerDay >= 28) return { minor:2, labelEvery:4 };
-      if(pxPerDay >= 20) return { minor:3, labelEvery:6 };
-      if(pxPerDay >= 14) return { minor:7, labelEvery:14 };
-      return { minor:14, labelEvery:28 };
+      if(pxPerDay >= 36) return { labelEvery:1 };
+      if(pxPerDay >= 28) return { labelEvery:2 };
+      if(pxPerDay >= 20) return { labelEvery:3 };
+      if(pxPerDay >= 14) return { labelEvery:7 };
+      return { labelEvery:14 };
     }
     function drawGantt(p, sched){
       const container = byId('ganttContent');
@@ -788,11 +795,12 @@
       scroll.addEventListener('mousemove', e=>{ if(!isDown) return; e.preventDefault(); const x=e.pageX - scroll.offsetLeft; const walk=(x-startX)*1.2; scroll.scrollLeft = scrollLeft - walk; });
     }
     function drawRulerAndGrid(scroll, chartStart, totalDays, pxPerDay, contentHeight, phaseWindows){
-      scroll.querySelectorAll('.ruler,.grid,.phase-tag').forEach(n=> n.remove());
+      scroll.querySelectorAll('.ruler,.grid,.phase-tag,.sprint-line,.sprint-label,.hover-line,.hover-label').forEach(n=> n.remove());
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
       const ruler = document.createElement('div'); ruler.className='ruler'; ruler.style.width = (totalDays*pxPerDay + labelPad) + 'px'; scroll.appendChild(ruler);
-      const {minor, labelEvery} = dayTicks(pxPerDay);
-      for(let d=0; d<=totalDays; d+=minor){
+      const chartEndDate = new Date(chartStart.getTime()+totalDays*dayMs);
+      const {labelEvery} = dayTicks(pxPerDay);
+      for(let d=0; d<=totalDays; d++){
         const x = labelPad + d*pxPerDay;
         const tick = document.createElement('div'); tick.className='tick'; tick.style.left = x+'px'; ruler.appendChild(tick);
         if(d % labelEvery === 0){
@@ -803,17 +811,32 @@
       }
       const firstMonth = new Date(chartStart); firstMonth.setDate(1);
       let m = new Date(firstMonth); if(m < chartStart) m.setMonth(m.getMonth()+1);
-      while(m <= new Date(chartStart.getTime()+totalDays*dayMs)){
+      while(m <= chartEndDate){
         const d = Math.floor((m-chartStart)/dayMs); const x = labelPad + d*pxPerDay;
         const tm = document.createElement('div'); tm.className='tick major'; tm.style.left = x+'px'; ruler.appendChild(tm);
         const ml = document.createElement('div'); ml.className='month'; ml.style.left = x+'px'; ml.textContent = m.toLocaleDateString('en-GB', { month:'short', year:'2-digit' }); ruler.appendChild(ml);
         m.setMonth(m.getMonth()+1);
       }
+      let w = new Date(chartStart);
+      w.setDate(w.getDate() - ((w.getDay()+6)%7));
+      if(w < chartStart) w.setDate(w.getDate()+7);
+      function weekNumber(dt){
+        const d = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        return Math.ceil((((d - yearStart) / dayMs) + 1) / 7);
+      }
+      while(w <= chartEndDate){
+        const d = Math.floor((w-chartStart)/dayMs); const x = labelPad + d*pxPerDay;
+        const tw = document.createElement('div'); tw.className='tick week'; tw.style.left = x+'px'; ruler.appendChild(tw);
+        const wl = document.createElement('div'); wl.className='week-label'; wl.style.left = x+'px'; wl.textContent = 'W'+weekNumber(w); ruler.appendChild(wl);
+        w.setDate(w.getDate()+7);
+      }
       const grid = document.createElement('div'); grid.className='grid'; grid.style.width = (totalDays*pxPerDay + labelPad) + 'px'; grid.style.height = (contentHeight - 60) + 'px'; scroll.appendChild(grid);
-      const {minor:gn} = dayTicks(pxPerDay);
-      for(let d=0; d<=totalDays; d+=gn){ const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline'; gl.style.left = x+'px'; grid.appendChild(gl); }
+      for(let d=0; d<=totalDays; d++){ const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline'; if(d%7===0) gl.classList.add('week'); gl.style.left = x+'px'; grid.appendChild(gl); }
       m = new Date(firstMonth); if(m < chartStart) m.setMonth(m.getMonth()+1);
-      while(m <= new Date(chartStart.getTime()+totalDays*dayMs)){ const d = Math.floor((m-chartStart)/dayMs); const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl); m.setMonth(m.getMonth()+1); }
+      while(m <= chartEndDate){ const d = Math.floor((m-chartStart)/dayMs); const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl); m.setMonth(m.getMonth()+1); }
       phaseWindows.forEach(w=>{
         const d0 = Math.floor((w.start - chartStart)/dayMs);
         const d1 = Math.floor((w.end - chartStart)/dayMs);
@@ -822,6 +845,32 @@
         const tag = document.createElement('div'); tag.className='phase-tag'; tag.style.left = x+'px'; tag.style.width = wpx+'px'; tag.textContent = w.ph;
         scroll.appendChild(tag);
       });
+      let sprintStart = new Date('2025-08-13');
+      let sprintIdx = 1;
+      while(sprintStart <= chartEndDate){
+        const d = Math.floor((sprintStart - chartStart)/dayMs);
+        const x = labelPad + d*pxPerDay;
+        const sl = document.createElement('div'); sl.className='sprint-line'; sl.style.left = x+'px'; scroll.appendChild(sl);
+        const lbl = document.createElement('div'); lbl.className='sprint-label'; lbl.style.left = x+'px'; lbl.textContent = `Sprint ${sprintIdx}`; scroll.appendChild(lbl);
+        sprintStart.setDate(sprintStart.getDate()+14); sprintIdx++;
+      }
+      const hoverLine = document.createElement('div'); hoverLine.className='hover-line'; scroll.appendChild(hoverLine);
+      const hoverLabel = document.createElement('div'); hoverLabel.className='hover-label'; ruler.appendChild(hoverLabel);
+      function handleHover(e){
+        const rect = scroll.getBoundingClientRect();
+        const x = e.clientX - rect.left + scroll.scrollLeft;
+        if(x < labelPad || x > labelPad + totalDays*pxPerDay){ hoverLine.style.display='none'; hoverLabel.style.display='none'; return; }
+        hoverLine.style.display='block'; hoverLabel.style.display='block';
+        hoverLine.style.left = x+'px'; hoverLabel.style.left = x+'px';
+        const d = Math.round((x - labelPad)/pxPerDay);
+        const dt = new Date(chartStart.getTime() + d*dayMs);
+        hoverLabel.textContent = dt.toLocaleDateString('en-GB',{day:'2-digit', month:'short', year:'numeric'});
+      }
+      function hideHover(){ hoverLine.style.display='none'; hoverLabel.style.display='none'; }
+      if(scroll._hoverHandler){ scroll.removeEventListener('mousemove', scroll._hoverHandler); scroll.removeEventListener('mouseleave', scroll._hoverLeave); }
+      scroll._hoverHandler = handleHover; scroll._hoverLeave = hideHover;
+      scroll.addEventListener('mousemove', handleHover);
+      scroll.addEventListener('mouseleave', hideHover);
     }
     function makeDraggableBar(bar, plan, sched, daysLen){
       let startX=0, origLeft=0, dragging=false;
