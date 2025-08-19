@@ -113,6 +113,11 @@ export function ensureSprints(){
   save();
 }
 
+export function resetSprints(){
+  state.sprints = [];
+  ensureSprints();
+}
+
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
 export function getPhase(phaseId){ return state.phases.find(p => p.id === phaseId); }
 export function getProject(projectId){ return state.projects.find(p => p.id === projectId); }

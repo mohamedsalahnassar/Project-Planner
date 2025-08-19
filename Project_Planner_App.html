@@ -302,7 +302,10 @@
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
                   <input id="search-sprints" class="form-control" placeholder="Search sprints">
                 </div>
-                <button class="btn btn-primary" id="btn-add-sprint"><i class="bi bi-plus-lg"></i> Add Sprint</button>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-danger" id="btn-reset-sprints"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                  <button class="btn btn-primary" id="btn-add-sprint"><i class="bi bi-plus-lg"></i> Add Sprint</button>
+                </div>
               </div>
               <div class="table-responsive">
                 <table class="table table-hover align-middle" id="tbl-sprints">
@@ -495,7 +498,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints } from './data.js';
       load();
       ensureSprints();
     /* ===================== APP CODE (v20) ===================== */
@@ -1523,6 +1526,7 @@
       byId('btn-add-plan').onclick = ()=> openEditor('plan', null);
       byId('btn-add-phase').onclick = ()=> openEditor('phase', null);
       byId('btn-add-team').onclick = ()=> openEditor('team', null);
+      byId('btn-reset-sprints').onclick = ()=>{ if(confirm('Reset all sprints?')){ resetSprints(); refreshManage(); buildProjects(); } };
       byId('btn-add-sprint').onclick = ()=> openEditor('sprint', null);
       byId('btn-add-task').onclick = ()=> openEditor('task', null);
       byId('btn-add-effort-type').onclick = ()=> openEditor('effortType', null);
