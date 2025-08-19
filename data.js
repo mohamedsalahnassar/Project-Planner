@@ -59,6 +59,16 @@ export function replaceState(newState){
   if(!Array.isArray(state.sprints)) state.sprints = [];
 }
 
+export function mergeState(newData){
+  if(Array.isArray(newData.projects)) newData.projects.forEach(p=> state.projects.push(p));
+  if(Array.isArray(newData.proposals)) newData.proposals.forEach(p=> state.proposals.push(p));
+  if(Array.isArray(newData.tasks)) newData.tasks.forEach(t=> state.tasks.push(t));
+  if(Array.isArray(newData.teams)) newData.teams.forEach(t=> state.teams.push(t));
+  if(Array.isArray(newData.phases)) newData.phases.forEach(ph=> state.phases.push(ph));
+  if(Array.isArray(newData.sprints)) newData.sprints.forEach(s=> state.sprints.push(s));
+  if(newData.meta) Object.assign(state.meta, newData.meta);
+}
+
 export function getEffortTypes(){
   return state.meta.effortTypes || [];
 }
