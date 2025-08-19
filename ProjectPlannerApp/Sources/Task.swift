@@ -2,15 +2,19 @@ import CoreData
 
 @objc(Task)
 @MainActor
-public class Task: NSManagedObject, Identifiable {
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<Task> {
+public class Task: NSManagedObject {
+}
+
+@MainActor
+public extension Task: Identifiable {
+    @nonobjc class func fetchRequest() -> NSFetchRequest<Task> {
         NSFetchRequest<Task>(entityName: "Task")
     }
 
-    @NSManaged public var id: UUID
-    @NSManaged public var name: String
-    @NSManaged public var startDate: Date?
-    @NSManaged public var project: Project?
-    @NSManaged public var phases: Set<Phase>?
-    @NSManaged public var efforts: Set<TaskEffort>?
+    @NSManaged var id: UUID
+    @NSManaged var name: String
+    @NSManaged var startDate: Date?
+    @NSManaged var project: Project?
+    @NSManaged var phases: Set<Phase>?
+    @NSManaged var efforts: Set<TaskEffort>?
 }
