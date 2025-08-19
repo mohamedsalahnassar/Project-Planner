@@ -1614,7 +1614,6 @@
             const x=document.createElement('span');
             x.className='pt-remove text-danger ms-auto';
             x.innerHTML='&times;';
-            x.onclick=e=>{ e.stopPropagation(); div.remove(); };
             div.appendChild(x);
           }
           div.addEventListener('dragstart',()=>{
@@ -1648,6 +1647,22 @@
             });
           });
         }
+        function updateCounts(){
+          ptBoard.querySelectorAll('.pt-drop').forEach(zone=>{
+            const header=zone.closest('.card').querySelector('.pt-header');
+            if(!header) return;
+            const title=header.dataset.title||'';
+            let count;
+            if(zone.id==='pt-pool'){
+              count=Array.from(zone.querySelectorAll('.pt-task')).filter(t=>{
+                return !ptBoard.querySelector(`[data-ph] [data-tid="${t.dataset.tid}"]`);
+              }).length;
+            }else{
+              count=zone.querySelectorAll('.pt-task').length;
+            }
+            header.innerHTML=`${title} (<span class="badge bg-secondary">${count}</span>)`;
+          });
+        }
         function initDropZone(zone){
           zone.addEventListener('dragover',e=>e.preventDefault());
           zone.addEventListener('drop',e=>{
@@ -1669,6 +1684,16 @@
             }
             dragSet=[]; dragEl=null;
             updatePoolTags();
+            updateCounts();
+          });
+          zone.addEventListener('click',e=>{
+            if(e.target.classList.contains('pt-remove')){
+              e.stopPropagation();
+              const task=e.target.closest('.pt-task');
+              task.remove();
+              updatePoolTags();
+              updateCounts();
+            }
           });
         }
         function renderPhaseTasks(){
@@ -1680,7 +1705,7 @@
           ptBoard.innerHTML = '';
           const poolBox=document.createElement('div');
           poolBox.className='pt-box pt-pool-box card shadow-sm';
-          poolBox.innerHTML='<div class="card-header d-flex align-items-center justify-content-between"><span>Tasks</span><button class="btn btn-sm btn-outline-secondary" id="pt-select-all">Select All</button></div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
+          poolBox.innerHTML='<div class="card-header d-flex align-items-center justify-content-between"><span class="pt-header" data-title="Tasks">Tasks (<span class="badge bg-secondary">0</span>)</span><button class="btn btn-sm btn-outline-secondary" id="pt-select-all">Select All</button></div><div class="card-body pt-drop vstack gap-1" id="pt-pool"></div>';
           ptBoard.appendChild(poolBox);
           const pool=byId('pt-pool');
           tasks.forEach(t=>{ pool.appendChild(createTaskElem(t.id, t.title, true)); });
@@ -1693,7 +1718,7 @@
           state.phases.forEach(ph=>{
             const box=document.createElement('div');
             box.className='pt-box card shadow-sm';
-            box.innerHTML=`<div class="card-header">${ph.name}</div><div class="card-body pt-drop vstack gap-1" data-ph="${ph.id}"></div>`;
+            box.innerHTML=`<div class="card-header"><span class="pt-header" data-title="${ph.name}">${ph.name} (<span class="badge bg-secondary">0</span>)</span></div><div class="card-body pt-drop vstack gap-1" data-ph="${ph.id}"></div>`;
             ptBoard.appendChild(box);
           });
           tasks.forEach(t=>{
@@ -1703,6 +1728,7 @@
             });
           });
           ptBoard.querySelectorAll('.pt-drop').forEach(initDropZone);
+          updateCounts();
           updatePoolTags();
         }
         function renderPhaseTaskMatrix(){
