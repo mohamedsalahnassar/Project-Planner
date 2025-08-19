@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject } from '../data.js';
+import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject, mergeState } from '../data.js';
 
 test('replaceState swaps state object contents', () => {
   const initial = {
@@ -121,4 +121,12 @@ test('getTasksByPhase uses assignments when phaseIds missing', () => {
   const res = getTasksByPhase('p','ph');
   assert.equal(res.length,1);
   assert.equal(res[0].id,'t');
+});
+
+test('mergeState appends projects without removing existing', () => {
+  replaceState({ projects:[{id:'a'}], proposals:[], tasks:[], teams:[], phases:[], sprints:[], meta:{} });
+  mergeState({ projects:[{id:'b'}], proposals:[], tasks:[], teams:[], phases:[], sprints:[], meta:{} });
+  assert.equal(state.projects.length,2);
+  assert.ok(state.projects.find(p=>p.id==='a'));
+  assert.ok(state.projects.find(p=>p.id==='b'));
 });

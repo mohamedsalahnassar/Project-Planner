@@ -519,7 +519,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints } from './data.js';
       load();
       ensureSprints();
     /* ===================== APP CODE (v20) ===================== */
@@ -682,12 +682,19 @@
       byId('plansLayer').style.display='none';
       byId('detail').style.display='none';
       state.projects.forEach(pr=>{
+        const plans = state.proposals.filter(p=>p.projectId===pr.id);
+        const details = plans.map(pl=>{
+          const aggr = aggregate(pl, state.tasks, getTeam);
+          const sched = computeSchedule(pl, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+          return `<li>${pl.title}: ${fmt(sched.chartStart)} → ${fmt(sched.chartEnd)}</li>`;
+        }).join('');
         const col = document.createElement('div'); col.className='col-12 col-md-6 col-xl-4';
         col.innerHTML = `<div class="card card-hover h-100"><div class="card-body d-flex flex-column gap-2">
           <h5 class="card-title mb-0">${pr.name}</h5>
           <div class="text-secondary small">${pr.description||''}</div>
+          ${details ? `<ul class="small mb-0 ps-3">${details}</ul>` : ''}
           <div class="d-flex justify-content-between align-items-center mt-2">
-            <div class="small text-secondary">Plans: <b>${state.proposals.filter(p=>p.projectId===pr.id).length}</b></div>
+            <div class="small text-secondary">Plans: <b>${plans.length}</b></div>
             <button class="btn btn-outline-primary btn-sm">Open</button>
           </div>
         </div></div>`;
@@ -722,7 +729,7 @@
       const seg = Object.fromEntries(keys.map(k=>[k, Math.max(2, Math.round(260*(totals[k]/sumEff)))]));
       const startStr = fmt(sched.chartStart), endStr = fmt(sched.chartEnd);
       const phases = p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ');
-      const col = document.createElement('div'); col.className='col-12 col-md-6 col-xl-4';
+      const col = document.createElement('div'); col.className='col-12 col-md-6';
       col.innerHTML = `<div class="card card-hover h-100" data-plan="${p.id}"><div class="card-body d-flex flex-column gap-2">
         <div class="d-flex justify-content-between align-items-start gap-2">
           <div><h5 class="card-title mb-0">${p.title}</h5><div class="text-secondary small">${p.description||''}</div></div>
@@ -2007,8 +2014,30 @@
       const blob = new Blob([data], {type:'application/json'});
       const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='project_planner_v20.json'; a.click(); URL.revokeObjectURL(url);
     };
-      byId('file-import').onchange = (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const obj=JSON.parse(r.result); if(obj.phaseIds){ state.proposals.push(importPlanJSON(r.result)); } else { replaceState(obj); } save(); applyTheme(state.meta.theme||"Dark"); document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
-        buildProjects(); }catch(err){ alert('Invalid JSON: '+err); } }; r.readAsText(f); };
+      byId('file-import').onchange = (e)=>{
+        const f = e.target.files[0]; if(!f) return;
+        const r = new FileReader();
+        r.onload = ()=>{
+          try{
+            const obj = JSON.parse(r.result);
+            if(obj.phaseIds){
+              state.proposals.push(importPlanJSON(r.result));
+            }else if(obj.projects){
+              mergeState(obj);
+            }else{
+              replaceState(obj);
+            }
+            save();
+            applyTheme(state.meta.theme||"Dark");
+            document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr');
+            try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
+            buildProjects();
+          }catch(err){
+            alert('Invalid JSON: '+err);
+          }
+        };
+        r.readAsText(f);
+      };
       byId('btn-reset').onclick = ()=>{ if(confirm('Reset to defaults?')){ replaceState(structuredClone(DEFAULT_DATA)); save(); applyTheme(state.meta.theme||"Dark"); document.documentElement.setAttribute('dir', state.meta.rtl ? 'rtl' : 'ltr'); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
         buildProjects(); } };
     byId('themeSelect').onchange = (e)=>{ state.meta.theme = e.target.value; applyTheme(state.meta.theme); save(); };
