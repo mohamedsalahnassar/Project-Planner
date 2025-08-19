@@ -96,18 +96,18 @@ const iso = d => d.toISOString().slice(0,10);
 export function ensureSprints(){
   state.sprints ||= [];
   if(state.sprints.length) return;
-  const baseYear = new Date().getFullYear();
-  const start = new Date(baseYear,0,1);
-  const end = new Date(baseYear+1,11,31);
+  const start = new Date(2025,0,1);
+  const end = new Date(2026,11,31);
   const quarterCounts = {};
   for(let d=new Date(start); d<=end; d.setDate(d.getDate()+14)){
     const sStart = new Date(d);
     const sEnd = new Date(d); sEnd.setDate(sEnd.getDate()+13);
     const year = sStart.getFullYear();
+    const yearShort = String(year).slice(2);
     const quarter = Math.floor(sStart.getMonth()/3)+1;
     const key = `${year}-Q${quarter}`;
     const num = (quarterCounts[key]||0)+1; quarterCounts[key]=num;
-    const name = `EVBUXCore-Q${quarter}-S${num}`;
+    const name = `EVBUXCORE-Y${yearShort}-Q${quarter}-S${num}`;
     state.sprints.push({ id:`SPR-${iso(sStart)}`, name, start: iso(sStart), end: iso(sEnd) });
   }
   save();
