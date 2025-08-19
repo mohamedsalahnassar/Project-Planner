@@ -2,17 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "ProjectPlannerMac",
+    name: "ProjectPlannerApp",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v13),
+        .iOS(.v16) // iPadOS uses the iOS SDK
     ],
     products: [
-        .executable(name: "ProjectPlannerMac", targets: ["ProjectPlannerMac"])
+        .executable(name: "ProjectPlannerApp", targets: ["ProjectPlannerApp"])
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "ProjectPlannerMac",
+            name: "ProjectPlannerApp",
             path: "Sources"
         )
     ]

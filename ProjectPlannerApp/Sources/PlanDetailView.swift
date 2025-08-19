@@ -59,6 +59,10 @@ struct PlanDetailView: View {
         if panel.runModal() == .OK, let url = panel.url {
             try? exportSchedule(schedule: schedule, to: url)
         }
+        #else
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("schedule.csv")
+        try? exportSchedule(schedule: schedule, to: url)
         #endif
     }
 }

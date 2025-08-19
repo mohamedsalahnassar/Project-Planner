@@ -3,7 +3,7 @@ import CoreData
 
 @main
 @MainActor
-struct ProjectPlannerMacApp: App {
+struct ProjectPlannerApp: App {
     let persistenceController = PersistenceController.shared
 
     var body: some Scene {
