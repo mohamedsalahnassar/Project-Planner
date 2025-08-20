@@ -5,7 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder",
+    "dist": "electron-builder --mac --win",
     "test": "node --test"
   },
   "build": {
@@ -14,7 +14,12 @@
       "Project_Planner_App.html",
       "assets/**/*",
       "electron/**/*"
-    ]
+    ],
+    "mac": {},
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {}
   },
   "devDependencies": {
     "electron": "^29.0.0",

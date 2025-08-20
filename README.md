@@ -23,10 +23,12 @@ npm test
 ```
 
 ## Build distributable installers
-Generate platform-specific packages in the `dist/` folder:
+Generate macOS and Windows packages in the `dist/` folder:
 ```bash
 npm run dist
 ```
+Electron Builder will create `.dmg` and `.exe` installers. Building Windows installers on non-Windows systems requires
+[Wine](https://www.winehq.org/) to be available on your machine.
 
 ## Directory structure
 - `Project_Planner_App.html` – Main HTML entry
