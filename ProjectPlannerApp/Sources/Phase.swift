@@ -5,13 +5,12 @@ import CoreData
 public class Phase: NSManagedObject {
 }
 
-@MainActor
-public extension Phase: Identifiable {
+extension Phase: @MainActor Identifiable {
     @nonobjc class func fetchRequest() -> NSFetchRequest<Phase> {
         NSFetchRequest<Phase>(entityName: "Phase")
     }
 
-    @NSManaged var id: UUID
+    @NSManaged public var id: UUID
     @NSManaged var name: String
     @NSManaged var order: Int16
     @NSManaged var project: Project?

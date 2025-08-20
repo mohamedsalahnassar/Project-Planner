@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject, mergeState } from '../data.js';
+import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject, mergeState, ensureSprints } from '../data.js';
+
+globalThis.localStorage = {
+  getItem(){ return null; },
+  setItem(){},
+};
 
 test('replaceState swaps state object contents', () => {
   const initial = {
@@ -129,4 +134,33 @@ test('mergeState appends projects without removing existing', () => {
   assert.equal(state.projects.length,2);
   assert.ok(state.projects.find(p=>p.id==='a'));
   assert.ok(state.projects.find(p=>p.id==='b'));
+});
+
+test('ensureSprints defaults to current year and +2', () => {
+  replaceState({ projects:[], proposals:[], tasks:[], teams:[], phases:[], sprints:[], meta:{} });
+  ensureSprints();
+  assert.ok(state.sprints.length > 0);
+  const firstYear = new Date(state.sprints[0].start).getUTCFullYear();
+  const lastYear = new Date(state.sprints[state.sprints.length - 1].start).getUTCFullYear();
+  const nowYear = new Date().getUTCFullYear();
+  assert.equal(firstYear, nowYear);
+  assert.equal(lastYear, nowYear + 2);
+});
+
+test('ensureSprints uses provided start and end years', () => {
+  replaceState({ projects:[], proposals:[], tasks:[], teams:[], phases:[], sprints:[], meta:{} });
+  ensureSprints(2020, 2021);
+  assert.ok(state.sprints.length > 0);
+  const firstYear = new Date(state.sprints[0].start).getUTCFullYear();
+  const lastYear = new Date(state.sprints[state.sprints.length - 1].start).getUTCFullYear();
+  assert.equal(firstYear, 2020);
+  assert.equal(lastYear, 2021);
+});
+
+test('ensureSprints accepts custom start date', () => {
+  replaceState({ projects:[], proposals:[], tasks:[], teams:[], phases:[], sprints:[], meta:{} });
+  ensureSprints('2024-03-04');
+  assert.equal(state.sprints[0].start, '2024-03-04');
+  const lastYear = new Date(state.sprints[state.sprints.length - 1].start).getUTCFullYear();
+  assert.equal(lastYear, 2026);
 });
