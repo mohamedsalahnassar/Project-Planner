@@ -26,27 +26,28 @@
     .gantt{position:relative; height:540px; overflow:auto; cursor:grab}
     .gantt:active{cursor:grabbing}
     .gantt .content{position:relative}
-    .ruler{position:sticky; top:0; height:60px; background:linear-gradient(180deg, var(--bs-body-bg), var(--bs-body-bg) 62%, transparent); margin-left:var(--label-pad); border-bottom:1px solid var(--bs-border-color); z-index:1}
+    .ruler{position:sticky; top:0; height:80px; background:linear-gradient(180deg, var(--bs-body-bg), var(--bs-body-bg) 62%, transparent); margin-left:var(--label-pad); border-bottom:1px solid var(--bs-border-color); z-index:1}
     .tick{position:absolute; bottom:0; width:1px; height:12px; background:rgba(127,127,127,.35)}
     .tick.major{height:24px; background:rgba(127,127,127,.6)}
     .tick.week{height:18px; background:rgba(127,127,127,.5)}
-    .label{position:absolute; bottom:24px; transform:translateX(-50%); font-size:.75rem; color:var(--bs-secondary-color); white-space:nowrap}
+    .label{position:absolute; bottom:44px; transform:translateX(-50%); font-size:.75rem; color:var(--bs-secondary-color); white-space:nowrap}
     .ruler.dense .label{transform:translateX(-50%) rotate(-90deg); transform-origin:bottom left}
     .ruler.hide-labels .label{display:none}
-    .week-label{position:absolute; bottom:34px; transform:translateX(-50%); font-size:.7rem; color:var(--bs-secondary-color)}
-    .month{position:absolute; bottom:44px; transform:translateX(-50%); font-weight:600; color:var(--bs-body-color); font-size:.8rem}
-    .grid{position:absolute; left:0; right:0; top:60px; bottom:0; pointer-events:none}
+    .week-label{position:absolute; bottom:54px; transform:translateX(-50%); font-size:.7rem; color:var(--bs-secondary-color)}
+    .month-section{position:absolute; bottom:20px; font-weight:600; color:var(--bs-body-color); font-size:.8rem; text-align:center}
+    .year-section{position:absolute; bottom:0; font-weight:600; color:var(--bs-body-color); font-size:.8rem; text-align:center}
+    .grid{position:absolute; left:0; right:0; top:80px; bottom:0; pointer-events:none}
     .gridline{position:absolute; top:0; bottom:0; width:1px; background:rgba(127,127,127,.15)}
     .gridline.week{background:rgba(127,127,127,.22)}
     .gridline.major{background:rgba(127,127,127,.28)}
-    .sprint-line{position:absolute; top:60px; bottom:0; width:2px; background:rgba(220,53,69,.6); pointer-events:none}
-    .sprint-label{position:absolute; top:60px; transform:translate(-50%,-100%); font-size:.75rem; color:#fff; background:rgba(220,53,69,.6); padding:1px 4px; border-radius:4px; pointer-events:none}
-    .hover-line{position:absolute; top:60px; bottom:0; width:1px; background:rgba(255,255,255,.3); pointer-events:none; display:none}
+    .sprint-line{position:absolute; top:80px; bottom:0; width:2px; background:rgba(220,53,69,.6); pointer-events:none}
+    .sprint-label{position:absolute; top:80px; transform:translate(-50%,-100%); font-size:.75rem; color:#fff; background:rgba(220,53,69,.6); padding:1px 4px; border-radius:4px; pointer-events:none}
+    .hover-line{position:absolute; top:80px; bottom:0; width:1px; background:rgba(255,255,255,.3); pointer-events:none; display:none}
     .hover-label{position:absolute; top:0; transform:translateX(-50%); font-size:.75rem; color:var(--bs-body-color); background:var(--bs-body-bg); border:1px solid var(--bs-border-color); padding:1px 4px; border-radius:4px; pointer-events:none; display:none}
     .lane{position:relative; height:64px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
     .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
     .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
-    .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
+    .phase-tag{position:absolute; top:86px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
     .phase-badge{background:var(--bs-secondary);color:#fff}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
@@ -858,6 +859,7 @@
       if(pxPerDay < 8) ruler.classList.add('hide-labels');
       scroll.appendChild(ruler);
       const chartEndDate = new Date(chartStart.getTime()+totalDays*dayMs);
+      const firstMonth = new Date(chartStart); firstMonth.setDate(1);
       for(let d=0; d<=totalDays; d++){
         const x = labelPad + d*pxPerDay;
         const tick = document.createElement('div'); tick.className='tick'; tick.style.left = x+'px'; ruler.appendChild(tick);
@@ -865,13 +867,34 @@
         const dt = new Date(chartStart.getTime() + d*dayMs); label.textContent = dt.getDate();
         ruler.appendChild(label);
       }
-      const firstMonth = new Date(chartStart); firstMonth.setDate(1);
-      let m = new Date(firstMonth); if(m < chartStart) m.setMonth(m.getMonth()+1);
-      while(m <= chartEndDate){
-        const d = Math.floor((m-chartStart)/dayMs); const x = labelPad + d*pxPerDay;
-        const tm = document.createElement('div'); tm.className='tick major'; tm.style.left = x+'px'; ruler.appendChild(tm);
-        const ml = document.createElement('div'); ml.className='month'; ml.style.left = x+'px'; ml.textContent = m.toLocaleDateString('en-GB', { month:'short', year:'2-digit' }); ruler.appendChild(ml);
-        m.setMonth(m.getMonth()+1);
+      let msd = new Date(chartStart);
+      while(msd <= chartEndDate){
+        const nextMonth = new Date(msd.getFullYear(), msd.getMonth()+1, 1);
+        const startDay = Math.floor((msd - chartStart)/dayMs);
+        const endDay = Math.min(totalDays, Math.floor((nextMonth - chartStart)/dayMs) - 1);
+        const left = labelPad + startDay*pxPerDay;
+        const width = (endDay - startDay + 1)*pxPerDay;
+        if(startDay > 0){
+          const tm = document.createElement('div'); tm.className='tick major'; tm.style.left = left+'px'; ruler.appendChild(tm);
+        }
+        const ms = document.createElement('div'); ms.className='month-section'; ms.style.left = left+'px'; ms.style.width = width+'px';
+        ms.textContent = msd.toLocaleDateString('en-GB', { month:'long' });
+        ruler.appendChild(ms);
+        msd = nextMonth;
+      }
+      let yd = new Date(chartStart);
+      yd.setMonth(0,1);
+      if(yd < chartStart) yd.setFullYear(yd.getFullYear()+1);
+      while(yd <= chartEndDate){
+        const nextYear = new Date(yd.getFullYear()+1, 0, 1);
+        const startDay = Math.floor((yd - chartStart)/dayMs);
+        const endDay = Math.min(totalDays, Math.floor((nextYear - chartStart)/dayMs) - 1);
+        const left = labelPad + startDay*pxPerDay;
+        const width = (endDay - startDay + 1)*pxPerDay;
+        const ys = document.createElement('div'); ys.className='year-section'; ys.style.left = left+'px'; ys.style.width = width+'px';
+        ys.textContent = yd.getFullYear();
+        ruler.appendChild(ys);
+        yd = nextYear;
       }
       let w = new Date(chartStart);
       w.setDate(w.getDate() - ((w.getDay()+6)%7));
@@ -889,7 +912,7 @@
         const wl = document.createElement('div'); wl.className='week-label'; wl.style.left = x+'px'; wl.textContent = 'W'+weekNumber(w); ruler.appendChild(wl);
         w.setDate(w.getDate()+7);
       }
-      const grid = document.createElement('div'); grid.className='grid'; grid.style.width = (totalDays*pxPerDay + labelPad) + 'px'; grid.style.height = (contentHeight - 60) + 'px'; scroll.appendChild(grid);
+      const grid = document.createElement('div'); grid.className='grid'; grid.style.width = (totalDays*pxPerDay + labelPad) + 'px'; grid.style.height = (contentHeight - 80) + 'px'; scroll.appendChild(grid);
       for(let d=0; d<=totalDays; d++){ const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline'; if(d%7===0) gl.classList.add('week'); gl.style.left = x+'px'; grid.appendChild(gl); }
       m = new Date(firstMonth); if(m < chartStart) m.setMonth(m.getMonth()+1);
       while(m <= chartEndDate){ const d = Math.floor((m-chartStart)/dayMs); const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl); m.setMonth(m.getMonth()+1); }
