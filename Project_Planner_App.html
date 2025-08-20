@@ -522,7 +522,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints, defaultPlanLanes } from './data.js';
       load();
       ensureSprints();
     /* ===================== APP CODE (v20) ===================== */
@@ -724,7 +724,7 @@
       const aggr = aggregate(p, state.tasks, getTeam);
       const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
       const keys = effortTypes();
-      sched.lanes.forEach(l=>{ l.name = effortTypeTitle(l.key); });
+      sched.lanes.forEach(l=>{ if(!l.name) l.name = effortTypeTitle(l.key); if(!l.color) l.color = effortTypeColor(l.key); });
       const totals = Object.fromEntries(keys.map(k=>[k,0]));
       Object.values(aggr.phaseTotals).forEach(pt=>{ keys.forEach(k=>{ totals[k]+=(pt[k]||0); }); });
       keys.forEach(k=> totals[k] = +totals[k].toFixed(1));
@@ -790,8 +790,8 @@
         tbTeam.appendChild(tr);
       });
       const lf = byId('lane-filters');
-      lf.innerHTML = effortTypes().map(t=>
-        `<div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="${t}" id="chk${t}"><label class="form-check-label" for="chk${t}"><span class="badge-lane"><span class="dot" style="background:${effortTypeColor(t)}"></span>${effortTypeTitle(t)}</span></label></div>`
+      lf.innerHTML = (p.lanes||[]).map(l=>
+        `<div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="${l.key}" id="chk${l.key}"><label class="form-check-label" for="chk${l.key}"><span class="badge-lane"><span class="dot" style="background:${l.color||effortTypeColor(l.key)}"></span>${l.name||effortTypeTitle(l.key)}</span></label></div>`
       ).join('');
       document.querySelectorAll('.lane-filter').forEach(chk=>{
         chk.checked = !(p.hiddenLanes||[]).includes(chk.value);
@@ -831,7 +831,7 @@
         sched.phaseWindows.forEach(w=>{
           const li = w.lanes.find(x=>x.key===l.key);
           const offset = Math.floor(((li.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
-          const bar = document.createElement('div'); bar.className = 'bar'; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px'; bar.style.background = effortTypeColor(l.key);
+          const bar = document.createElement('div'); bar.className = 'bar'; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px'; bar.style.background = l.color || effortTypeColor(l.key);
           bar.textContent = w.ph; bar.title = `${l.name} • ${w.ph} • ${fmt(li.start)} (${li.days}d)`;
           bar.dataset.lane = l.key; bar.dataset.phase = w.ph;
           makeDraggableBar(bar, p, sched, li.days);
@@ -1896,7 +1896,8 @@
       }
       if(kind==='plan'){
         const isEdit = !!id;
-        const data = isEdit ? state.proposals.find(x=>x.id===id) : { id:'prop'+Math.random().toString(36).slice(2,7), projectId:state.projects[0]?.id||'', title:'', description:'', teamId:state.teams[0]?.id||'', bufferPct:12, phaseIds:[], pxPerDay:state.meta.defaultPxPerDay||18, overrides:{} };
+        const data = isEdit ? state.proposals.find(x=>x.id===id) : { id:'prop'+Math.random().toString(36).slice(2,7), projectId:state.projects[0]?.id||'', title:'', description:'', teamId:state.teams[0]?.id||'', bufferPct:12, phaseIds:[], pxPerDay:state.meta.defaultPxPerDay||18, overrides:{}, lanes:defaultPlanLanes() };
+        data.lanes = data.lanes && data.lanes.length ? structuredClone(data.lanes) : defaultPlanLanes();
         title.textContent = isEdit? 'Edit Delivery Plan' : 'Add Delivery Plan';
         form.innerHTML = [
           field('Project', `<select id="f-project" class="form-select">${state.projects.map(p=> `<option value="${p.id}" ${p.id===data.projectId?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select>`),
@@ -1905,11 +1906,41 @@
           field('Team', `<select id="f-team" class="form-select">${state.teams.map(t=> `<option value="${t.id}" ${t.id===data.teamId?'selected':''}>${escapeHtml(t.name)}</option>`).join('')}</select>`),
           field('Buffer %', `<input id="f-buffer" class="form-control" type="number" min="0" step="1" value="${data.bufferPct||0}">`),
           field('Phases (multi-select)', `<select id="f-phases" class="form-select" multiple size="6">${state.phases.map(ph=> `<option value="${ph.id}" ${data.phaseIds.includes(ph.id)?'selected':''}>${escapeHtml(ph.name)}</option>`).join('')}</select>`),
+          `<hr><h6>Lanes</h6>
+           <div id="lane-list" class="mb-2"></div>
+           <div class="row g-2 align-items-end">
+             <div class="col-3"><input id="f-lane-key" class="form-control" placeholder="Key"></div>
+             <div class="col-5"><input id="f-lane-name" class="form-control" placeholder="Name"></div>
+             <div class="col-3"><input id="f-lane-color" type="color" class="form-control form-control-color" value="#888888"></div>
+             <div class="col-1"><button type="button" class="btn btn-outline-secondary w-100" id="btn-lane-add"><i class="bi bi-plus-lg"></i></button></div>
+           </div>`,
           field('ID', idInputHtml(data.id, isEdit)),
         ].join('');
+        const lanes = data.lanes;
+        const laneList = byId('lane-list');
+        function renderLanes(){
+          laneList.innerHTML = lanes.map((l,i)=>
+            `<div class="d-flex align-items-center gap-2 mb-1">
+               <input class="form-control form-control-sm lane-key" data-i="${i}" style="width:25%" value="${escapeHtml(l.key)}">
+               <input class="form-control form-control-sm lane-name" data-i="${i}" style="width:45%" value="${escapeHtml(l.name||'')}">
+               <input type="color" class="form-control form-control-color lane-color" data-i="${i}" style="width:20%" value="${escapeHtml(l.color||'#888888')}">
+               <button class="btn btn-sm btn-outline-danger" data-i="${i}">Delete</button>
+             </div>`).join('') || '<div class="text-secondary">No lanes</div>';
+          laneList.querySelectorAll('.lane-key').forEach(inp=> inp.oninput = ()=>{ lanes[inp.dataset.i].key = inp.value.trim(); });
+          laneList.querySelectorAll('.lane-name').forEach(inp=> inp.oninput = ()=>{ lanes[inp.dataset.i].name = inp.value.trim(); });
+          laneList.querySelectorAll('.lane-color').forEach(inp=> inp.oninput = ()=>{ lanes[inp.dataset.i].color = inp.value; });
+          laneList.querySelectorAll('button[data-i]').forEach(btn=> btn.onclick = ()=>{ lanes.splice(btn.dataset.i,1); renderLanes(); });
+        }
+        renderLanes();
+        byId('btn-lane-add').onclick = ()=>{
+          const key = val('f-lane-key'); if(!key) return;
+          lanes.push({key, name: val('f-lane-name')||key, color: byId('f-lane-color').value||'#888888'});
+          byId('f-lane-key').value=''; byId('f-lane-name').value='';
+          renderLanes();
+        };
         byId('editSave').onclick = ()=>{
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.proposals, newId)) return alert('ID already exists.');
-          const obj = { id: isEdit? data.id : newId, projectId:val('f-project'), title:val('f-title'), description:val('f-desc'), teamId:val('f-team'), bufferPct:+val('f-buffer')||0, phaseIds: Array.from(byId('f-phases').selectedOptions).map(o=>o.value), pxPerDay:data.pxPerDay||state.meta.defaultPxPerDay||18, overrides:data.overrides||{} };
+          const obj = { id: isEdit? data.id : newId, projectId:val('f-project'), title:val('f-title'), description:val('f-desc'), teamId:val('f-team'), bufferPct:+val('f-buffer')||0, phaseIds: Array.from(byId('f-phases').selectedOptions).map(o=>o.value), pxPerDay:data.pxPerDay||state.meta.defaultPxPerDay||18, overrides:data.overrides||{}, lanes };
           if(isEdit){ Object.assign(state.proposals.find(x=>x.id===id), obj); } else { state.proposals.push(obj); }
           save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();

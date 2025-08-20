@@ -6,6 +6,7 @@ import { state, removeEffortType, updateEffortType } from '../data.js';
 const dayMs = 86400000;
 function dummyPhase(id){ return {id, order:1}; }
 function getTeam(){ return {sizes:{BE:1,iOS:1,Android:1,Online:1,QA:1}}; }
+const baseLanes = ['BE','iOS','Android','Online','QA'].map(k=> ({key:k,name:k,color:'#000'}));
 function sampleTasks(){
   return [{
     projectId:1,
@@ -32,7 +33,7 @@ test('aggregate counts assignments without phaseIds', () => {
 });
 
 test('computeSchedule supports QA after FE rule', () => {
-  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1']};
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes: baseLanes};
   const tasks = sampleTasks();
   const aggr = aggregate({...plan, bufferPct:0}, tasks, getTeam);
   const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01', {qaStart:'afterFE'});
@@ -44,7 +45,7 @@ test('computeSchedule supports QA after FE rule', () => {
 });
 
   test('computeSchedule respects overrides', () => {
-    const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], overrides:{'p1':{QA:'2024-01-10'}}};
+    const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], overrides:{'p1':{QA:'2024-01-10'}}, lanes: baseLanes};
     const tasks = sampleTasks();
     const aggr = aggregate(plan, tasks, getTeam);
     const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
@@ -53,7 +54,7 @@ test('computeSchedule supports QA after FE rule', () => {
   });
 
   test('computeSchedule allows custom stagger days', () => {
-    const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1']};
+    const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes: baseLanes};
     const tasks = sampleTasks();
     const aggr = aggregate(plan, tasks, getTeam);
     const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01', {staggerDays:2});
@@ -65,7 +66,8 @@ test('computeSchedule supports QA after FE rule', () => {
   });
 
 test('computeSchedule handles custom effort types', () => {
-  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1']};
+  const lanes = [...baseLanes, {key:'DevOps', name:'DevOps', color:'#000'}];
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes};
   const tasks = [{projectId:1, startDate:'2024-01-01', phaseIds:['p1'], efforts:[{platform:'DevOps', manDays:6}]}];
   const aggr = aggregate(plan, tasks, () => ({sizes:{BE:1,DevOps:2}}));
   const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');

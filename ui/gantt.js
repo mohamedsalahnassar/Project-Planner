@@ -25,6 +25,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       const offset = Math.floor((info.start - sched.chartStart) / dayMs);
       bar.style.left = `${(offset / totalDays) * 100}%`;
       bar.style.width = `${(info.days / totalDays) * 100}%`;
+      if(lane.color) bar.style.background = lane.color;
       laneDiv.appendChild(bar);
     });
 

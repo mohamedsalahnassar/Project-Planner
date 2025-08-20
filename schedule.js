@@ -38,18 +38,21 @@ export const DEFAULT_STAGGER_DAYS = 5;
 export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}){
   const planStart = new Date(startDate);
   const phases = plan.phaseIds.map(id=> getPhase(id)).filter(Boolean).sort((a,b)=>(a.order||0)-(b.order||0));
-  const platformSet = new Set(Object.keys(aggr.team||{}));
-  Object.values(aggr.phaseTotals||{}).forEach(rec=>{
-    Object.keys(rec).forEach(k=>{ if(k!=='earliest') platformSet.add(k); });
-  });
-  let laneKeys = Array.from(platformSet);
-  laneKeys.sort((a,b)=>{
-    if(a==='BE') return -1; if(b==='BE') return 1;
-    if(a==='QA') return 1; if(b==='QA') return -1;
-    return a.localeCompare(b);
-  });
-  const defaultLanes = laneKeys.map(k=> ({key:k, name:k, cls:k.toLowerCase()}));
-  const lanes = options.lanes || defaultLanes;
+  let lanes = plan.lanes && plan.lanes.length ? plan.lanes.map(l=> ({...l})) : null;
+  if(!lanes){
+    const platformSet = new Set(Object.keys(aggr.team||{}));
+    Object.values(aggr.phaseTotals||{}).forEach(rec=>{
+      Object.keys(rec).forEach(k=>{ if(k!=='earliest') platformSet.add(k); });
+    });
+    let laneKeys = Array.from(platformSet);
+    laneKeys.sort((a,b)=>{
+      if(a==='BE') return -1; if(b==='BE') return 1;
+      if(a==='QA') return 1; if(b==='QA') return -1;
+      return a.localeCompare(b);
+    });
+    lanes = laneKeys.map(k=> ({key:k, name:k, cls:k.toLowerCase()}));
+  }
+  lanes = options.lanes || lanes;
   const qaRule = options.qaStart || 'half'; // 'half' or 'afterFE'
   const stagger = options.staggerDays ?? DEFAULT_STAGGER_DAYS;
   const phaseWindows = [];
