@@ -44,6 +44,15 @@ test('computeSchedule supports QA after FE rule', () => {
   assert.strictEqual(diffDays, ios.days);
 });
 
+test('computeSchedule chartStart matches earliest lane start', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes:[{key:'iOS', name:'iOS'}]};
+  const tasks = sampleTasks();
+  const aggr = aggregate(plan, tasks, getTeam);
+  const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
+  const laneStart = sched.phaseWindows[0].lanes[0].start.toISOString();
+  assert.strictEqual(sched.chartStart.toISOString(), laneStart);
+});
+
   test('computeSchedule respects overrides', () => {
     const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], overrides:{'p1':{QA:'2024-01-10'}}, lanes: baseLanes};
     const tasks = sampleTasks();
