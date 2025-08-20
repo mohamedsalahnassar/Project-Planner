@@ -5,13 +5,12 @@ import CoreData
 public class Team: NSManagedObject {
 }
 
-@MainActor
-public extension Team: Identifiable {
+extension Team: @MainActor Identifiable {
     @nonobjc class func fetchRequest() -> NSFetchRequest<Team> {
         NSFetchRequest<Team>(entityName: "Team")
     }
 
-    @NSManaged var id: UUID
+    @NSManaged public var id: UUID
     @NSManaged var name: String
     @NSManaged var be: Double
     @NSManaged var ios: Double
