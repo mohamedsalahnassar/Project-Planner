@@ -1564,7 +1564,16 @@
       byId('btn-add-plan').onclick = ()=> openEditor('plan', null);
       byId('btn-add-phase').onclick = ()=> openEditor('phase', null);
       byId('btn-add-team').onclick = ()=> openEditor('team', null);
-      byId('btn-reset-sprints').onclick = ()=>{ if(confirm('Reset all sprints?')){ resetSprints(); refreshManage(); buildProjects(); } };
+      byId('btn-reset-sprints').onclick = ()=>{
+        if(confirm('Reset all sprints?')){
+          const start = prompt('Start date for first sprint (YYYY-MM-DD)', state.sprints[0]?.start || new Date().toISOString().slice(0,10));
+          if(start){
+            resetSprints(start);
+            refreshManage();
+            buildProjects();
+          }
+        }
+      };
       byId('btn-add-sprint').onclick = ()=> openEditor('sprint', null);
       byId('btn-add-task').onclick = ()=> openEditor('task', null);
       byId('btn-add-effort-type').onclick = ()=> openEditor('effortType', null);
