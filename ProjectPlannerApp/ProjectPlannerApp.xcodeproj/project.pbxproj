@@ -1,0 +1,245 @@
+// !$*UTF8*$!
+{
+archiveVersion = 1;
+classes = {};
+objectVersion = 56;
+objects = {
+
+/* Begin PBXBuildFile section */
+D2A6B5402B03E4A400FE6512 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5502B03E4A400FE6512 /* ContentView.swift */; };
+D2A6B5412B03E4A400FE6512 /* GanttChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5512B03E4A400FE6512 /* GanttChartView.swift */; };
+D2A6B5422B03E4A400FE6512 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5522B03E4A400FE6512 /* Persistence.swift */; };
+D2A6B5432B03E4A400FE6512 /* Plan.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5532B03E4A400FE6512 /* Plan.swift */; };
+D2A6B5442B03E4A400FE6512 /* PlanDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5542B03E4A400FE6512 /* PlanDetailView.swift */; };
+D2A6B5452B03E4A400FE6512 /* Phase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5552B03E4A400FE6512 /* Phase.swift */; };
+D2A6B5462B03E4A400FE6512 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5562B03E4A400FE6512 /* Project.swift */; };
+D2A6B5472B03E4A400FE6512 /* ProjectCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5572B03E4A400FE6512 /* ProjectCSV.swift */; };
+D2A6B5482B03E4A400FE6512 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5582B03E4A400FE6512 /* ProjectDetailView.swift */; };
+D2A6B5492B03E4A400FE6512 /* ProjectJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B5592B03E4A400FE6512 /* ProjectJSON.swift */; };
+D2A6B54A2B03E4A400FE6512 /* ProjectPlannerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B55A2B03E4A400FE6512 /* ProjectPlannerApp.swift */; };
+D2A6B54B2B03E4A400FE6512 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B55B2B03E4A400FE6512 /* Schedule.swift */; };
+D2A6B54C2B03E4A400FE6512 /* ScheduleCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B55C2B03E4A400FE6512 /* ScheduleCSV.swift */; };
+D2A6B54D2B03E4A400FE6512 /* Task.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B55D2B03E4A400FE6512 /* Task.swift */; };
+D2A6B54E2B03E4A400FE6512 /* TaskEffort.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B55E2B03E4A400FE6512 /* TaskEffort.swift */; };
+D2A6B54F2B03E4A400FE6512 /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2A6B55F2B03E4A400FE6512 /* Team.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+D2A6B53E2B03E4A400FE6512 /* ProjectPlannerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = ProjectPlannerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+D2A6B53F2B03E4A400FE6512 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+D2A6B5502B03E4A400FE6512 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+D2A6B5512B03E4A400FE6512 /* GanttChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GanttChartView.swift; sourceTree = "<group>"; };
+D2A6B5522B03E4A400FE6512 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+D2A6B5532B03E4A400FE6512 /* Plan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plan.swift; sourceTree = "<group>"; };
+D2A6B5542B03E4A400FE6512 /* PlanDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDetailView.swift; sourceTree = "<group>"; };
+D2A6B5552B03E4A400FE6512 /* Phase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase.swift; sourceTree = "<group>"; };
+D2A6B5562B03E4A400FE6512 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+D2A6B5572B03E4A400FE6512 /* ProjectCSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectCSV.swift; sourceTree = "<group>"; };
+D2A6B5582B03E4A400FE6512 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+D2A6B5592B03E4A400FE6512 /* ProjectJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectJSON.swift; sourceTree = "<group>"; };
+D2A6B55A2B03E4A400FE6512 /* ProjectPlannerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPlannerApp.swift; sourceTree = "<group>"; };
+D2A6B55B2B03E4A400FE6512 /* Schedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule.swift; sourceTree = "<group>"; };
+D2A6B55C2B03E4A400FE6512 /* ScheduleCSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCSV.swift; sourceTree = "<group>"; };
+D2A6B55D2B03E4A400FE6512 /* Task.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Task.swift; sourceTree = "<group>"; };
+D2A6B55E2B03E4A400FE6512 /* TaskEffort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskEffort.swift; sourceTree = "<group>"; };
+D2A6B55F2B03E4A400FE6512 /* Team.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Team.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+D2A6B5312B03E4A400FE6512 = {
+isa = PBXGroup;
+children = (
+D2A6B5332B03E4A400FE6512 /* Sources */,
+D2A6B53F2B03E4A400FE6512 /* Info.plist */,
+D2A6B5342B03E4A400FE6512 /* Products */,
+);
+sourceTree = "<group>";
+};
+D2A6B5332B03E4A400FE6512 /* Sources */ = {
+isa = PBXGroup;
+children = (
+D2A6B5502B03E4A400FE6512 /* ContentView.swift */,
+D2A6B5512B03E4A400FE6512 /* GanttChartView.swift */,
+D2A6B5522B03E4A400FE6512 /* Persistence.swift */,
+D2A6B5532B03E4A400FE6512 /* Plan.swift */,
+D2A6B5542B03E4A400FE6512 /* PlanDetailView.swift */,
+D2A6B5552B03E4A400FE6512 /* Phase.swift */,
+D2A6B5562B03E4A400FE6512 /* Project.swift */,
+D2A6B5572B03E4A400FE6512 /* ProjectCSV.swift */,
+D2A6B5582B03E4A400FE6512 /* ProjectDetailView.swift */,
+D2A6B5592B03E4A400FE6512 /* ProjectJSON.swift */,
+D2A6B55A2B03E4A400FE6512 /* ProjectPlannerApp.swift */,
+D2A6B55B2B03E4A400FE6512 /* Schedule.swift */,
+D2A6B55C2B03E4A400FE6512 /* ScheduleCSV.swift */,
+D2A6B55D2B03E4A400FE6512 /* Task.swift */,
+D2A6B55E2B03E4A400FE6512 /* TaskEffort.swift */,
+D2A6B55F2B03E4A400FE6512 /* Team.swift */,
+);
+path = Sources;
+sourceTree = "<group>";
+};
+D2A6B5342B03E4A400FE6512 /* Products */ = {
+isa = PBXGroup;
+children = (
+D2A6B53E2B03E4A400FE6512 /* ProjectPlannerApp.app */,
+);
+name = Products;
+sourceTree = "<group>";
+};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+D2A6B5352B03E4A400FE6512 /* ProjectPlannerApp */ = {
+isa = PBXNativeTarget;
+buildConfigurationList = D2A6B5382B03E4A400FE6512 /* Build configuration list for PBXNativeTarget "ProjectPlannerApp" */;
+buildPhases = (
+D2A6B5362B03E4A400FE6512 /* Sources */,
+D2A6B5372B03E4A400FE6512 /* Resources */,
+);
+buildRules = ();
+dependencies = ();
+name = ProjectPlannerApp;
+productName = ProjectPlannerApp;
+productReference = D2A6B53E2B03E4A400FE6512 /* ProjectPlannerApp.app */;
+productType = "com.apple.product-type.application";
+};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+D2A6B5322B03E4A400FE6512 /* Project object */ = {
+isa = PBXProject;
+attributes = {
+LastSwiftUpdateCheck = 1500;
+LastUpgradeCheck = 1500;
+TargetAttributes = {
+D2A6B5352B03E4A400FE6512 = {
+CreatedOnToolsVersion = 15.0;
+};
+};
+};
+buildConfigurationList = D2A6B53B2B03E4A400FE6512 /* Build configuration list for PBXProject "ProjectPlannerApp" */;
+compatibilityVersion = "Xcode 14.0";
+developmentRegion = en;
+hasScannedForEncodings = 0;
+knownRegions = (
+en,
+);
+mainGroup = D2A6B5312B03E4A400FE6512;
+productRefGroup = D2A6B5342B03E4A400FE6512 /* Products */;
+projectDirPath = "";
+projectRoot = "";
+targets = (
+D2A6B5352B03E4A400FE6512 /* ProjectPlannerApp */,
+);
+};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+D2A6B5372B03E4A400FE6512 /* Resources */ = {
+isa = PBXResourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+D2A6B5362B03E4A400FE6512 /* Sources */ = {
+isa = PBXSourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+D2A6B5402B03E4A400FE6512 /* ContentView.swift in Sources */,
+D2A6B5412B03E4A400FE6512 /* GanttChartView.swift in Sources */,
+D2A6B5422B03E4A400FE6512 /* Persistence.swift in Sources */,
+D2A6B5432B03E4A400FE6512 /* Plan.swift in Sources */,
+D2A6B5442B03E4A400FE6512 /* PlanDetailView.swift in Sources */,
+D2A6B5452B03E4A400FE6512 /* Phase.swift in Sources */,
+D2A6B5462B03E4A400FE6512 /* Project.swift in Sources */,
+D2A6B5472B03E4A400FE6512 /* ProjectCSV.swift in Sources */,
+D2A6B5482B03E4A400FE6512 /* ProjectDetailView.swift in Sources */,
+D2A6B5492B03E4A400FE6512 /* ProjectJSON.swift in Sources */,
+D2A6B54A2B03E4A400FE6512 /* ProjectPlannerApp.swift in Sources */,
+D2A6B54B2B03E4A400FE6512 /* Schedule.swift in Sources */,
+D2A6B54C2B03E4A400FE6512 /* ScheduleCSV.swift in Sources */,
+D2A6B54D2B03E4A400FE6512 /* Task.swift in Sources */,
+D2A6B54E2B03E4A400FE6512 /* TaskEffort.swift in Sources */,
+D2A6B54F2B03E4A400FE6512 /* Team.swift in Sources */,
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+D2A6B5392B03E4A400FE6512 /* Debug */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+CODE_SIGN_STYLE = Automatic;
+COMBINE_HIDPI_IMAGES = YES;
+INFOPLIST_FILE = Info.plist;
+LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+MACOSX_DEPLOYMENT_TARGET = 13.0;
+PRODUCT_BUNDLE_IDENTIFIER = com.example.ProjectPlannerApp;
+PRODUCT_NAME = "$(TARGET_NAME)";
+SWIFT_VERSION = 5.0;
+GENERATE_INFOPLIST_FILE = NO;
+};
+name = Debug;
+};
+D2A6B53A2B03E4A400FE6512 /* Release */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+CODE_SIGN_STYLE = Automatic;
+COMBINE_HIDPI_IMAGES = YES;
+INFOPLIST_FILE = Info.plist;
+LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+MACOSX_DEPLOYMENT_TARGET = 13.0;
+PRODUCT_BUNDLE_IDENTIFIER = com.example.ProjectPlannerApp;
+PRODUCT_NAME = "$(TARGET_NAME)";
+SWIFT_VERSION = 5.0;
+GENERATE_INFOPLIST_FILE = NO;
+};
+name = Release;
+};
+D2A6B53C2B03E4A400FE6512 /* Debug */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+MACOSX_DEPLOYMENT_TARGET = 13.0;
+SWIFT_VERSION = 5.0;
+};
+name = Debug;
+};
+D2A6B53D2B03E4A400FE6512 /* Release */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+MACOSX_DEPLOYMENT_TARGET = 13.0;
+SWIFT_VERSION = 5.0;
+};
+name = Release;
+};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+D2A6B5382B03E4A400FE6512 /* Build configuration list for PBXNativeTarget "ProjectPlannerApp" */ = {
+isa = XCConfigurationList;
+buildConfigurations = (
+D2A6B5392B03E4A400FE6512 /* Debug */,
+D2A6B53A2B03E4A400FE6512 /* Release */,
+);
+defaultConfigurationIsVisible = 0;
+defaultConfigurationName = Release;
+};
+D2A6B53B2B03E4A400FE6512 /* Build configuration list for PBXProject "ProjectPlannerApp" */ = {
+isa = XCConfigurationList;
+buildConfigurations = (
+D2A6B53C2B03E4A400FE6512 /* Debug */,
+D2A6B53D2B03E4A400FE6512 /* Release */,
+);
+defaultConfigurationIsVisible = 0;
+defaultConfigurationName = Release;
+};
+/* End XCConfigurationList section */
+
+};
+rootObject = D2A6B5322B03E4A400FE6512 /* Project object */;
+}
