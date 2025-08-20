@@ -12,7 +12,7 @@ npm install
 ```
 
 ## Run in development
-Launch the Electron app:
+Launch the Electron app for development without creating installers:
 ```bash
 npm start
 ```

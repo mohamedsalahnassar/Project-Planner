@@ -6,8 +6,7 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
-    "test": "node --test",
-    "serve": "./serve.sh"
+    "test": "node --test"
   },
   "build": {
     "appId": "com.yourname.projectplanner",
