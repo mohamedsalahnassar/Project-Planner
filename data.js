@@ -21,6 +21,16 @@ export const state = {
   }
 };
 
+export function defaultPlanLanes(){
+  return getEffortTypes().map(e=> ({ key: e.key, name: e.title, color: e.color }));
+}
+
+function ensurePlanLanes(){
+  state.proposals.forEach(p=>{
+    if(!Array.isArray(p.lanes)) p.lanes = defaultPlanLanes();
+  });
+}
+
 export function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -39,6 +49,7 @@ export function load(){
     }
     const present = new Set(state.meta.effortTypes.map(e=>e.key));
     DEFAULT_EFFORT_TYPES.forEach(d=>{ if(!present.has(d.key)) state.meta.effortTypes.push({...d}); });
+    ensurePlanLanes();
   }catch(e){
     console.error('Failed to load saved state', e);
   }
@@ -57,16 +68,18 @@ export function replaceState(newState){
   Object.keys(state).forEach(k => delete state[k]);
   Object.assign(state, newState);
   if(!Array.isArray(state.sprints)) state.sprints = [];
+  ensurePlanLanes();
 }
 
 export function mergeState(newData){
   if(Array.isArray(newData.projects)) newData.projects.forEach(p=> state.projects.push(p));
-  if(Array.isArray(newData.proposals)) newData.proposals.forEach(p=> state.proposals.push(p));
+  if(Array.isArray(newData.proposals)) newData.proposals.forEach(p=>{ if(!Array.isArray(p.lanes)) p.lanes = defaultPlanLanes(); state.proposals.push(p); });
   if(Array.isArray(newData.tasks)) newData.tasks.forEach(t=> state.tasks.push(t));
   if(Array.isArray(newData.teams)) newData.teams.forEach(t=> state.teams.push(t));
   if(Array.isArray(newData.phases)) newData.phases.forEach(ph=> state.phases.push(ph));
   if(Array.isArray(newData.sprints)) newData.sprints.forEach(s=> state.sprints.push(s));
   if(newData.meta) Object.assign(state.meta, newData.meta);
+  ensurePlanLanes();
 }
 
 export function getEffortTypes(){
