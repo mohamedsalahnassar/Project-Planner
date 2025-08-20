@@ -14,7 +14,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "ProjectPlannerApp",
-            path: "Sources"
+            path: "Sources",
+            resources: [.process("Info.plist")]
         )
     ]
 )
