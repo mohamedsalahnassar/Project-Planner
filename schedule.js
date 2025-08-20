@@ -99,8 +99,9 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
     const phEnd = laneOut.reduce((max, l)=>{
       const end = addDays(l.start, l.days);
       return end>max ? end : max;
-    }, phStart);
-    phaseWindows.push({ ph: ph.id, start: phStart, end: phEnd, lanes: laneOut });
+    }, laneOut[0]?.start || phStart);
+    const earliestStart = laneOut.reduce((min, l)=> l.start < min ? l.start : min, laneOut[0]?.start || phStart);
+    phaseWindows.push({ ph: ph.id, start: earliestStart, end: phEnd, lanes: laneOut });
     prevEnd = phEnd;
   }
   const chartStart = phaseWindows.length ? phaseWindows[0].start : planStart;
