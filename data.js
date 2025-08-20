@@ -116,11 +116,14 @@ export function removeEffortType(key){
 
 const iso = d => d.toISOString().slice(0,10);
 
-export function ensureSprints(){
-  state.sprints ||= [];
-  if(state.sprints.length) return;
-  const start = Date.UTC(2025,0,1);
-  const end = Date.UTC(2026,11,31);
+export function ensureSprints(startYear, endYear){
+  const now = new Date();
+  const sYear = startYear ?? now.getUTCFullYear();
+  const eYear = endYear ?? (sYear + 2);
+  const start = Date.UTC(sYear,0,1);
+  const end = Date.UTC(eYear,11,31);
+
+  state.sprints = [];
   const day = 24 * 60 * 60 * 1000;
   const quarterCounts = {};
   for(let t=start; t<=end; t+=14*day){
@@ -137,9 +140,8 @@ export function ensureSprints(){
   save();
 }
 
-export function resetSprints(){
-  state.sprints = [];
-  ensureSprints();
+export function resetSprints(startYear, endYear){
+  ensureSprints(startYear, endYear);
 }
 
 export function getTeam(teamId){ return state.teams.find(t => t.id === teamId); }
