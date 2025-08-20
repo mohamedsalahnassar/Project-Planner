@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "start": "./serve.sh",
-    "test": "node --test"
+    "test": "node --test",
+    "build": "vite build"
+  }
+  ,"devDependencies": {
+    "vite": "^5.0.0"
   }
 }
