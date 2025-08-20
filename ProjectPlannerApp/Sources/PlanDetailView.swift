@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import CoreData
 #if os(macOS)
 import AppKit
