@@ -9,9 +9,18 @@ struct PlanDetailView: View {
     @ObservedObject var plan: Plan
     @Environment(\.managedObjectContext) private var context
     @State private var schedule: ScheduleResult?
+    @State private var startDate: Date = Date()
+    @State private var efficiency: Double = 1.0
 
     var body: some View {
         VStack(alignment: .leading) {
+            DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+            HStack {
+                Text("Efficiency")
+                Slider(value: $efficiency, in: 0.1...1.0, step: 0.05)
+                TextField("", value: $efficiency, format: .number)
+                    .frame(width: 50)
+            }
             if let schedule = schedule {
                 GanttChartView(schedule: schedule)
                     .frame(height: 300)
@@ -40,7 +49,7 @@ struct PlanDetailView: View {
     private func compute() {
         guard let tasks = plan.project?.tasks else { return }
         if let aggr = aggregate(plan: plan, tasks: Array(tasks)) {
-            schedule = computeSchedule(plan: plan, aggr: aggr, efficiency: 1.0, startDate: Date())
+            schedule = computeSchedule(plan: plan, aggr: aggr, efficiency: efficiency, startDate: startDate)
         }
     }
 
