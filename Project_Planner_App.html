@@ -922,7 +922,7 @@
         if(x < labelPad || x > labelPad + totalDays*pxPerDay){ hoverLine.style.display='none'; hoverLabel.style.display='none'; return; }
         hoverLine.style.display='block'; hoverLabel.style.display='block';
         hoverLine.style.left = x+'px'; hoverLabel.style.left = x+'px';
-        const d = Math.round((x - labelPad)/pxPerDay);
+        const d = Math.floor((x - labelPad)/pxPerDay);
         const dt = new Date(chartStart.getTime() + d*dayMs);
         hoverLabel.textContent = dt.toLocaleDateString('en-GB',{day:'2-digit', month:'short', year:'numeric'});
       }
