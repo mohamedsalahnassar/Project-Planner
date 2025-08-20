@@ -853,13 +853,13 @@
     function drawRulerAndGrid(scroll, chartStart, totalDays, pxPerDay, contentHeight, phaseWindows){
       scroll.querySelectorAll('.ruler,.grid,.phase-tag,.sprint-line,.sprint-label,.hover-line,.hover-label').forEach(n=> n.remove());
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
-      const ruler = document.createElement('div'); ruler.className='ruler'; ruler.style.width = (totalDays*pxPerDay + labelPad) + 'px';
+      const ruler = document.createElement('div'); ruler.className='ruler'; ruler.style.width = (totalDays*pxPerDay) + 'px';
       if(pxPerDay < 14) ruler.classList.add('dense');
       if(pxPerDay < 8) ruler.classList.add('hide-labels');
       scroll.appendChild(ruler);
       const chartEndDate = new Date(chartStart.getTime()+totalDays*dayMs);
       for(let d=0; d<=totalDays; d++){
-        const x = labelPad + d*pxPerDay;
+        const x = d*pxPerDay;
         const tick = document.createElement('div'); tick.className='tick'; tick.style.left = x+'px'; ruler.appendChild(tick);
         const label = document.createElement('div'); label.className='label'; label.style.left = x+'px';
         const dt = new Date(chartStart.getTime() + d*dayMs); label.textContent = dt.getDate();
@@ -868,7 +868,7 @@
       const firstMonth = new Date(chartStart); firstMonth.setDate(1);
       let m = new Date(firstMonth); if(m < chartStart) m.setMonth(m.getMonth()+1);
       while(m <= chartEndDate){
-        const d = Math.floor((m-chartStart)/dayMs); const x = labelPad + d*pxPerDay;
+        const d = Math.floor((m-chartStart)/dayMs); const x = d*pxPerDay;
         const tm = document.createElement('div'); tm.className='tick major'; tm.style.left = x+'px'; ruler.appendChild(tm);
         const ml = document.createElement('div'); ml.className='month'; ml.style.left = x+'px'; ml.textContent = m.toLocaleDateString('en-GB', { month:'short', year:'2-digit' }); ruler.appendChild(ml);
         m.setMonth(m.getMonth()+1);
@@ -884,7 +884,7 @@
         return Math.ceil((((d - yearStart) / dayMs) + 1) / 7);
       }
       while(w <= chartEndDate){
-        const d = Math.floor((w-chartStart)/dayMs); const x = labelPad + d*pxPerDay;
+        const d = Math.floor((w-chartStart)/dayMs); const x = d*pxPerDay;
         const tw = document.createElement('div'); tw.className='tick week'; tw.style.left = x+'px'; ruler.appendChild(tw);
         const wl = document.createElement('div'); wl.className='week-label'; wl.style.left = x+'px'; wl.textContent = 'W'+weekNumber(w); ruler.appendChild(wl);
         w.setDate(w.getDate()+7);
@@ -916,7 +916,7 @@
         const x = e.clientX - rect.left + scroll.scrollLeft;
         if(x < labelPad || x > labelPad + totalDays*pxPerDay){ hoverLine.style.display='none'; hoverLabel.style.display='none'; return; }
         hoverLine.style.display='block'; hoverLabel.style.display='block';
-        hoverLine.style.left = x+'px'; hoverLabel.style.left = x+'px';
+        hoverLine.style.left = x+'px'; hoverLabel.style.left = (x - labelPad)+'px';
         const d = Math.floor((x - labelPad)/pxPerDay);
         const dt = new Date(chartStart.getTime() + d*dayMs);
         hoverLabel.textContent = dt.toLocaleDateString('en-GB',{day:'2-digit', month:'short', year:'numeric'});
