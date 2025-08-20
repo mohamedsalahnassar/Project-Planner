@@ -2,8 +2,22 @@
   "name": "project-planner",
   "version": "1.0.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
-    "start": "./serve.sh",
+    "start": "electron .",
+    "dist": "electron-builder",
     "test": "node --test"
+  },
+  "build": {
+    "appId": "com.yourname.projectplanner",
+    "files": [
+      "Project_Planner_App.html",
+      "assets/**/*",
+      "electron/**/*"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.6.4"
   }
 }
