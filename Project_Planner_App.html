@@ -30,7 +30,7 @@
     .tick{position:absolute; bottom:0; width:1px; height:12px; background:rgba(127,127,127,.35)}
     .tick.major{height:24px; background:rgba(127,127,127,.6)}
     .label{position:absolute; bottom:24px; transform:translateX(-50%); font-size:.75rem; color:var(--bs-secondary-color); white-space:nowrap}
-    .month{position:absolute; bottom:44px; transform:translateX(-50%); font-weight:600; color:var(--bs-body-color); font-size:.8rem}
+    .month-section{position:absolute; bottom:0; height:24px; display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--bs-body-color); font-size:.8rem; pointer-events:none}
     .grid{position:absolute; left:0; right:0; top:60px; bottom:0; pointer-events:none}
     .gridline{position:absolute; top:0; bottom:0; width:1px; background:rgba(127,127,127,.15)}
     .gridline.week{background:rgba(127,127,127,.22)}
@@ -863,18 +863,32 @@
           ruler.appendChild(label);
         }
       }
-      const firstMonth = new Date(chartStart); firstMonth.setDate(1);
-      let m = new Date(firstMonth); if(m < chartStart) m.setMonth(m.getMonth()+1);
-      while(m <= chartEndDate){
-        const d = Math.floor((m-chartStart)/dayMs); const x = d*pxPerDay;
-        const tm = document.createElement('div'); tm.className='tick major'; tm.style.left = x+'px'; ruler.appendChild(tm);
-        const ml = document.createElement('div'); ml.className='month'; ml.style.left = x+'px'; ml.textContent = m.toLocaleDateString('en-GB', { month:'short', year:'2-digit' }); ruler.appendChild(ml);
-        m.setMonth(m.getMonth()+1);
+      const monthRanges = [];
+      let rangeStart = 0;
+      let rangeDate = new Date(chartStart);
+      for(let d=0; d<=totalDays; d++){
+        const dt = new Date(chartStart.getTime() + d*dayMs);
+        if(dt.getMonth() !== rangeDate.getMonth() || dt.getFullYear() !== rangeDate.getFullYear()){
+          monthRanges.push({start:rangeStart, end:d-1, label:rangeDate.toLocaleDateString('en-GB',{month:'short', year:'numeric'})});
+          rangeStart = d;
+          rangeDate = dt;
+        }
       }
+      monthRanges.push({start:rangeStart, end:totalDays, label:rangeDate.toLocaleDateString('en-GB',{month:'short', year:'numeric'})});
+      monthRanges.forEach(r=>{
+        const ms = document.createElement('div');
+        ms.className='month-section';
+        ms.style.left = (r.start*pxPerDay)+'px';
+        ms.style.width = ((r.end - r.start + 1)*pxPerDay)+'px';
+        ms.textContent = r.label;
+        ruler.appendChild(ms);
+      });
       const grid = document.createElement('div'); grid.className='grid'; grid.style.width = (totalDays*pxPerDay + labelPad) + 'px'; grid.style.height = (contentHeight - 60) + 'px'; scroll.appendChild(grid);
       for(let d=0; d<=totalDays; d++){ const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline'; if(d%7===0) gl.classList.add('week'); gl.style.left = x+'px'; grid.appendChild(gl); }
-      m = new Date(firstMonth); if(m < chartStart) m.setMonth(m.getMonth()+1);
-      while(m <= chartEndDate){ const d = Math.floor((m-chartStart)/dayMs); const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl); m.setMonth(m.getMonth()+1); }
+      monthRanges.slice(1).forEach(r=>{
+        const x = labelPad + r.start*pxPerDay;
+        const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl);
+      });
       phaseWindows.forEach(w=>{
         const d0 = Math.floor((w.start - chartStart)/dayMs);
         const d1 = Math.floor((w.end - chartStart)/dayMs);
