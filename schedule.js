@@ -56,10 +56,9 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
   const qaRule = options.qaStart || 'half'; // 'half' or 'afterFE'
   const stagger = options.staggerDays ?? DEFAULT_STAGGER_DAYS;
   const phaseWindows = [];
-  let prevEnd = null;
   for(const ph of phases){
     const totals = aggr.phaseTotals[ph.id] || {earliest:null};
-    let phStart = prevEnd ? addDays(prevEnd, 1) : planStart;
+    let phStart = planStart;
     if(totals.earliest && totals.earliest > phStart) phStart = totals.earliest;
     const laneOut = [];
     const feLanes = lanes.filter(l=> l.key!=='BE' && l.key!=='QA');
@@ -102,9 +101,8 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
     }, laneOut[0]?.start || phStart);
     const earliestStart = laneOut.reduce((min, l)=> l.start < min ? l.start : min, laneOut[0]?.start || phStart);
     phaseWindows.push({ ph: ph.id, start: earliestStart, end: phEnd, lanes: laneOut });
-    prevEnd = phEnd;
   }
-  const chartStart = phaseWindows.length ? phaseWindows[0].start : planStart;
-  const chartEnd = phaseWindows.length ? phaseWindows[phaseWindows.length-1].end : planStart;
+  const chartStart = phaseWindows.length ? phaseWindows.reduce((min, pw)=> pw.start < min ? pw.start : min, phaseWindows[0].start) : planStart;
+  const chartEnd = phaseWindows.length ? phaseWindows.reduce((max, pw)=> pw.end > max ? pw.end : max, phaseWindows[0].end) : planStart;
   return { chartStart, chartEnd, lanes, phaseWindows };
 }

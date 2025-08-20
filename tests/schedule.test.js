@@ -53,6 +53,20 @@ test('computeSchedule chartStart matches earliest lane start', () => {
   assert.strictEqual(sched.chartStart.toISOString(), laneStart);
 });
 
+test('computeSchedule allows overlapping phases', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1','p2'], lanes: baseLanes};
+  const tasks = [
+    {projectId:1, startDate:'2024-01-01', phaseIds:['p1'], efforts:[{platform:'BE', manDays:10}]},
+    {projectId:1, startDate:'2024-01-05', phaseIds:['p2'], efforts:[{platform:'BE', manDays:3}]}
+  ];
+  const aggr = aggregate(plan, tasks, getTeam);
+  const sched = computeSchedule(plan, aggr, 1, id=>({id, order: id==='p1'?1:2}), '2024-01-01');
+  const p1 = sched.phaseWindows.find(pw=> pw.ph==='p1');
+  const p2 = sched.phaseWindows.find(pw=> pw.ph==='p2');
+  assert.strictEqual(p2.start.toISOString().slice(0,10), '2024-01-05');
+  assert.ok(p2.start < p1.end); // phases overlap
+});
+
   test('computeSchedule respects overrides', () => {
     const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], overrides:{'p1':{QA:'2024-01-10'}}, lanes: baseLanes};
     const tasks = sampleTasks();
