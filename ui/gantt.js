@@ -98,22 +98,37 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
   sched.lanes.forEach(lane => {
     const laneDiv = document.createElement('div');
     laneDiv.className = `gantt-lane ${lane.cls || ''}`;
-    laneDiv.style.height = laneHeight + 'px';
     const label = document.createElement('span');
     label.className = 'gantt-label';
     label.textContent = lane.name;
     laneDiv.appendChild(label);
 
+    const bars = [];
     sched.phaseWindows.forEach(pw => {
       const info = pw.lanes.find(l => l.key === lane.key);
       if(!info || !info.days) return;
+      bars.push({ info, phase: pw.ph });
+    });
+
+    const trackEnd = [];
+    bars.forEach(b => {
+      const startMs = b.info.start.getTime();
+      let t = 0;
+      while(t < trackEnd.length && startMs < trackEnd[t]) t++;
+      b.track = t;
+      trackEnd[t] = startMs + b.info.days * dayMs;
+    });
+    const trackCount = trackEnd.length || 1;
+    laneDiv.style.height = (lanePad * (trackCount + 1) + barHeight * trackCount) + 'px';
+
+    bars.forEach(b => {
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
-      const offset = Math.floor((info.start - sched.chartStart) / dayMs);
+      const offset = Math.floor((b.info.start - sched.chartStart) / dayMs);
       bar.style.left = `${(offset / totalDays) * 100}%`;
-      bar.style.width = `${(info.days / totalDays) * 100}%`;
+      bar.style.width = `${(b.info.days / totalDays) * 100}%`;
       if(lane.color) bar.style.background = lane.color;
-      bar.style.top = lanePad + 'px';
+      bar.style.top = (lanePad + b.track * (barHeight + lanePad)) + 'px';
       bar.style.height = `${barHeight}px`;
       laneDiv.appendChild(bar);
     });

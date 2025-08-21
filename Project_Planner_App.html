@@ -934,16 +934,45 @@
       sched.lanes.filter(l=> lanesOn.includes(l.key)).forEach(l=>{
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane=l.key;
         const label = document.createElement('div'); label.className='lane-label'; label.textContent = l.name; lane.appendChild(label);
+
+        const bars = [];
         sched.phaseWindows.forEach(w=>{
           const li = w.lanes.find(x=>x.key===l.key);
-          const offset = Math.floor(((li.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
-          const bar = document.createElement('div'); bar.className = 'bar'; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px'; bar.style.background = l.color || effortTypeColor(l.key);
-          bar.textContent = w.ph; bar.title = `${l.name} • ${w.ph} • ${fmt(li.start)} (${li.days}d)`;
-          bar.dataset.lane = l.key; bar.dataset.phase = w.ph;
-          makeDraggableBar(bar, p, sched, li.days);
-          bar.addEventListener('click', (ev)=>{ ev.stopPropagation(); openBreakdown(p, w.ph, l.key); });
+          if(!li) return;
+          bars.push({ phase: w.ph, info: li });
+        });
+
+        const trackEnd = [];
+        bars.forEach(b=>{
+          const startMs = b.info.start.getTime();
+          let t = 0;
+          while(t < trackEnd.length && startMs < trackEnd[t]) t++;
+          b.track = t;
+          trackEnd[t] = startMs + b.info.days*dayMs;
+        });
+
+        const lanePad = 4;
+        const barHeight = 36;
+        const trackCount = trackEnd.length || 1;
+        lane.style.height = (lanePad*(trackCount+1) + barHeight*trackCount)+'px';
+
+        bars.forEach(b=>{
+          const offset = Math.floor(((b.info.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
+          const bar = document.createElement('div');
+          bar.className = 'bar';
+          bar.style.left = offset+'px';
+          bar.style.width = (Math.max(1, b.info.days)*pxPerDay)+'px';
+          bar.style.background = l.color || effortTypeColor(l.key);
+          bar.style.top = (lanePad + b.track*(barHeight + lanePad))+'px';
+          bar.textContent = b.phase;
+          bar.title = `${l.name} • ${b.phase} • ${fmt(b.info.start)} (${b.info.days}d)`;
+          bar.dataset.lane = l.key;
+          bar.dataset.phase = b.phase;
+          makeDraggableBar(bar, p, sched, b.info.days);
+          bar.addEventListener('click', (ev)=>{ ev.stopPropagation(); openBreakdown(p, b.phase, l.key); });
           lane.appendChild(bar);
         });
+
         container.appendChild(lane);
       });
       drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0);
