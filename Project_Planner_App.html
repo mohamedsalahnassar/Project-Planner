@@ -14,6 +14,7 @@
     }
     body{background-image: radial-gradient(1200px 700px at 15% -10%, var(--bg-grad-start) 0%, var(--bg-grad-end) 60%); background-attachment: fixed;}
     .app-header{position:sticky;top:0;z-index:1030;background:rgba(0,0,0,.35);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,.08);}
+    @media (min-width:1400px){.container-xxl{max-width:1800px}}
     .pointer{cursor:pointer}
     .card-hover{transition:box-shadow .2s, transform .1s; cursor:pointer}
     .card-hover:hover{box-shadow:0 8px 30px rgba(0,0,0,.25); transform:translateY(-2px)}
@@ -29,21 +30,20 @@
     .ruler{position:sticky; top:0; height:60px; background:linear-gradient(180deg, var(--bs-body-bg), var(--bs-body-bg) 62%, transparent); margin-left:var(--label-pad); border-bottom:1px solid var(--bs-border-color); z-index:1}
     .tick{position:absolute; bottom:0; width:1px; height:12px; background:rgba(127,127,127,.35)}
     .tick.major{height:24px; background:rgba(127,127,127,.6)}
-    .label{position:absolute; bottom:24px; transform:translateX(-50%); font-size:.75rem; color:var(--bs-secondary-color); white-space:nowrap}
-    .month-section{position:absolute; bottom:0; height:24px; display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--bs-body-color); font-size:.8rem; pointer-events:none}
+    .label{position:absolute; bottom:24px; transform:translateX(-50%); font-size:.75em; color:var(--bs-secondary-color); white-space:nowrap}
+    .month-section{position:absolute; bottom:0; height:24px; display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--bs-body-color); font-size:.8em; pointer-events:none}
     .grid{position:absolute; left:0; right:0; top:60px; bottom:0; pointer-events:none}
     .gridline{position:absolute; top:0; bottom:0; width:1px; background:rgba(127,127,127,.15)}
     .gridline.week{background:rgba(127,127,127,.22)}
     .gridline.major{background:rgba(127,127,127,.28)}
-    .sprint-line{position:absolute; top:60px; bottom:0; width:2px; background:rgba(220,53,69,.6); pointer-events:none}
-    .sprint-label{position:absolute; top:60px; transform:translate(-50%,-100%); font-size:.75rem; color:#fff; background:rgba(220,53,69,.6); padding:1px 4px; border-radius:4px; pointer-events:none}
     .hover-line{position:absolute; top:60px; bottom:0; width:1px; background:rgba(255,255,255,.3); pointer-events:none; display:none}
-    .hover-label{position:absolute; top:0; transform:translateX(-50%); font-size:.75rem; color:var(--bs-body-color); background:var(--bs-body-bg); border:1px solid var(--bs-border-color); padding:1px 4px; border-radius:4px; pointer-events:none; display:none}
-    .lane{position:relative; height:64px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
-    .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
-    .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
+    .hover-label{position:absolute; top:0; transform:translateX(-50%); font-size:.75em; color:var(--bs-body-color); background:var(--bs-body-bg); border:1px solid var(--bs-border-color); padding:1px 4px; border-radius:4px; pointer-events:none; display:none}
+    .lane{position:relative; height:44px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
+    .lane-label{position:absolute; left:12px; top:10px; width:160px; font-weight:600}
+    .bar{position:absolute; top:4px; height:36px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
     .release-bar{background:#6f42c1;color:#fff}
-    .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
+    .sprint-bar{background:#dc3545;color:#fff;font-size:.75em}
+    .phase-bar{background:var(--bs-secondary);color:#fff;font-size:.75em}
     .phase-badge{background:var(--bs-secondary);color:#fff}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
@@ -141,9 +141,12 @@
           <h2 id="detail-title" class="h6 mb-0"></h2>
           <span class="badge text-bg-secondary" id="detail-team"></span>
           <span class="badge text-bg-secondary">Buffer <span id="detail-buffer"></span>%</span>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" id="laneMenuBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside">Lanes</button>
+            <div id="lane-menu" class="dropdown-menu p-2"></div>
+          </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <div id="lane-filters" class="d-flex align-items-center gap-2"></div>
           <button id="btn-export-plan-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Plan PDF</button>
           <button id="btn-export-plan-xlsx-basic" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Plan Excel (Basic)</button>
         </div>
@@ -151,17 +154,45 @@
 
       <div class="gantt-wrap mb-3">
         <div class="gantt-toolbar p-2 d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center gap-2">
-            <span class="small text-secondary">Zoom</span>
-            <button class="btn btn-sm btn-outline-secondary" id="zoomMinus">−</button>
-            <input type="range" id="zoomRange" min="6" max="44" step="2" value="18" style="width:240px">
-            <button class="btn btn-sm btn-outline-secondary" id="zoomPlus">+</button>
-            <button class="btn btn-sm btn-outline-secondary" id="zoomFit">Fit</button>
+          <div class="d-flex align-items-center gap-4">
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-secondary">Zoom</span>
+              <button class="btn btn-sm btn-outline-secondary" id="zoomMinus">−</button>
+              <input type="range" id="zoomRange" min="6" max="44" step="2" value="18" style="width:240px">
+              <button class="btn btn-sm btn-outline-secondary" id="zoomPlus">+</button>
+              <button class="btn btn-sm btn-outline-secondary" id="zoomFit">Fit</button>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-secondary">Font</span>
+              <button class="btn btn-sm btn-outline-secondary" id="fontMinus">−</button>
+              <input type="range" id="fontRange" min="0.5" max="2" step="0.1" value="1" style="width:120px">
+              <button class="btn btn-sm btn-outline-secondary" id="fontPlus">+</button>
+            </div>
           </div>
           <div class="small text-secondary">Drag any bar to shift dates. Click a bar to view task breakdown.</div>
         </div>
         <div class="gantt" id="ganttScroll">
           <div class="content" id="ganttContent"></div>
+        </div>
+      </div>
+
+      <div class="accordion mb-3" id="phaseScheduleAcc">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#phaseScheduleCollapse">
+              Phase schedule
+            </button>
+          </h2>
+          <div id="phaseScheduleCollapse" class="accordion-collapse collapse" data-bs-parent="#phaseScheduleAcc">
+            <div class="accordion-body">
+              <div class="table-responsive">
+                <table id="phaseDatesTable" class="table table-sm table-bordered table-striped mb-0 align-middle">
+                  <thead class="table-dark"></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -653,8 +684,36 @@
     /* ---------- State ---------- */
     function toast(msg){ const el=document.getElementById('appToast'); document.getElementById('toastBody').textContent=msg; const t=new bootstrap.Toast(el,{delay:1400}); t.show(); }
     function byId(id){ return document.getElementById(id); }
-    function daysBetween(a,b){ return Math.ceil((b-a)/dayMs); }
+    function daysBetween(a,b){
+      let count = 0;
+      const d = new Date(a.getTime());
+      while(d < b){
+        d.setDate(d.getDate()+1);
+        const day = d.getDay();
+        if(day !== 0 && day !== 6) count++;
+      }
+      return count;
+    }
     function fmt(d){ return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); }
+    function addBusinessDays(d,n){
+      const x = new Date(d.getTime());
+      if(n >= 0){
+        let added = 0;
+        while(added < n){
+          x.setDate(x.getDate()+1);
+          const day = x.getDay();
+          if(day !== 0 && day !== 6) added++;
+        }
+      }else{
+        let added = 0;
+        while(added > n){
+          x.setDate(x.getDate()-1);
+          const day = x.getDay();
+          if(day !== 0 && day !== 6) added--;
+        }
+      }
+      return x;
+    }
     function iso(d){ return d.toISOString().slice(0,10); }
     function escapeHtml(s){
       return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -778,17 +837,18 @@
 
     /* ---------- Detail ---------- */
     let currentPlanId = null;
-    function openDetail(planId){
-      const p = state.proposals.find(x=>x.id===planId); if(!p) return;
-      currentPlanId = planId;
-      byId('plansLayer').style.display='none';
-      byId('detail').style.display='block';
-      const aggr = aggregate(p, state.tasks, getTeam);
-      const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+      function openDetail(planId){
+        const p = state.proposals.find(x=>x.id===planId); if(!p) return;
+        currentPlanId = planId;
+        byId('plansLayer').style.display='none';
+        byId('detail').style.display='block';
+        const aggr = aggregate(p, state.tasks, getTeam);
+        const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
       byId('detail-title').textContent = p.title;
       byId('detail-team').textContent = getTeam(p.teamId)?.name || '—';
       byId('detail-buffer').textContent = p.bufferPct||0;
-      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
+      const totalDays = Math.max(1, daysBetween(sched.chartStart, addBusinessDays(sched.chartEnd,1)));
       byId('detail-span').textContent = `${fmt(sched.chartStart)} → ${fmt(sched.chartEnd)} • ${totalDays} days`;
       const th = `<tr><th>Phase</th>${effortTypes().map(k=>`<th>${effortTypeTitle(k)}</th>`).join('')}</tr>`;
       byId('effTable').querySelector('thead').innerHTML = th;
@@ -807,18 +867,22 @@
         tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${team.sizes?.[k]||0}</td>`;
         tbTeam.appendChild(tr);
       });
-      const lf = byId('lane-filters');
-      lf.innerHTML = `<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="chkReleases"><label class="form-check-label" for="chkReleases"><span class="badge-lane"><span class="dot" style="background:#6f42c1"></span>Releases</span></label></div>`+
+      const lf = byId('lane-menu');
+      lf.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" id="chkReleases"><label class="form-check-label" for="chkReleases"><span class="badge-lane"><span class="dot" style="background:#6f42c1"></span>Releases</span></label></div>`+
+        `<div class="form-check"><input class="form-check-input" type="checkbox" id="chkSprints"><label class="form-check-label" for="chkSprints"><span class="badge-lane"><span class="dot" style="background:#dc3545"></span>Sprints</span></label></div>`+
         (p.lanes||[]).map(l=>
-        `<div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="${l.key}" id="chk${l.key}"><label class="form-check-label" for="chk${l.key}"><span class="badge-lane"><span class="dot" style="background:${l.color||effortTypeColor(l.key)}"></span>${l.name||effortTypeTitle(l.key)}</span></label></div>`
+        `<div class="form-check"><input class="form-check-input lane-filter" type="checkbox" value="${l.key}" id="chk${l.key}"><label class="form-check-label" for="chk${l.key}"><span class="badge-lane"><span class="dot" style="background:${l.color||effortTypeColor(l.key)}"></span>${l.name||effortTypeTitle(l.key)}</span></label></div>`
       ).join('');
-      document.querySelectorAll('.lane-filter').forEach(chk=>{
+      lf.querySelectorAll('.lane-filter').forEach(chk=>{
         chk.checked = !(p.hiddenLanes||[]).includes(chk.value);
         chk.onchange = ()=>{
-          p.hiddenLanes = Array.from(document.querySelectorAll('.lane-filter'))
+          p.hiddenLanes = Array.from(document.querySelectorAll('#lane-menu .lane-filter'))
             .filter(x=>!x.checked).map(x=>x.value);
           save();
-          drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+          const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+          const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+          drawGantt(p, sched);
+          renderPhaseDatesTable(sched);
         };
       });
       const chkRel = byId('chkReleases');
@@ -826,11 +890,26 @@
       chkRel.onchange = ()=>{
         state.meta.showReleaseLane = chkRel.checked;
         save();
-        drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+        const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        drawGantt(p, sched);
+        renderPhaseDatesTable(sched);
+      };
+      const chkSpr = byId('chkSprints');
+      chkSpr.checked = state.meta.showSprintLane !== false;
+      chkSpr.onchange = ()=>{
+        state.meta.showSprintLane = chkSpr.checked;
+        save();
+        const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        drawGantt(p, sched);
+        renderPhaseDatesTable(sched);
       };
       drawGantt(p, sched);
+      renderPhaseDatesTable(sched);
       renderPhaseBreakdownTables(p);
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
+      byId('fontRange').value = p.fontScale || 1;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
       byId('btn-export-plan-pdf').onclick = ()=> exportPlanPDF(p.id);
       byId('btn-export-plan-xlsx-basic').onclick = ()=> exportPlanExcel(p.id);
@@ -840,21 +919,88 @@
       const scroll = byId('ganttScroll');
       container.innerHTML = '';
       const pxPerDay = p.pxPerDay || state.meta.defaultPxPerDay || 18;
-      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
+      const totalDays = Math.max(1, daysBetween(sched.chartStart, addBusinessDays(sched.chartEnd,1)));
+      function applyFont(){
+        const baseFont = Math.max(8, Math.min(16, Math.round(pxPerDay*0.75)));
+        scroll.style.fontSize = (baseFont * (p.fontScale||1)) + 'px';
+      }
+      applyFont();
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
       const width = totalDays * pxPerDay + labelPad;
-      const lanesOn = Array.from(document.querySelectorAll('.lane-filter')).filter(x=>x.checked).map(x=>x.value);
+      const lanesOn = Array.from(document.querySelectorAll('#lane-menu .lane-filter')).filter(x=>x.checked).map(x=>x.value);
       if(state.meta.showReleaseLane !== false && (state.releases||[]).length){
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='releases';
         const label = document.createElement('div'); label.className='lane-label'; label.textContent='Releases'; lane.appendChild(label);
+        const bars = [];
         (state.releases||[]).forEach(r=>{
           const start = new Date(r.codeFreeze); const end = new Date(r.releaseDate);
           if(end < sched.chartStart || start > sched.chartEnd) return;
-          const d0 = Math.max(0, Math.floor((start - sched.chartStart)/dayMs));
-          const d1 = Math.floor((end - sched.chartStart)/dayMs);
-          const bar = document.createElement('div'); bar.className='bar release-bar'; bar.textContent = r.version || '';
-          bar.style.left = (labelPad + d0*pxPerDay) + 'px';
-          bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
+          const d0 = Math.max(0, daysBetween(sched.chartStart, start));
+          const d1 = daysBetween(sched.chartStart, addBusinessDays(end,1));
+          bars.push({start:start.getTime(), end:end.getTime(), d0, d1, rel:r});
+        });
+        bars.sort((a,b)=>a.start-b.start);
+        const trackEnd=[];
+        bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+        const trackCount=trackEnd.length||1; const lanePad=4, barHeight=36, step=barHeight*0.5;
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+        bars.forEach(b=>{
+          const bar = document.createElement('div'); bar.className='bar release-bar'; bar.textContent = b.rel.version || '';
+          bar.style.left = (labelPad + b.d0*pxPerDay)+'px';
+          bar.style.width = (Math.max(1, b.d1 - b.d0)*pxPerDay)+'px';
+          bar.style.top = (lanePad + b.track*step)+'px';
+          bar.style.height = barHeight+'px';
+          lane.appendChild(bar);
+        });
+        container.appendChild(lane);
+      }
+      if(state.meta.showSprintLane !== false && (state.sprints||[]).length){
+        const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='sprints';
+        const label = document.createElement('div'); label.className='lane-label'; label.textContent='Sprints'; lane.appendChild(label);
+        const bars = [];
+        (state.sprints||[]).forEach(s=>{
+          const start = new Date(s.start); const end = new Date(s.end);
+          if(end < sched.chartStart || start > sched.chartEnd) return;
+          const d0 = Math.max(0, daysBetween(sched.chartStart, start));
+          const d1 = daysBetween(sched.chartStart, addBusinessDays(end,1));
+          bars.push({start:start.getTime(), end:end.getTime(), d0, d1, spr:s});
+        });
+        bars.sort((a,b)=>a.start-b.start);
+        const trackEnd=[];
+        bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+        const trackCount=trackEnd.length||1; const lanePad=4, barHeight=36, step=barHeight*0.5;
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+        bars.forEach(b=>{
+          const bar = document.createElement('div'); bar.className='bar sprint-bar'; bar.textContent = b.spr.name || '';
+          bar.style.left = (labelPad + b.d0*pxPerDay) + 'px';
+          bar.style.width = (Math.max(1, b.d1 - b.d0)*pxPerDay) + 'px';
+          bar.style.top = (lanePad + b.track*step)+'px';
+          bar.style.height = barHeight+'px';
+          lane.appendChild(bar);
+        });
+        container.appendChild(lane);
+      }
+      {
+        const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='phases';
+        const label = document.createElement('div'); label.className='lane-label'; label.textContent='Phases'; lane.appendChild(label);
+        const bars = [];
+        sched.phaseWindows.forEach(w=>{
+          const d0 = daysBetween(sched.chartStart, w.start);
+          const d1 = daysBetween(sched.chartStart, addBusinessDays(w.end,1));
+          bars.push({start:w.start.getTime(), end:w.end.getTime(), d0, d1, ph:w.ph});
+        });
+        bars.sort((a,b)=>a.start-b.start);
+        const trackEnd=[];
+        bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+        const trackCount=trackEnd.length||1; const lanePad=4, barHeight=36, step=barHeight*0.5;
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+        bars.forEach(b=>{
+          const bar = document.createElement('div'); bar.className='bar phase-bar'; bar.textContent = getPhase(b.ph)?.name || b.ph;
+          bar.style.left = (labelPad + b.d0*pxPerDay)+'px';
+          // width uses exclusive offset difference so phase bar ends at last effort
+          bar.style.width = (Math.max(1, b.d1 - b.d0)*pxPerDay)+'px';
+          bar.style.top = (lanePad + b.track*step)+'px';
+          bar.style.height = barHeight+'px';
           lane.appendChild(bar);
         });
         container.appendChild(lane);
@@ -862,20 +1008,51 @@
       sched.lanes.filter(l=> lanesOn.includes(l.key)).forEach(l=>{
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane=l.key;
         const label = document.createElement('div'); label.className='lane-label'; label.textContent = l.name; lane.appendChild(label);
+
+        const bars = [];
         sched.phaseWindows.forEach(w=>{
           const li = w.lanes.find(x=>x.key===l.key);
-          const offset = Math.floor(((li.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
-          const bar = document.createElement('div'); bar.className = 'bar'; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px'; bar.style.background = l.color || effortTypeColor(l.key);
-          bar.textContent = w.ph; bar.title = `${l.name} • ${w.ph} • ${fmt(li.start)} (${li.days}d)`;
-          bar.dataset.lane = l.key; bar.dataset.phase = w.ph;
-          makeDraggableBar(bar, p, sched, li.days);
-          bar.addEventListener('click', (ev)=>{ ev.stopPropagation(); openBreakdown(p, w.ph, l.key); });
+          if(!li) return;
+          bars.push({ phase: w.ph, info: li });
+        });
+
+        const trackEnd = [];
+        bars.forEach(b=>{
+          const startMs = b.info.start.getTime();
+          let t = 0;
+          while(t < trackEnd.length && startMs < trackEnd[t]) t++;
+          b.track = t;
+          trackEnd[t] = addBusinessDays(b.info.start, b.info.days).getTime();
+        });
+
+        const lanePad = 4;
+        const barHeight = 36;
+        const step = barHeight*0.5;
+        const trackCount = trackEnd.length || 1;
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+
+        bars.forEach(b=>{
+          const offset = labelPad + daysBetween(sched.chartStart, b.info.start) * pxPerDay;
+          const bar = document.createElement('div');
+          bar.className = 'bar';
+          bar.style.left = offset+'px';
+          bar.style.width = (Math.max(1, b.info.days)*pxPerDay)+'px';
+          bar.style.background = l.color || effortTypeColor(l.key);
+          bar.style.top = (lanePad + b.track*step)+'px';
+          bar.textContent = b.phase;
+          bar.title = `${l.name} • ${b.phase} • ${fmt(b.info.start)} (${b.info.days}d)`;
+          bar.dataset.lane = l.key;
+          bar.dataset.phase = b.phase;
+          makeDraggableBar(bar, p, sched, b.info.days);
+          bar.addEventListener('click', (ev)=>{ ev.stopPropagation(); openBreakdown(p, b.phase, l.key); });
           lane.appendChild(bar);
         });
+
         container.appendChild(lane);
       });
-      drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0, sched.phaseWindows);
+      drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0);
       const zr = byId('zoomRange'), zm = byId('zoomMinus'), zp = byId('zoomPlus'), zf = byId('zoomFit');
+      const fr = byId('fontRange'), fm = byId('fontMinus'), fp = byId('fontPlus');
       zr.oninput = (e)=>{ p.pxPerDay = +e.target.value; save(); openDetail(p.id); };
       zm.onclick = ()=>{ p.pxPerDay = Math.max(6, (p.pxPerDay||pxPerDay)-2); save(); openDetail(p.id); };
       zp.onclick = ()=>{ p.pxPerDay = Math.min(44, (p.pxPerDay||pxPerDay)+2); save(); openDetail(p.id); };
@@ -884,17 +1061,19 @@
         const fit = Math.max(6, Math.min(44, Math.floor(visible/totalDays)));
         p.pxPerDay = fit; save(); openDetail(p.id);
       };
+      fr.oninput = (e)=>{ p.fontScale = +e.target.value; save(); applyFont(); };
+      fm.onclick = ()=>{ fr.value = Math.max(0.5, (+fr.value - 0.1)).toFixed(1); fr.dispatchEvent(new Event('input')); };
+      fp.onclick = ()=>{ fr.value = Math.min(2, (+fr.value + 0.1)).toFixed(1); fr.dispatchEvent(new Event('input')); };
       let isDown=false, startX=0, scrollLeft=0;
       scroll.addEventListener('mousedown', e=>{ if(e.target.classList.contains('bar')) return; isDown=true; startX=e.pageX - scroll.offsetLeft; scrollLeft=scroll.scrollLeft; });
       window.addEventListener('mouseup', ()=> isDown=false);
       scroll.addEventListener('mousemove', e=>{ if(!isDown) return; e.preventDefault(); const x=e.pageX - scroll.offsetLeft; const walk=(x-startX)*1.2; scroll.scrollLeft = scrollLeft - walk; });
     }
-    function drawRulerAndGrid(scroll, chartStart, totalDays, pxPerDay, contentHeight, phaseWindows){
-      scroll.querySelectorAll('.ruler,.grid,.phase-tag,.sprint-line,.sprint-label,.hover-line,.hover-label').forEach(n=> n.remove());
+    function drawRulerAndGrid(scroll, chartStart, totalDays, pxPerDay, contentHeight){
+      scroll.querySelectorAll('.ruler,.grid,.hover-line,.hover-label').forEach(n=> n.remove());
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
       const ruler = document.createElement('div'); ruler.className='ruler'; ruler.style.width = (totalDays*pxPerDay) + 'px';
       scroll.appendChild(ruler);
-      const chartEndDate = new Date(chartStart.getTime()+totalDays*dayMs);
       const minLabelPx = 15;
       const dayStep = Math.max(1, Math.ceil(minLabelPx/pxPerDay));
       for(let d=0; d<=totalDays; d++){
@@ -902,7 +1081,7 @@
         const tick = document.createElement('div'); tick.className='tick'; tick.style.left = x+'px'; ruler.appendChild(tick);
         if(d % dayStep === 0){
           const label = document.createElement('div'); label.className='label'; label.style.left = x+'px';
-          const dt = new Date(chartStart.getTime() + d*dayMs); label.textContent = dt.getDate();
+          const dt = addBusinessDays(chartStart, d); label.textContent = dt.getDate();
           ruler.appendChild(label);
         }
       }
@@ -910,7 +1089,7 @@
       let rangeStart = 0;
       let rangeDate = new Date(chartStart);
       for(let d=0; d<=totalDays; d++){
-        const dt = new Date(chartStart.getTime() + d*dayMs);
+        const dt = addBusinessDays(chartStart, d);
         if(dt.getMonth() !== rangeDate.getMonth() || dt.getFullYear() !== rangeDate.getFullYear()){
           monthRanges.push({start:rangeStart, end:d-1, label:rangeDate.toLocaleDateString('en-GB',{month:'short', year:'numeric'})});
           rangeStart = d;
@@ -927,26 +1106,17 @@
         ruler.appendChild(ms);
       });
       const grid = document.createElement('div'); grid.className='grid'; grid.style.width = (totalDays*pxPerDay + labelPad) + 'px'; grid.style.height = (contentHeight - 60) + 'px'; scroll.appendChild(grid);
-      for(let d=0; d<=totalDays; d++){ const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline'; if(d%7===0) gl.classList.add('week'); gl.style.left = x+'px'; grid.appendChild(gl); }
+      for(let d=0; d<=totalDays; d++){
+        const x = labelPad + d*pxPerDay;
+        const gl = document.createElement('div'); gl.className='gridline';
+        const dt = addBusinessDays(chartStart, d);
+        if(dt.getDay() === 1) gl.classList.add('week');
+        gl.style.left = x+'px';
+        grid.appendChild(gl);
+      }
       monthRanges.slice(1).forEach(r=>{
         const x = labelPad + r.start*pxPerDay;
         const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl);
-      });
-      phaseWindows.forEach(w=>{
-        const d0 = Math.floor((w.start - chartStart)/dayMs);
-        const d1 = Math.floor((w.end - chartStart)/dayMs);
-        const x = labelPad + d0*pxPerDay;
-        const wpx = Math.max(1, (d1-d0+1)*pxPerDay);
-        const tag = document.createElement('div'); tag.className='phase-tag'; tag.style.left = x+'px'; tag.style.width = wpx+'px'; tag.textContent = w.ph;
-        scroll.appendChild(tag);
-      });
-      (state.sprints||[]).forEach(sp=>{
-        const sd = new Date(sp.start);
-        if(sd < chartStart || sd > chartEndDate) return;
-        const d = Math.floor((sd - chartStart)/dayMs);
-        const x = labelPad + d*pxPerDay;
-        const sl = document.createElement('div'); sl.className='sprint-line'; sl.style.left = x+'px'; scroll.appendChild(sl);
-        const lbl = document.createElement('div'); lbl.className='sprint-label'; lbl.style.left = x+'px'; lbl.textContent = sp.name; scroll.appendChild(lbl);
       });
       const hoverLine = document.createElement('div'); hoverLine.className='hover-line'; scroll.appendChild(hoverLine);
       const hoverLabel = document.createElement('div'); hoverLabel.className='hover-label'; ruler.appendChild(hoverLabel);
@@ -957,7 +1127,7 @@
         hoverLine.style.display='block'; hoverLabel.style.display='block';
         hoverLine.style.left = x+'px'; hoverLabel.style.left = (x - labelPad)+'px';
         const d = Math.floor((x - labelPad)/pxPerDay);
-        const dt = new Date(chartStart.getTime() + d*dayMs);
+        const dt = addBusinessDays(chartStart, d);
         hoverLabel.textContent = dt.toLocaleDateString('en-GB',{day:'2-digit', month:'short', year:'numeric'});
       }
       function hideHover(){ hoverLine.style.display='none'; hoverLabel.style.display='none'; }
@@ -975,10 +1145,34 @@
         const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
         const left = parseInt(bar.style.left);
         const offsetPx = left - labelPad;
-        const days = Math.max(0, Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18)));
-        const newDate = new Date(sched.chartStart.getTime() + days*dayMs);
+        const days = Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18));
+        const newDate = addBusinessDays(sched.chartStart, days);
         plan.overrides ||= {}; plan.overrides[bar.dataset.phase] ||= {}; plan.overrides[bar.dataset.phase][bar.dataset.lane] = iso(newDate);
         save(); openDetail(plan.id);
+      });
+    }
+    function renderPhaseDatesTable(sched){
+      const lanes = sched.lanes;
+      const thead = byId('phaseDatesTable').querySelector('thead');
+      const tbody = byId('phaseDatesTable').querySelector('tbody');
+      thead.innerHTML =
+        `<tr><th rowspan="2">Phase</th><th colspan="2">Phase</th>${lanes.map(l=>`<th colspan="2">${l.name||l.key}</th>`).join('')}</tr>`+
+        `<tr><th>Start</th><th>End</th>${lanes.map(()=>'<th>Start</th><th>End</th>').join('')}</tr>`;
+      tbody.innerHTML = '';
+      sched.phaseWindows.forEach(w=>{
+        let row = `<th scope="row">${getPhase(w.ph)?.name||w.ph}</th><td>${fmt(w.start)}</td><td>${fmt(w.end)}</td>`;
+        lanes.forEach(l=>{
+          const li = w.lanes.find(x=> x.key===l.key);
+          if(li){
+            const le = addBusinessDays(li.start, Math.max(1, li.days) - 1);
+            row += `<td>${fmt(li.start)}</td><td>${fmt(le)}</td>`;
+          }else{
+            row += '<td></td><td></td>';
+          }
+        });
+        const tr = document.createElement('tr');
+        tr.innerHTML = row;
+        tbody.appendChild(tr);
       });
     }
 
@@ -1012,7 +1206,7 @@
         const aggr = aggregate(plan, state.tasks, getTeam);
         const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
         const win = sched.phaseWindows.find(w=> w.ph===phId);
-        const span = win ? `${fmt(win.start)} → ${fmt(win.end)} (${daysBetween(win.start, win.end)} days)` : '';
+        const span = win ? `${fmt(win.start)} → ${fmt(win.end)} (${daysBetween(win.start, win.end)+1} days)` : '';
         const data = computeTaskEffortsForPhase(plan, phId);
         const item = document.createElement('div'); item.className='accordion-item';
         item.innerHTML = `
@@ -1064,7 +1258,7 @@
       // A4 landscape content width ~1100px; respect padding used in .pdf-sheet (24px)
       const pageWidth = 1100 - 2*24;
       const labelPad = 140;
-      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
+      const totalDays = Math.max(1, daysBetween(sched.chartStart, addBusinessDays(sched.chartEnd,1)));
       const pxPerDay = Math.max(3, Math.floor((pageWidth - labelPad) / totalDays));
       const width = totalDays * pxPerDay + labelPad;
       const wrap = document.createElement('div');
@@ -1075,11 +1269,14 @@
       container.style.position='relative'; container.style.overflow='visible'; container.style.width = width+'px'; container.style.border='1px solid #333';
       container.style.padding='0'; container.style.height = (plan.phaseIds.length*28 + 36)+'px';
       const grid = document.createElement('div'); grid.style.position='absolute'; grid.style.left=labelPad+'px'; grid.style.top='0'; grid.style.bottom='0'; grid.style.right='0';
-      // vertical day lines every 7 days
-      for(let d=0; d<totalDays; d+=7){
-        const x = labelPad + d*pxPerDay;
-        const v = document.createElement('div'); v.style.position='absolute'; v.style.left=x+'px'; v.style.top='0'; v.style.bottom='0'; v.style.width='0'; v.style.borderLeft='1px dashed rgba(127,127,127,.5)';
-        container.appendChild(v);
+      // vertical lines at week boundaries (Mondays)
+      for(let d=0; d<totalDays; d++){
+        const dt = addBusinessDays(sched.chartStart, d);
+        if(dt.getDay() === 1){
+          const x = labelPad + d*pxPerDay;
+          const v = document.createElement('div'); v.style.position='absolute'; v.style.left=x+'px'; v.style.top='0'; v.style.bottom='0'; v.style.width='0'; v.style.borderLeft='1px dashed rgba(127,127,127,.5)';
+          container.appendChild(v);
+        }
       }
       // y rows
       plan.phaseIds.forEach((phId, idx)=>{
@@ -1090,7 +1287,7 @@
         const seg = (sched.phaseWindows||[]).find(w => w.ph === phId);
         if(seg){
           const left = daysBetween(sched.chartStart, seg.start) * pxPerDay;
-          const segDays = Math.max(1, daysBetween(seg.start, seg.end) + 1);
+          const segDays = Math.max(1, daysBetween(seg.start, addBusinessDays(seg.end,1)));
           const w = segDays * pxPerDay;
           const bar = document.createElement('div');
           bar.style.position='absolute'; bar.style.left = (labelPad + left)+'px'; bar.style.top='0'; bar.style.height='100%'; bar.style.width = w+'px';
@@ -1184,7 +1381,8 @@
       const sheet = [["Project", pr?.name||"—"], ["Generated", new Date().toLocaleString()], [""], ["Plan","Team","Phases","Buffer%","Start","End", ...effortTypes().map(k=>effortTypeTitle(k))]];
       state.proposals.filter(p=>p.projectId===projectId).forEach(p=>{
         const aggr = aggregate(p, state.tasks, getTeam);
-        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+        const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
         const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
         Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+= (pt[k]||0)); });
         sheet.push([p.title, getTeam(p.teamId)?.name||"—", p.phaseIds.map(id=>getPhase(id)?.name||id).join(" / "), p.bufferPct||0, sched.chartStart.toISOString().slice(0,10), sched.chartEnd.toISOString().slice(0,10), ...effortTypes().map(k=> totals[k])]);
@@ -1226,17 +1424,17 @@
         rows.push([""]);
       });
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), sheetName(plan.title,"_Tasks"));
-      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
+      const totalDays = Math.max(1, daysBetween(sched.chartStart, addBusinessDays(sched.chartEnd,1)));
       const header = ["Lane","Phase","Start","Days"];
       for(let d=0; d<totalDays; d++){
-        const dt = new Date(sched.chartStart.getTime()+d*dayMs);
+        const dt = addBusinessDays(sched.chartStart, d);
         header.push(dt.toISOString().slice(0,10));
       }
       const ganttRows = [header];
       sched.phaseWindows.forEach(w=>{
         w.lanes.forEach(li=>{
           const row = [li.key, w.ph, li.start.toISOString().slice(0,10), li.days];
-          const startIdx = Math.max(0, Math.floor((li.start - sched.chartStart)/dayMs));
+          const startIdx = Math.max(0, daysBetween(sched.chartStart, li.start));
           for(let i=0;i<totalDays;i++){
             row.push(i>=startIdx && i<startIdx+li.days ? "■" : "");
           }
@@ -1269,7 +1467,8 @@
       const totalsAll = Object.fromEntries(effortTypes().map(k=>[k,0]));
       for(const p of plans){
         const aggr = aggregate(p, state.tasks, getTeam);
-        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+        const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
         const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
         Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+=(pt[k]||0)); });
         effortTypes().forEach(k=> totalsAll[k]+=totals[k]);
@@ -1351,16 +1550,16 @@
 
       // Gantt (colored cells)
       const shG = wb.addSheet(sheetName(plan.title,"_Gantt"));
-      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
+      const totalDays = Math.max(1, daysBetween(sched.chartStart, addBusinessDays(sched.chartEnd,1)));
       const header = ["Lane","Phase","Start","Days"];
-      for(let d=0; d<totalDays; d++){ const dt = new Date(sched.chartStart.getTime()+d*dayMs); header.push(dt.toISOString().slice(0,10)); }
+      for(let d=0; d<totalDays; d++){ const dt = addBusinessDays(sched.chartStart, d); header.push(dt.toISOString().slice(0,10)); }
       shG.cell("A1").value([header]).style({bold:true, fill:"9BC2E6", border:true});
       let gr=2;
       sched.phaseWindows.forEach(w=>{
         w.lanes.forEach(li=>{
           const row = [li.key, w.ph, li.start.toISOString().slice(0,10), li.days];
           shG.cell("A"+gr).value([row]).style({border:true});
-          const startIdx = Math.max(0, Math.floor((li.start - sched.chartStart)/dayMs));
+          const startIdx = Math.max(0, daysBetween(sched.chartStart, li.start));
           for(let i=0;i<totalDays;i++){
             const cell = shG.cell(4 + i + 1, gr); // (col,row) is 1-based; col 5 = first date column
           }

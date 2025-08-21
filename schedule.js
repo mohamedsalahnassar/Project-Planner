@@ -33,11 +33,20 @@ export function aggregate(plan, tasks, getTeam){
 function duration(md, eng, eff){ if(!eng||eng<=0) return 0; return Math.max(1, Math.ceil(md/(eng*eff))); }
 function addBusinessDays(d, n){
   const x = new Date(d.getTime());
-  let added = 0;
-  while(added < n){
-    x.setDate(x.getDate()+1);
-    const day = x.getDay();
-    if(day !== 0 && day !== 6) added++;
+  if(n >= 0){
+    let added = 0;
+    while(added < n){
+      x.setDate(x.getDate()+1);
+      const day = x.getDay();
+      if(day !== 0 && day !== 6) added++;
+    }
+  }else{
+    let added = 0;
+    while(added > n){
+      x.setDate(x.getDate()-1);
+      const day = x.getDay();
+      if(day !== 0 && day !== 6) added--;
+    }
   }
   return x;
 }
@@ -106,7 +115,7 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
       laneOut.push({key:qaLane.key, start, days});
     }
     const phEnd = laneOut.reduce((max, l)=>{
-      const end = addBusinessDays(l.start, l.days);
+      const end = addBusinessDays(l.start, Math.max(1, l.days) - 1);
       return end>max ? end : max;
     }, laneOut[0]?.start || phStart);
     const earliestStart = laneOut.reduce((min, l)=> l.start < min ? l.start : min, laneOut[0]?.start || phStart);
