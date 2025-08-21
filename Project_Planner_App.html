@@ -154,12 +154,20 @@
 
       <div class="gantt-wrap mb-3">
         <div class="gantt-toolbar p-2 d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center gap-2">
-            <span class="small text-secondary">Zoom</span>
-            <button class="btn btn-sm btn-outline-secondary" id="zoomMinus">−</button>
-            <input type="range" id="zoomRange" min="6" max="44" step="2" value="18" style="width:240px">
-            <button class="btn btn-sm btn-outline-secondary" id="zoomPlus">+</button>
-            <button class="btn btn-sm btn-outline-secondary" id="zoomFit">Fit</button>
+          <div class="d-flex align-items-center gap-4">
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-secondary">Zoom</span>
+              <button class="btn btn-sm btn-outline-secondary" id="zoomMinus">−</button>
+              <input type="range" id="zoomRange" min="6" max="44" step="2" value="18" style="width:240px">
+              <button class="btn btn-sm btn-outline-secondary" id="zoomPlus">+</button>
+              <button class="btn btn-sm btn-outline-secondary" id="zoomFit">Fit</button>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-secondary">Font</span>
+              <button class="btn btn-sm btn-outline-secondary" id="fontMinus">−</button>
+              <input type="range" id="fontRange" min="0.5" max="2" step="0.1" value="1" style="width:120px">
+              <button class="btn btn-sm btn-outline-secondary" id="fontPlus">+</button>
+            </div>
           </div>
           <div class="small text-secondary">Drag any bar to shift dates. Click a bar to view task breakdown.</div>
         </div>
@@ -811,13 +819,14 @@
 
     /* ---------- Detail ---------- */
     let currentPlanId = null;
-    function openDetail(planId){
-      const p = state.proposals.find(x=>x.id===planId); if(!p) return;
-      currentPlanId = planId;
-      byId('plansLayer').style.display='none';
-      byId('detail').style.display='block';
-      const aggr = aggregate(p, state.tasks, getTeam);
-      const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+      function openDetail(planId){
+        const p = state.proposals.find(x=>x.id===planId); if(!p) return;
+        currentPlanId = planId;
+        byId('plansLayer').style.display='none';
+        byId('detail').style.display='block';
+        const aggr = aggregate(p, state.tasks, getTeam);
+        const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
       byId('detail-title').textContent = p.title;
       byId('detail-team').textContent = getTeam(p.teamId)?.name || '—';
       byId('detail-buffer').textContent = p.bufferPct||0;
@@ -852,7 +861,10 @@
           p.hiddenLanes = Array.from(document.querySelectorAll('#lane-menu .lane-filter'))
             .filter(x=>!x.checked).map(x=>x.value);
           save();
-          drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+          const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+          const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+          drawGantt(p, sched);
+          renderPhaseDatesTable(sched);
         };
       });
       const chkRel = byId('chkReleases');
@@ -860,19 +872,26 @@
       chkRel.onchange = ()=>{
         state.meta.showReleaseLane = chkRel.checked;
         save();
-        drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+        const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        drawGantt(p, sched);
+        renderPhaseDatesTable(sched);
       };
       const chkSpr = byId('chkSprints');
       chkSpr.checked = state.meta.showSprintLane !== false;
       chkSpr.onchange = ()=>{
         state.meta.showSprintLane = chkSpr.checked;
         save();
-        drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+        const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        drawGantt(p, sched);
+        renderPhaseDatesTable(sched);
       };
       drawGantt(p, sched);
       renderPhaseDatesTable(sched);
       renderPhaseBreakdownTables(p);
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
+      byId('fontRange').value = p.fontScale || 1;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
       byId('btn-export-plan-pdf').onclick = ()=> exportPlanPDF(p.id);
       byId('btn-export-plan-xlsx-basic').onclick = ()=> exportPlanExcel(p.id);
@@ -883,22 +902,36 @@
       container.innerHTML = '';
       const pxPerDay = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
-      const fontSize = Math.max(8, Math.min(16, Math.round(pxPerDay*0.75)));
-      scroll.style.fontSize = fontSize + 'px';
+      function applyFont(){
+        const baseFont = Math.max(8, Math.min(16, Math.round(pxPerDay*0.75)));
+        scroll.style.fontSize = (baseFont * (p.fontScale||1)) + 'px';
+      }
+      applyFont();
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
       const width = totalDays * pxPerDay + labelPad;
       const lanesOn = Array.from(document.querySelectorAll('#lane-menu .lane-filter')).filter(x=>x.checked).map(x=>x.value);
       if(state.meta.showReleaseLane !== false && (state.releases||[]).length){
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='releases';
         const label = document.createElement('div'); label.className='lane-label'; label.textContent='Releases'; lane.appendChild(label);
+        const bars = [];
         (state.releases||[]).forEach(r=>{
           const start = new Date(r.codeFreeze); const end = new Date(r.releaseDate);
           if(end < sched.chartStart || start > sched.chartEnd) return;
           const d0 = Math.max(0, Math.floor((start - sched.chartStart)/dayMs));
           const d1 = Math.floor((end - sched.chartStart)/dayMs);
-          const bar = document.createElement('div'); bar.className='bar release-bar'; bar.textContent = r.version || '';
-          bar.style.left = (labelPad + d0*pxPerDay) + 'px';
-          bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
+          bars.push({start:start.getTime(), end:end.getTime(), d0, d1, rel:r});
+        });
+        bars.sort((a,b)=>a.start-b.start);
+        const trackEnd=[];
+        bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+        const trackCount=trackEnd.length||1; const lanePad=4, barHeight=36, step=barHeight*0.5;
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+        bars.forEach(b=>{
+          const bar = document.createElement('div'); bar.className='bar release-bar'; bar.textContent = b.rel.version || '';
+          bar.style.left = (labelPad + b.d0*pxPerDay)+'px';
+          bar.style.width = (Math.max(1, b.d1 - b.d0 + 1)*pxPerDay)+'px';
+          bar.style.top = (lanePad + b.track*step)+'px';
+          bar.style.height = barHeight+'px';
           lane.appendChild(bar);
         });
         container.appendChild(lane);
@@ -906,14 +939,25 @@
       if(state.meta.showSprintLane !== false && (state.sprints||[]).length){
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='sprints';
         const label = document.createElement('div'); label.className='lane-label'; label.textContent='Sprints'; lane.appendChild(label);
+        const bars = [];
         (state.sprints||[]).forEach(s=>{
           const start = new Date(s.start); const end = new Date(s.end);
           if(end < sched.chartStart || start > sched.chartEnd) return;
           const d0 = Math.max(0, Math.floor((start - sched.chartStart)/dayMs));
           const d1 = Math.floor((end - sched.chartStart)/dayMs);
-          const bar = document.createElement('div'); bar.className='bar sprint-bar'; bar.textContent = s.name || '';
-          bar.style.left = (labelPad + d0*pxPerDay) + 'px';
-          bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
+          bars.push({start:start.getTime(), end:end.getTime(), d0, d1, spr:s});
+        });
+        bars.sort((a,b)=>a.start-b.start);
+        const trackEnd=[];
+        bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+        const trackCount=trackEnd.length||1; const lanePad=4, barHeight=36, step=barHeight*0.5;
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+        bars.forEach(b=>{
+          const bar = document.createElement('div'); bar.className='bar sprint-bar'; bar.textContent = b.spr.name || '';
+          bar.style.left = (labelPad + b.d0*pxPerDay) + 'px';
+          bar.style.width = (Math.max(1, b.d1 - b.d0 + 1)*pxPerDay) + 'px';
+          bar.style.top = (lanePad + b.track*step)+'px';
+          bar.style.height = barHeight+'px';
           lane.appendChild(bar);
         });
         container.appendChild(lane);
@@ -921,12 +965,23 @@
       {
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='phases';
         const label = document.createElement('div'); label.className='lane-label'; label.textContent='Phases'; lane.appendChild(label);
+        const bars = [];
         sched.phaseWindows.forEach(w=>{
           const d0 = Math.floor((w.start - sched.chartStart)/dayMs);
           const d1 = Math.floor((w.end - sched.chartStart)/dayMs);
-          const bar = document.createElement('div'); bar.className='bar phase-bar'; bar.textContent = getPhase(w.ph)?.name || w.ph;
-          bar.style.left = (labelPad + d0*pxPerDay) + 'px';
-          bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
+          bars.push({start:w.start.getTime(), end:w.end.getTime(), d0, d1, ph:w.ph});
+        });
+        bars.sort((a,b)=>a.start-b.start);
+        const trackEnd=[];
+        bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+        const trackCount=trackEnd.length||1; const lanePad=4, barHeight=36, step=barHeight*0.5;
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+        bars.forEach(b=>{
+          const bar = document.createElement('div'); bar.className='bar phase-bar'; bar.textContent = getPhase(b.ph)?.name || b.ph;
+          bar.style.left = (labelPad + b.d0*pxPerDay)+'px';
+          bar.style.width = (Math.max(1, b.d1 - b.d0 + 1)*pxPerDay)+'px';
+          bar.style.top = (lanePad + b.track*step)+'px';
+          bar.style.height = barHeight+'px';
           lane.appendChild(bar);
         });
         container.appendChild(lane);
@@ -953,8 +1008,9 @@
 
         const lanePad = 4;
         const barHeight = 36;
+        const step = barHeight*0.5;
         const trackCount = trackEnd.length || 1;
-        lane.style.height = (lanePad*(trackCount+1) + barHeight*trackCount)+'px';
+        lane.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
 
         bars.forEach(b=>{
           const offset = Math.floor(((b.info.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
@@ -963,7 +1019,7 @@
           bar.style.left = offset+'px';
           bar.style.width = (Math.max(1, b.info.days)*pxPerDay)+'px';
           bar.style.background = l.color || effortTypeColor(l.key);
-          bar.style.top = (lanePad + b.track*(barHeight + lanePad))+'px';
+          bar.style.top = (lanePad + b.track*step)+'px';
           bar.textContent = b.phase;
           bar.title = `${l.name} • ${b.phase} • ${fmt(b.info.start)} (${b.info.days}d)`;
           bar.dataset.lane = l.key;
@@ -977,6 +1033,7 @@
       });
       drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0);
       const zr = byId('zoomRange'), zm = byId('zoomMinus'), zp = byId('zoomPlus'), zf = byId('zoomFit');
+      const fr = byId('fontRange'), fm = byId('fontMinus'), fp = byId('fontPlus');
       zr.oninput = (e)=>{ p.pxPerDay = +e.target.value; save(); openDetail(p.id); };
       zm.onclick = ()=>{ p.pxPerDay = Math.max(6, (p.pxPerDay||pxPerDay)-2); save(); openDetail(p.id); };
       zp.onclick = ()=>{ p.pxPerDay = Math.min(44, (p.pxPerDay||pxPerDay)+2); save(); openDetail(p.id); };
@@ -985,6 +1042,9 @@
         const fit = Math.max(6, Math.min(44, Math.floor(visible/totalDays)));
         p.pxPerDay = fit; save(); openDetail(p.id);
       };
+      fr.oninput = (e)=>{ p.fontScale = +e.target.value; save(); applyFont(); };
+      fm.onclick = ()=>{ fr.value = Math.max(0.5, (+fr.value - 0.1)).toFixed(1); fr.dispatchEvent(new Event('input')); };
+      fp.onclick = ()=>{ fr.value = Math.min(2, (+fr.value + 0.1)).toFixed(1); fr.dispatchEvent(new Event('input')); };
       let isDown=false, startX=0, scrollLeft=0;
       scroll.addEventListener('mousedown', e=>{ if(e.target.classList.contains('bar')) return; isDown=true; startX=e.pageX - scroll.offsetLeft; scrollLeft=scroll.scrollLeft; });
       window.addEventListener('mouseup', ()=> isDown=false);
@@ -1293,7 +1353,8 @@
       const sheet = [["Project", pr?.name||"—"], ["Generated", new Date().toLocaleString()], [""], ["Plan","Team","Phases","Buffer%","Start","End", ...effortTypes().map(k=>effortTypeTitle(k))]];
       state.proposals.filter(p=>p.projectId===projectId).forEach(p=>{
         const aggr = aggregate(p, state.tasks, getTeam);
-        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+        const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
         const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
         Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+= (pt[k]||0)); });
         sheet.push([p.title, getTeam(p.teamId)?.name||"—", p.phaseIds.map(id=>getPhase(id)?.name||id).join(" / "), p.bufferPct||0, sched.chartStart.toISOString().slice(0,10), sched.chartEnd.toISOString().slice(0,10), ...effortTypes().map(k=> totals[k])]);
@@ -1378,7 +1439,8 @@
       const totalsAll = Object.fromEntries(effortTypes().map(k=>[k,0]));
       for(const p of plans){
         const aggr = aggregate(p, state.tasks, getTeam);
-        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+        const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+        const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
         const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
         Object.values(aggr.phaseTotals).forEach(pt=>{ effortTypes().forEach(k=> totals[k]+=(pt[k]||0)); });
         effortTypes().forEach(k=> totalsAll[k]+=totals[k]);
