@@ -74,6 +74,18 @@ test('computeSchedule chartStart matches earliest lane start', () => {
     assert.strictEqual(diffDays, 2);
   });
 
+test('computeSchedule skips weekends when advancing dates', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes:[{key:'BE', name:'BE'}]};
+  const tasks = [{projectId:1, startDate:'2024-01-05', phaseIds:['p1'], efforts:[{platform:'BE', manDays:1}]}];
+  const aggr = aggregate(plan, tasks, getTeam);
+  const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-05');
+  const phase = sched.phaseWindows[0];
+  const be = phase.lanes[0];
+  // Start on Friday (5) and end on Monday (1), skipping the weekend
+  assert.strictEqual(be.start.getDay(), 5);
+  assert.strictEqual(phase.end.getDay(), 1);
+});
+
 test('computeSchedule handles custom effort types', () => {
   const lanes = [...baseLanes, {key:'DevOps', name:'DevOps', color:'#000'}];
   const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes};
