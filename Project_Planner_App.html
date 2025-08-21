@@ -20,8 +20,8 @@
     .card-hover:hover{box-shadow:0 8px 30px rgba(0,0,0,.25); transform:translateY(-2px)}
     .mini-timeline{border-radius:.5rem;border:1px solid var(--bs-border-color); overflow:hidden}
     .mini-phase{height:8px;background:var(--bs-border-color);opacity:.6; position:relative}
-    .mini-platforms{height:8px;display:flex}
-    .seg{height:8px}
+    .mini-platforms{height:8px;display:flex;width:100%}
+    .seg{height:8px;flex:1 1 0}
     .gantt-wrap{border:1px solid var(--bs-border-color); border-radius:.75rem; overflow:hidden}
     .gantt-toolbar{position:sticky;top:0;z-index:2;background:var(--bs-body-bg);border-bottom:1px solid var(--bs-border-color)}
     .gantt{position:relative; height:540px; overflow:auto; cursor:grab}
@@ -775,10 +775,14 @@
           ${details ? `<ul class="small mb-0 ps-3">${details}</ul>` : ''}
           <div class="d-flex justify-content-between align-items-center mt-2">
             <div class="small text-secondary">Plans: <b>${plans.length}</b></div>
-            <button class="btn btn-outline-primary btn-sm">Open</button>
+            <div class="btn-group">
+              <button class="btn btn-outline-primary btn-sm" data-act="open">Open</button>
+              <button class="btn btn-outline-secondary btn-sm" data-act="dup"><i class="bi bi-files"></i></button>
+            </div>
           </div>
         </div></div>`;
-        col.querySelector('button').onclick = ()=> openProject(pr.id);
+        col.querySelector('[data-act=open]').onclick = ()=> openProject(pr.id);
+        col.querySelector('[data-act=dup]').onclick = (e)=>{ e.stopPropagation(); duplicateEntity('project', pr.id); };
         byId('projectsLayer').appendChild(col);
       });
     }
@@ -806,7 +810,7 @@
       Object.values(aggr.phaseTotals).forEach(pt=>{ keys.forEach(k=>{ totals[k]+=(pt[k]||0); }); });
       keys.forEach(k=> totals[k] = +totals[k].toFixed(1));
       const sumEff = keys.reduce((s,k)=> s+totals[k],0) || 1;
-      const seg = Object.fromEntries(keys.map(k=>[k, Math.max(2, Math.round(260*(totals[k]/sumEff)))]));
+      const seg = Object.fromEntries(keys.map(k=>[k, totals[k]]));
       const startStr = fmt(sched.chartStart), endStr = fmt(sched.chartEnd);
       const phases = p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ');
       const col = document.createElement('div'); col.className='col-12 col-md-6';
@@ -824,14 +828,21 @@
             ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(255,255,255,.35)"><span class="position-absolute top-100 start-0 translate-middle-x" style="font-size:.65rem">${getPhase(phId)?.name||phId}</span></div>`).join('')}
           </div>
           <div class="mini-platforms">
-            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};width:${seg[k]}px"></div>`).join('')}
+            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};flex:${seg[k]}"></div>`).join('')}
           </div>
         </div>
-          <div class="row row-cols-${keys.length} g-2 text-center">
+        <div class="row row-cols-${keys.length} g-2 text-center">
             ${keys.map(k=> `<div class="col"><div class="border rounded p-2"><div class="small text-secondary">${effortTypeTitle(k)}</div><div class="fw-bold">${totals[k]}</div><div class="small text-secondary">md</div></div></div>`).join('')}
-          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-2">
+          <button class="btn btn-sm btn-outline-secondary" data-act="phase"><i class="bi bi-kanban"></i></button>
+          <button class="btn btn-sm btn-outline-secondary" data-act="dup"><i class="bi bi-files"></i></button>
+        </div>
         </div></div>`;
-        col.querySelector('.card').onclick = ()=> openDetail(p.id);
+        const card = col.querySelector('.card');
+        card.onclick = ()=> openDetail(p.id);
+        col.querySelector('[data-act=dup]').onclick = (e)=>{ e.stopPropagation(); duplicateEntity('plan', p.id); };
+        col.querySelector('[data-act=phase]').onclick = (e)=>{ e.stopPropagation(); const mm=new bootstrap.Modal(byId('manageModal')); mm.show(); byId('tab-phase-tasks').click(); byId('pt-proj').value = p.projectId; byId('pt-proj').dispatchEvent(new Event('change')); };
         return col;
       }
 
@@ -1678,7 +1689,7 @@
     const manageModal = new bootstrap.Modal('#manageModal');
     const editModal = new bootstrap.Modal('#editModal');
     byId('btn-manage').onclick = ()=>{ refreshManage(); manageModal.show(); };
-    byId('btn-save-manage').onclick = ()=>{ save(); refreshManage(); };
+    byId('btn-save-manage').onclick = ()=>{ save(); refreshManage(); manageModal.hide(); };
 
     function refreshManage(){
       const filterP = (byId('search-projects').value||'').toLowerCase();
@@ -1686,8 +1697,9 @@
       state.projects.filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterP)).forEach(p=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${p.name}</td><td>${p.description||''}</td><td><code>${p.id}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('project', p.id);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('project', p.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete project?')){
           state.proposals.forEach(pr=>{ if(pr.projectId===p.id) pr.projectId = state.projects[0]?.id || ''; });
           state.projects = state.projects.filter(x=>x.id!==p.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
@@ -1703,7 +1715,7 @@
         const totals = Object.fromEntries(keys.map(k=>[k,0]));
         Object.values(aggr.phaseTotals).forEach(pt=>{ keys.forEach(k=>{ totals[k]+=(pt[k]||0); }); });
         const sumEff = keys.reduce((s,k)=>s+totals[k],0) || 1;
-        const seg = Object.fromEntries(keys.map(k=>[k, Math.max(2, Math.round(180*(totals[k]/sumEff)))]));
+        const seg = Object.fromEntries(keys.map(k=>[k, totals[k]]));
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${p.title}</td><td>${getProject(p.projectId)?.name||'—'}</td><td>${getTeam(p.teamId)?.name||'—'}</td>
           <td>${p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ')}</td>
@@ -1712,10 +1724,11 @@
             ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(127,127,127,.6)"></div>`).join('')}
           </div>
           <div class="mini-platforms">
-            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};width:${seg[k]}px"></div>`).join('')}
+            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};flex:${seg[k]}"></div>`).join('')}
           </div></div></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('plan', p.id);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('plan', p.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete plan?')){
           state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==p.id));
           state.proposals = state.proposals.filter(x=>x.id!==p.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
@@ -1728,8 +1741,9 @@
       state.phases.slice().sort((a,b)=>(a.order||0)-(b.order||0)).filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterPh)).forEach(p=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${p.name}</td><td>${p.description||''}</td><td>${p.order||1}</td><td><code>${p.id}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('phase', p.id);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('phase', p.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete phase?')){
           state.proposals.forEach(pr=> pr.phaseIds = (pr.phaseIds||[]).filter(id=>id!==p.id));
           state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.phaseId!==p.id));
@@ -1747,8 +1761,9 @@
         const tr = document.createElement('tr');
         const cells = effortTypes().map(k=>`<td>${t.sizes[k]||0}</td>`).join('');
         tr.innerHTML = `<td>${t.name}</td>${cells}<td><code>${t.id}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('team', t.id);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('team', t.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete team?')){
           state.proposals.forEach(p=>{ if(p.teamId===t.id) p.teamId = state.teams[0]?.id || ''; });
           state.teams = state.teams.filter(x=>x.id!==t.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
@@ -1761,8 +1776,9 @@
       state.sprints.filter(s=> (s.name+' '+s.id).toLowerCase().includes(filterSp)).forEach(s=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(s.name)}</td><td>${s.start}</td><td>${s.end}</td><td><code>${s.id}</code></td>`+
-          `<td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          `<td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('sprint', s.id);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('sprint', s.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete sprint?')){ state.sprints = state.sprints.filter(x=>x.id!==s.id); save(); refreshManage(); } };
         tbSp.appendChild(tr);
       });
@@ -1771,8 +1787,9 @@
       (state.releases||[]).filter(r=> (r.version+' '+r.id).toLowerCase().includes(filterRl)).forEach(r=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(r.version)}</td><td>${r.codeFreeze||''}</td><td>${r.releaseDate||''}</td><td><code>${r.id}</code></td>`+
-          `<td class="text-end"><button class=\"btn btn-sm btn-outline-primary\">Edit</button><button class=\"btn btn-sm btn-outline-danger ms-1\">Delete</button></td>`;
+          `<td class="text-end"><button class=\"btn btn-sm btn-outline-primary\">Edit</button><button class=\"btn btn-sm btn-outline-secondary ms-1\">Duplicate</button><button class=\"btn btn-sm btn-outline-danger ms-1\">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('release', r.id);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('release', r.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete release?')){ state.releases = state.releases.filter(x=>x.id!==r.id); save(); refreshManage(); } };
         tbRl.appendChild(tr);
       });
@@ -1783,8 +1800,9 @@
         const asg = (t.assignments||[]).map(a=> `${a.proposalId}/${a.phaseId}`).join(', ');
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${t.title}</td><td>${t.startDate||''}</td><td>${getProject(t.projectId)?.name||'—'}</td><td>${t.viableProduct?'Yes':'No'}</td><td>${eff||'-'}</td><td><code>${t.id}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('task', t.id);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('task', t.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); } };
         tbTk.appendChild(tr);
@@ -1797,8 +1815,9 @@
         tr.innerHTML = `<td>${escapeHtml(et.title)}</td>`+
           `<td><div class="d-flex align-items-center gap-2"><span class="badge" style="background:${et.color}">&nbsp;</span><code>${et.color}</code></div></td>`+
           `<td><code>${et.key}</code></td>`+
-          `<td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button>${et.locked?'' : '<button class="btn btn-sm btn-outline-danger ms-1">Delete</button>'}</td>`;
+          `<td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button>${et.locked?'' : '<button class="btn btn-sm btn-outline-danger ms-1">Delete</button>'}</td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('effortType', et.key);
+        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('effortType', et.key);
         if(!et.locked){ tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete effort type?')){ removeEffortType(et.key); save(); refreshManage(); } }; }
         tbEt.appendChild(tr);
       });
@@ -2121,7 +2140,7 @@
       buildProjects();
       };
     }
-    function openEditor(kind, id){
+    function openEditor(kind, id, prefill={}){
       const form = byId('editForm'); const title = byId('editTitle'); const del = byId('editDelete');
       form.innerHTML=''; del.classList.toggle('d-none', !id);
       function field(label, inner){ return `<div><label class="form-label">${label}</label>${inner}</div>`; }
@@ -2131,7 +2150,7 @@
 
       if(kind==='project'){
         const isEdit = !!id;
-        const data = isEdit ? state.projects.find(x=>x.id===id) : { id:'proj-'+Math.random().toString(36).slice(2,6), name:'', description:'' };
+        const data = isEdit ? state.projects.find(x=>x.id===id) : Object.assign({ id:'proj-'+Math.random().toString(36).slice(2,6), name:'', description:'' }, structuredClone(prefill));
         title.textContent = isEdit? 'Edit Project' : 'Add Project';
         form.innerHTML = [
           field('Name', `<input id="f-name" class="form-control" value="${escapeHtml(data.name)}">`),
@@ -2150,7 +2169,7 @@
       }
       if(kind==='plan'){
         const isEdit = !!id;
-        const data = isEdit ? state.proposals.find(x=>x.id===id) : { id:'prop'+Math.random().toString(36).slice(2,7), projectId:state.projects[0]?.id||'', title:'', description:'', teamId:state.teams[0]?.id||'', bufferPct:12, phaseIds:[], pxPerDay:state.meta.defaultPxPerDay||18, overrides:{}, lanes:defaultPlanLanes() };
+        const data = isEdit ? state.proposals.find(x=>x.id===id) : Object.assign({ id:'prop'+Math.random().toString(36).slice(2,7), projectId:state.projects[0]?.id||'', title:'', description:'', teamId:state.teams[0]?.id||'', bufferPct:12, phaseIds:[], pxPerDay:state.meta.defaultPxPerDay||18, overrides:{}, lanes:defaultPlanLanes() }, structuredClone(prefill));
         data.lanes = data.lanes && data.lanes.length ? structuredClone(data.lanes) : defaultPlanLanes();
         title.textContent = isEdit? 'Edit Delivery Plan' : 'Add Delivery Plan';
         form.innerHTML = [
@@ -2204,7 +2223,7 @@
       }
       if(kind==='phase'){
         const isEdit = !!id;
-        const data = isEdit ? state.phases.find(x=>x.id===id) : { id:'PH'+Math.random().toString(36).slice(2,6), name:'', description:'', order:1, color:'#6c757d' };
+        const data = isEdit ? state.phases.find(x=>x.id===id) : Object.assign({ id:'PH'+Math.random().toString(36).slice(2,6), name:'', description:'', order:1, color:'#6c757d' }, structuredClone(prefill));
         title.textContent = isEdit? 'Edit Phase' : 'Add Phase';
         form.innerHTML = [
           field('Title', `<input id="f-name" class="form-control" value="${escapeHtml(data.name)}">`),
@@ -2225,7 +2244,7 @@
       }
       if(kind==='team'){
         const isEdit = !!id;
-        const data = isEdit ? state.teams.find(x=>x.id===id) : { id:'team-'+Math.random().toString(36).slice(2,6), name:'', sizes:Object.fromEntries(effortTypes().map(k=>[k,0])) };
+        const data = isEdit ? state.teams.find(x=>x.id===id) : Object.assign({ id:'team-'+Math.random().toString(36).slice(2,6), name:'', sizes:Object.fromEntries(effortTypes().map(k=>[k,0])) }, structuredClone(prefill));
         title.textContent = isEdit? 'Edit Team' : 'Add Team';
         const sizeInputs = effortTypes().map(k=>{
           const fid = 'f-'+k.toLowerCase();
@@ -2250,7 +2269,7 @@
 
       if(kind==='sprint'){
         const isEdit = !!id;
-        const data = isEdit ? state.sprints.find(x=>x.id===id) : { id:'SPR'+Math.random().toString(36).slice(2,6), name:'', start:'', end:'' };
+        const data = isEdit ? state.sprints.find(x=>x.id===id) : Object.assign({ id:'SPR'+Math.random().toString(36).slice(2,6), name:'', start:'', end:'' }, structuredClone(prefill));
         title.textContent = isEdit? 'Edit Sprint' : 'Add Sprint';
         form.innerHTML = [
           field('Name', `<input id="f-name" class="form-control" value="${escapeHtml(data.name)}">`),
@@ -2269,7 +2288,7 @@
 
       if(kind==='release'){
         const isEdit = !!id;
-        const data = isEdit ? state.releases.find(x=>x.id===id) : { id:'REL'+Math.random().toString(36).slice(2,6), version:'', codeFreeze:'', releaseDate:'' };
+        const data = isEdit ? state.releases.find(x=>x.id===id) : Object.assign({ id:'REL'+Math.random().toString(36).slice(2,6), version:'', codeFreeze:'', releaseDate:'' }, structuredClone(prefill));
         title.textContent = isEdit ? 'Edit Release' : 'Add Release';
         form.innerHTML = [
           field('Version', `<input id="f-version" class="form-control" value="${escapeHtml(data.version||'')}">`),
@@ -2288,7 +2307,7 @@
 
       if(kind==='effortType'){
         const isEdit = !!id;
-        const data = isEdit ? state.meta.effortTypes.find(e=>e.key===id) : { key:'', title:'', color:'#888', locked:false };
+        const data = isEdit ? state.meta.effortTypes.find(e=>e.key===id) : Object.assign({ key:'', title:'', color:'#888', locked:false }, structuredClone(prefill));
         title.textContent = isEdit ? 'Edit Effort Type' : 'Add Effort Type';
         form.innerHTML = [
           field('Title', `<input id="f-title" class="form-control" value="${escapeHtml(data.title)}">`),
@@ -2313,7 +2332,7 @@
 
       if(kind==='task'){
         const isEdit = !!id;
-        const data = isEdit ? state.tasks.find(x=>x.id===id) : { id: Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', projectId: (state.projects[0]?.id||''), viableProduct:false, efforts:[], assignments:[], phaseIds:[] };
+        const data = isEdit ? state.tasks.find(x=>x.id===id) : Object.assign({ id: Math.random().toString(36).slice(2,6), title:'', description:'', startDate:'', projectId: (state.projects[0]?.id||''), viableProduct:false, efforts:[], assignments:[], phaseIds:[] }, structuredClone(prefill));
         data.phaseIds = Array.from(new Set([...(data.phaseIds||[]).map(String), ...((data.assignments||[]).map(a=>String(a.phaseId)))]));
         title.textContent = isEdit? 'Edit Task' : 'Add Task';
         form.innerHTML = [
@@ -2360,6 +2379,28 @@
       }
 
       new bootstrap.Modal('#editModal').show();
+    }
+
+    function duplicateEntity(kind, id){
+      let src=null;
+      if(kind==='project'){
+        const it=state.projects.find(x=>x.id===id); if(it) src=Object.assign(structuredClone(it), {id:'proj-'+Math.random().toString(36).slice(2,6), name:it.name+' Copy'});
+      }else if(kind==='plan'){
+        const it=state.proposals.find(x=>x.id===id); if(it) src=Object.assign(structuredClone(it), {id:'prop'+Math.random().toString(36).slice(2,7), title:it.title+' Copy'});
+      }else if(kind==='phase'){
+        const it=state.phases.find(x=>x.id===id); if(it) src=Object.assign(structuredClone(it), {id:'PH'+Math.random().toString(36).slice(2,6), name:it.name+' Copy'});
+      }else if(kind==='team'){
+        const it=state.teams.find(x=>x.id===id); if(it) src=Object.assign(structuredClone(it), {id:'team-'+Math.random().toString(36).slice(2,6), name:it.name+' Copy'});
+      }else if(kind==='sprint'){
+        const it=state.sprints.find(x=>x.id===id); if(it) src=Object.assign(structuredClone(it), {id:'SPR'+Math.random().toString(36).slice(2,6), name:(it.name||'')+' Copy'});
+      }else if(kind==='release'){
+        const it=state.releases.find(x=>x.id===id); if(it) src=Object.assign(structuredClone(it), {id:'REL'+Math.random().toString(36).slice(2,6), version:(it.version||'')+' Copy'});
+      }else if(kind==='task'){
+        const it=state.tasks.find(x=>x.id===id); if(it) src=Object.assign(structuredClone(it), {id:Math.random().toString(36).slice(2,6), title:it.title+' Copy'});
+      }else if(kind==='effortType'){
+        const it=(state.meta.effortTypes||[]).find(e=>e.key===id); if(it) src=Object.assign(structuredClone(it), {key:it.key+Math.random().toString(36).slice(2,4)});
+      }
+      if(src) openEditor(kind, null, src);
     }
 
     /* ---------- Export/Import/Reset ---------- */
