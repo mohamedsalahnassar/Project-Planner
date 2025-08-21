@@ -9,6 +9,29 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
   const dayMs = 86400000;
   const totalDays = Math.max(1, Math.ceil((sched.chartEnd - sched.chartStart) / dayMs));
 
+  if(options.showReleases !== false && Array.isArray(options.releases) && options.releases.length){
+    const laneDiv = document.createElement('div');
+    laneDiv.className = 'gantt-lane releases';
+    const label = document.createElement('span');
+    label.className = 'gantt-label';
+    label.textContent = 'Releases';
+    laneDiv.appendChild(label);
+    options.releases.forEach(r => {
+      const start = new Date(r.codeFreeze);
+      const end = new Date(r.releaseDate);
+      const sOff = Math.max(0, Math.floor((start - sched.chartStart) / dayMs));
+      const eOff = Math.floor((end - sched.chartStart) / dayMs);
+      const bar = document.createElement('div');
+      bar.className = 'gantt-bar';
+      bar.style.left = `${(sOff / totalDays) * 100}%`;
+      bar.style.width = `${((eOff - sOff + 1) / totalDays) * 100}%`;
+      bar.style.background = r.color || '#6f42c1';
+      bar.textContent = r.version || '';
+      laneDiv.appendChild(bar);
+    });
+    root.appendChild(laneDiv);
+  }
+
   sched.lanes.forEach(lane => {
     const laneDiv = document.createElement('div');
     laneDiv.className = `gantt-lane ${lane.cls || ''}`;

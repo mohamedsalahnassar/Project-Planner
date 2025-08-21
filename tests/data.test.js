@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject, mergeState, ensureSprints } from '../data.js';
+import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject, mergeState, ensureSprints, addRelease, updateRelease, removeRelease } from '../data.js';
 
 globalThis.localStorage = {
   getItem(){ return null; },
@@ -163,4 +163,14 @@ test('ensureSprints accepts custom start date', () => {
   assert.equal(state.sprints[0].start, '2024-03-04');
   const lastYear = new Date(state.sprints[state.sprints.length - 1].start).getUTCFullYear();
   assert.equal(lastYear, 2026);
+});
+
+test('release CRUD functions manage state.releases', () => {
+  replaceState({ projects:[], proposals:[], tasks:[], teams:[], phases:[], sprints:[], releases:[], meta:{} });
+  addRelease({id:'rel1', version:'1.0', codeFreeze:'2024-01-01', releaseDate:'2024-01-15'});
+  assert.equal(state.releases.length, 1);
+  updateRelease('rel1', {version:'1.1'});
+  assert.equal(state.releases[0].version, '1.1');
+  removeRelease('rel1');
+  assert.equal(state.releases.length, 0);
 });
