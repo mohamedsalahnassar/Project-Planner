@@ -968,7 +968,8 @@
         const bars = [];
         sched.phaseWindows.forEach(w=>{
           const d0 = Math.floor((w.start - sched.chartStart)/dayMs);
-          const d1 = Math.floor((w.end - sched.chartStart)/dayMs);
+          // convert inclusive end date to an exclusive day offset
+          const d1 = Math.floor((w.end - sched.chartStart)/dayMs) + 1;
           bars.push({start:w.start.getTime(), end:w.end.getTime(), d0, d1, ph:w.ph});
         });
         bars.sort((a,b)=>a.start-b.start);
@@ -979,7 +980,8 @@
         bars.forEach(b=>{
           const bar = document.createElement('div'); bar.className='bar phase-bar'; bar.textContent = getPhase(b.ph)?.name || b.ph;
           bar.style.left = (labelPad + b.d0*pxPerDay)+'px';
-          bar.style.width = (Math.max(1, b.d1 - b.d0 + 1)*pxPerDay)+'px';
+          // width uses exclusive offset difference so phase bar ends at last effort
+          bar.style.width = (Math.max(1, b.d1 - b.d0)*pxPerDay)+'px';
           bar.style.top = (lanePad + b.track*step)+'px';
           bar.style.height = barHeight+'px';
           lane.appendChild(bar);

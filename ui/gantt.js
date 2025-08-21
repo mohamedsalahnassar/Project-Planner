@@ -14,7 +14,8 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
 
   // basic rendering using absolute positioning
   const dayMs = 86400000;
-  const totalDays = Math.max(1, Math.ceil((sched.chartEnd - sched.chartStart) / dayMs));
+  // chartEnd is inclusive; add one day to capture the final date span
+  const totalDays = Math.max(1, Math.ceil((sched.chartEnd - sched.chartStart) / dayMs) + 1);
 
   if(options.showReleases !== false && Array.isArray(options.releases) && options.releases.length){
     const laneDiv = document.createElement('div');
@@ -97,7 +98,8 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     const bars = [];
     sched.phaseWindows.forEach(w => {
       const sOff = Math.floor((w.start - sched.chartStart) / dayMs);
-      const eOff = Math.floor((w.end - sched.chartStart) / dayMs);
+      // treat phase end as inclusive so convert to an exclusive offset
+      const eOff = Math.floor((w.end - sched.chartStart) / dayMs) + 1;
       bars.push({start:w.start.getTime(), end:w.end.getTime(), sOff, eOff, ph:w.ph});
     });
     bars.sort((a,b)=>a.start-b.start);
@@ -110,7 +112,8 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
       bar.style.left = `${(b.sOff / totalDays) * 100}%`;
-      bar.style.width = `${((b.eOff - b.sOff + 1) / totalDays) * 100}%`;
+      // phase bars should end at the last effort; use the exclusive offset difference
+      bar.style.width = `${((b.eOff - b.sOff) / totalDays) * 100}%`;
       bar.style.background = '#6c757d';
       bar.style.color = '#fff';
       bar.style.fontSize = '0.75em';
