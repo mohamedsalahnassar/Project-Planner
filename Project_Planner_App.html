@@ -25,26 +25,7 @@
     .seg{height:8px}
     .gantt-wrap{border:1px solid var(--bs-border-color); border-radius:.75rem; overflow:hidden}
     .gantt-toolbar{position:sticky;top:0;z-index:2;background:var(--bs-body-bg);border-bottom:1px solid var(--bs-border-color)}
-    .gantt{position:relative; height:540px; overflow:auto; cursor:grab}
-    .gantt:active{cursor:grabbing}
-    .gantt .content{position:relative}
-    .ruler{position:sticky; top:0; height:60px; background:linear-gradient(180deg, var(--bs-body-bg), var(--bs-body-bg) 62%, transparent); margin-left:var(--label-pad); border-bottom:1px solid var(--bs-border-color); z-index:1}
-    .tick{position:absolute; bottom:0; width:1px; height:12px; background:rgba(127,127,127,.35)}
-    .tick.major{height:24px; background:rgba(127,127,127,.6)}
-    .label{position:absolute; bottom:24px; transform:translateX(-50%); font-size:.75rem; color:var(--bs-secondary-color); white-space:nowrap}
-    .month-section{position:absolute; bottom:0; height:24px; display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--bs-body-color); font-size:.8rem; pointer-events:none}
-    .grid{position:absolute; left:0; right:0; top:60px; bottom:0; pointer-events:none}
-    .gridline{position:absolute; top:0; bottom:0; width:1px; background:rgba(127,127,127,.15)}
-    .gridline.week{background:rgba(127,127,127,.22)}
-    .gridline.major{background:rgba(127,127,127,.28)}
-    .sprint-line{position:absolute; top:60px; bottom:0; width:2px; background:rgba(220,53,69,.6); pointer-events:none}
-    .sprint-label{position:absolute; top:60px; transform:translate(-50%,-100%); font-size:.75rem; color:#fff; background:rgba(220,53,69,.6); padding:1px 4px; border-radius:4px; pointer-events:none}
-    .hover-line{position:absolute; top:60px; bottom:0; width:1px; background:rgba(255,255,255,.3); pointer-events:none; display:none}
-    .hover-label{position:absolute; top:0; transform:translateX(-50%); font-size:.75rem; color:var(--bs-body-color); background:var(--bs-body-bg); border:1px solid var(--bs-border-color); padding:1px 4px; border-radius:4px; pointer-events:none; display:none}
-    .lane{position:relative; height:64px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
-    .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
-    .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
-    .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
+    #ganttHere{height:540px}
     .phase-badge{background:var(--bs-secondary);color:#fff}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
@@ -155,15 +136,12 @@
           <div class="d-flex align-items-center gap-2">
             <span class="small text-secondary">Zoom</span>
             <button class="btn btn-sm btn-outline-secondary" id="zoomMinus">−</button>
-            <input type="range" id="zoomRange" min="6" max="44" step="2" value="18" style="width:240px">
             <button class="btn btn-sm btn-outline-secondary" id="zoomPlus">+</button>
             <button class="btn btn-sm btn-outline-secondary" id="zoomFit">Fit</button>
           </div>
           <div class="small text-secondary">Drag any bar to shift dates. Click a bar to view task breakdown.</div>
         </div>
-        <div class="gantt" id="ganttScroll">
-          <div class="content" id="ganttContent"></div>
-        </div>
+        <div id="ganttHere"></div>
       </div>
 
       <div class="row row-cols-1 row-cols-lg-2 g-3">
@@ -522,6 +500,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
+      import { renderGantt } from './ui/gantt.js';
       import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints, defaultPlanLanes } from './data.js';
       load();
       ensureSprints();
@@ -799,148 +778,35 @@
           p.hiddenLanes = Array.from(document.querySelectorAll('.lane-filter'))
             .filter(x=>!x.checked).map(x=>x.value);
           save();
-          drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+          drawGantt();
         };
       });
-      drawGantt(p, sched);
+      function drawGantt(){
+        const hidden = p.hiddenLanes || [];
+        const lanes = (p.lanes||[]).filter(l=>!hidden.includes(l.key));
+        const res = renderGantt(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {
+          container: byId('ganttHere'),
+          lanes,
+          onTaskUpdate: (id,item)=>{
+            if(!item) return;
+            const start = item.start_date instanceof Date ? item.start_date : new Date(item.start_date);
+            p.overrides ||= {}; p.overrides[item.phase] ||= {}; p.overrides[item.phase][item.lane] = iso(start);
+            save();
+          }
+        });
+        const z = res.gantt.ext?.zoom;
+        if(z){
+          byId('zoomMinus').onclick = ()=> z.zoomOut();
+          byId('zoomPlus').onclick = ()=> z.zoomIn();
+          byId('zoomFit').onclick = ()=> z.setLevel('month');
+        }
+      }
+      drawGantt();
       renderPhaseBreakdownTables(p);
-      byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
       byId('btn-export-plan-pdf').onclick = ()=> exportPlanPDF(p.id);
       byId('btn-export-plan-xlsx-basic').onclick = ()=> exportPlanExcel(p.id);
     }
-    function drawGantt(p, sched){
-      const container = byId('ganttContent');
-      const scroll = byId('ganttScroll');
-      container.innerHTML = '';
-      const pxPerDay = p.pxPerDay || state.meta.defaultPxPerDay || 18;
-      const totalDays = Math.max(1, daysBetween(sched.chartStart, sched.chartEnd)+1);
-      const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
-      const width = totalDays * pxPerDay + labelPad;
-      const lanesOn = Array.from(document.querySelectorAll('.lane-filter')).filter(x=>x.checked).map(x=>x.value);
-      sched.lanes.filter(l=> lanesOn.includes(l.key)).forEach(l=>{
-        const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane=l.key;
-        const label = document.createElement('div'); label.className='lane-label'; label.textContent = l.name; lane.appendChild(label);
-        sched.phaseWindows.forEach(w=>{
-          const li = w.lanes.find(x=>x.key===l.key);
-          const offset = Math.floor(((li.start - sched.chartStart)/dayMs) * pxPerDay) + labelPad;
-          const bar = document.createElement('div'); bar.className = 'bar'; bar.style.left = offset+'px'; bar.style.width = (Math.max(1, li.days)*pxPerDay)+'px'; bar.style.background = l.color || effortTypeColor(l.key);
-          bar.textContent = w.ph; bar.title = `${l.name} • ${w.ph} • ${fmt(li.start)} (${li.days}d)`;
-          bar.dataset.lane = l.key; bar.dataset.phase = w.ph;
-          makeDraggableBar(bar, p, sched, li.days);
-          bar.addEventListener('click', (ev)=>{ ev.stopPropagation(); openBreakdown(p, w.ph, l.key); });
-          lane.appendChild(bar);
-        });
-        container.appendChild(lane);
-      });
-      drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0, sched.phaseWindows);
-      const zr = byId('zoomRange'), zm = byId('zoomMinus'), zp = byId('zoomPlus'), zf = byId('zoomFit');
-      zr.oninput = (e)=>{ p.pxPerDay = +e.target.value; save(); openDetail(p.id); };
-      zm.onclick = ()=>{ p.pxPerDay = Math.max(6, (p.pxPerDay||pxPerDay)-2); save(); openDetail(p.id); };
-      zp.onclick = ()=>{ p.pxPerDay = Math.min(44, (p.pxPerDay||pxPerDay)+2); save(); openDetail(p.id); };
-      zf.onclick = ()=>{
-        const visible = byId('ganttScroll').clientWidth - labelPad - 20;
-        const fit = Math.max(6, Math.min(44, Math.floor(visible/totalDays)));
-        p.pxPerDay = fit; save(); openDetail(p.id);
-      };
-      let isDown=false, startX=0, scrollLeft=0;
-      scroll.addEventListener('mousedown', e=>{ if(e.target.classList.contains('bar')) return; isDown=true; startX=e.pageX - scroll.offsetLeft; scrollLeft=scroll.scrollLeft; });
-      window.addEventListener('mouseup', ()=> isDown=false);
-      scroll.addEventListener('mousemove', e=>{ if(!isDown) return; e.preventDefault(); const x=e.pageX - scroll.offsetLeft; const walk=(x-startX)*1.2; scroll.scrollLeft = scrollLeft - walk; });
-    }
-    function drawRulerAndGrid(scroll, chartStart, totalDays, pxPerDay, contentHeight, phaseWindows){
-      scroll.querySelectorAll('.ruler,.grid,.phase-tag,.sprint-line,.sprint-label,.hover-line,.hover-label').forEach(n=> n.remove());
-      const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
-      const ruler = document.createElement('div'); ruler.className='ruler'; ruler.style.width = (totalDays*pxPerDay) + 'px';
-      scroll.appendChild(ruler);
-      const chartEndDate = new Date(chartStart.getTime()+totalDays*dayMs);
-      const minLabelPx = 15;
-      const dayStep = Math.max(1, Math.ceil(minLabelPx/pxPerDay));
-      for(let d=0; d<=totalDays; d++){
-        const x = d*pxPerDay;
-        const tick = document.createElement('div'); tick.className='tick'; tick.style.left = x+'px'; ruler.appendChild(tick);
-        if(d % dayStep === 0){
-          const label = document.createElement('div'); label.className='label'; label.style.left = x+'px';
-          const dt = new Date(chartStart.getTime() + d*dayMs); label.textContent = dt.getDate();
-          ruler.appendChild(label);
-        }
-      }
-      const monthRanges = [];
-      let rangeStart = 0;
-      let rangeDate = new Date(chartStart);
-      for(let d=0; d<=totalDays; d++){
-        const dt = new Date(chartStart.getTime() + d*dayMs);
-        if(dt.getMonth() !== rangeDate.getMonth() || dt.getFullYear() !== rangeDate.getFullYear()){
-          monthRanges.push({start:rangeStart, end:d-1, label:rangeDate.toLocaleDateString('en-GB',{month:'short', year:'numeric'})});
-          rangeStart = d;
-          rangeDate = dt;
-        }
-      }
-      monthRanges.push({start:rangeStart, end:totalDays, label:rangeDate.toLocaleDateString('en-GB',{month:'short', year:'numeric'})});
-      monthRanges.forEach(r=>{
-        const ms = document.createElement('div');
-        ms.className='month-section';
-        ms.style.left = (r.start*pxPerDay)+'px';
-        ms.style.width = ((r.end - r.start + 1)*pxPerDay)+'px';
-        ms.textContent = r.label;
-        ruler.appendChild(ms);
-      });
-      const grid = document.createElement('div'); grid.className='grid'; grid.style.width = (totalDays*pxPerDay + labelPad) + 'px'; grid.style.height = (contentHeight - 60) + 'px'; scroll.appendChild(grid);
-      for(let d=0; d<=totalDays; d++){ const x = labelPad + d*pxPerDay; const gl = document.createElement('div'); gl.className='gridline'; if(d%7===0) gl.classList.add('week'); gl.style.left = x+'px'; grid.appendChild(gl); }
-      monthRanges.slice(1).forEach(r=>{
-        const x = labelPad + r.start*pxPerDay;
-        const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl);
-      });
-      phaseWindows.forEach(w=>{
-        const d0 = Math.floor((w.start - chartStart)/dayMs);
-        const d1 = Math.floor((w.end - chartStart)/dayMs);
-        const x = labelPad + d0*pxPerDay;
-        const wpx = Math.max(1, (d1-d0+1)*pxPerDay);
-        const tag = document.createElement('div'); tag.className='phase-tag'; tag.style.left = x+'px'; tag.style.width = wpx+'px'; tag.textContent = w.ph;
-        scroll.appendChild(tag);
-      });
-      (state.sprints||[]).forEach(sp=>{
-        const sd = new Date(sp.start);
-        if(sd < chartStart || sd > chartEndDate) return;
-        const d = Math.floor((sd - chartStart)/dayMs);
-        const x = labelPad + d*pxPerDay;
-        const sl = document.createElement('div'); sl.className='sprint-line'; sl.style.left = x+'px'; scroll.appendChild(sl);
-        const lbl = document.createElement('div'); lbl.className='sprint-label'; lbl.style.left = x+'px'; lbl.textContent = sp.name; scroll.appendChild(lbl);
-      });
-      const hoverLine = document.createElement('div'); hoverLine.className='hover-line'; scroll.appendChild(hoverLine);
-      const hoverLabel = document.createElement('div'); hoverLabel.className='hover-label'; ruler.appendChild(hoverLabel);
-      function handleHover(e){
-        const rect = scroll.getBoundingClientRect();
-        const x = e.clientX - rect.left + scroll.scrollLeft;
-        if(x < labelPad || x > labelPad + totalDays*pxPerDay){ hoverLine.style.display='none'; hoverLabel.style.display='none'; return; }
-        hoverLine.style.display='block'; hoverLabel.style.display='block';
-        hoverLine.style.left = x+'px'; hoverLabel.style.left = (x - labelPad)+'px';
-        const d = Math.floor((x - labelPad)/pxPerDay);
-        const dt = new Date(chartStart.getTime() + d*dayMs);
-        hoverLabel.textContent = dt.toLocaleDateString('en-GB',{day:'2-digit', month:'short', year:'numeric'});
-      }
-      function hideHover(){ hoverLine.style.display='none'; hoverLabel.style.display='none'; }
-      if(scroll._hoverHandler){ scroll.removeEventListener('mousemove', scroll._hoverHandler); scroll.removeEventListener('mouseleave', scroll._hoverLeave); }
-      scroll._hoverHandler = handleHover; scroll._hoverLeave = hideHover;
-      scroll.addEventListener('mousemove', handleHover);
-      scroll.addEventListener('mouseleave', hideHover);
-    }
-    function makeDraggableBar(bar, plan, sched, daysLen){
-      let startX=0, origLeft=0, dragging=false;
-      bar.addEventListener('mousedown', (e)=>{ dragging=true; startX=e.pageX; origLeft=parseInt(bar.style.left); document.body.style.userSelect='none'; });
-      window.addEventListener('mousemove', (e)=>{ if(!dragging) return; const dx = e.pageX - startX; bar.style.left = (origLeft + dx) + 'px'; });
-      window.addEventListener('mouseup', ()=>{
-        if(!dragging) return; dragging=false; document.body.style.userSelect='';
-        const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
-        const left = parseInt(bar.style.left);
-        const offsetPx = left - labelPad;
-        const days = Math.max(0, Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18)));
-        const newDate = new Date(sched.chartStart.getTime() + days*dayMs);
-        plan.overrides ||= {}; plan.overrides[bar.dataset.phase] ||= {}; plan.overrides[bar.dataset.phase][bar.dataset.lane] = iso(newDate);
-        save(); openDetail(plan.id);
-      });
-    }
-
     /* ---------- Breakdown ---------- */
 
 
