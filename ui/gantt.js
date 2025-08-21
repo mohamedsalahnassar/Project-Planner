@@ -1,5 +1,22 @@
 import { computeSchedule } from '../schedule.js';
 
+// Assign a row index to each segment so that overlapping bars
+// are displayed on separate lines. Mutates each segment with `row`.
+export function stackOverlaps(segs){
+  const dayMs = 86400000;
+  const sorted = segs.slice().sort((a,b)=> a.start - b.start);
+  const rowEnd = [];
+  sorted.forEach(s => {
+    const end = new Date(s.start.getTime() + (s.days || 0) * dayMs);
+    let placed = false;
+    for(let i=0;i<rowEnd.length;i++){
+      if(s.start >= rowEnd[i]){ rowEnd[i] = end; s.row = i; placed=true; break; }
+    }
+    if(!placed){ rowEnd.push(end); s.row = rowEnd.length-1; }
+  });
+  return sorted;
+}
+
 export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
   const sched = computeSchedule(plan, aggr, eff, getPhase, startDate, options);
   const root = options.container || document.createElement('div');
@@ -50,13 +67,19 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
 
     group.appendChild(phaseRow);
 
-    // lanes within this phase
-    pw.lanes.forEach(info => {
-      const laneMeta = sched.lanes.find(l => l.key === info.key) || {key:info.key, name:info.key};
+    // group lanes by key to allow multiple bars per lane
+    const laneGroups = {};
+    pw.lanes.forEach(l => { (laneGroups[l.key] ||= []).push(l); });
+    Object.entries(laneGroups).forEach(([key, segs]) => {
+      const laneMeta = sched.lanes.find(l => l.key === key) || {key, name:key};
+      // assign rows for overlapping segments
+      const stacked = stackOverlaps(segs.map(s => ({...s})));
+      const rows = Math.max(1, ...stacked.map(s => s.row+1));
+
       const laneRow = document.createElement('div');
       laneRow.className = `gantt-lane ${laneMeta.cls || ''}`;
       laneRow.style.display = 'flex';
-      laneRow.style.alignItems = 'center';
+      laneRow.style.alignItems = 'flex-start';
 
       const label = document.createElement('span');
       label.className = 'gantt-label';
@@ -67,20 +90,22 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       const track = document.createElement('div');
       track.style.position = 'relative';
       track.style.flex = '1';
-      track.style.height = `${barHeight}px`;
+      track.style.height = `${rows * barHeight}px`;
       laneRow.appendChild(track);
 
-      const bar = document.createElement('div');
-      bar.className = 'gantt-bar';
-      bar.style.position = 'absolute';
-      bar.style.top = '0';
-      bar.style.height = '100%';
-      const offset = Math.floor((info.start - sched.chartStart) / dayMs);
-      bar.style.left = `${(offset / totalDays) * 100}%`;
-      bar.style.width = `${(info.days / totalDays) * 100}%`;
-      bar.style.background = laneMeta.color || '#888';
-      bar.style.borderRadius = '4px';
-      track.appendChild(bar);
+      stacked.forEach(info => {
+        const bar = document.createElement('div');
+        bar.className = 'gantt-bar';
+        bar.style.position = 'absolute';
+        bar.style.top = `${info.row * barHeight}px`;
+        bar.style.height = `${barHeight}px`;
+        const offset = Math.floor((info.start - sched.chartStart) / dayMs);
+        bar.style.left = `${(offset / totalDays) * 100}%`;
+        bar.style.width = `${(info.days / totalDays) * 100}%`;
+        bar.style.background = laneMeta.color || '#888';
+        bar.style.borderRadius = '4px';
+        track.appendChild(bar);
+      });
 
       group.appendChild(laneRow);
     });
