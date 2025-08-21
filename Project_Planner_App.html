@@ -904,7 +904,7 @@
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       byId('fontRange').value = p.fontScale || 1;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
-      byId('btn-export-plan-pdf').onclick = ()=> exportPlanPDF(p.id);
+      byId('btn-export-plan-pdf').onclick = ()=> exportPlanImage(p.id);
       byId('btn-export-plan-xlsx-basic').onclick = ()=> exportPlanExcel(p.id);
     }
     function drawGantt(p, sched){
@@ -1243,9 +1243,9 @@
       });
     }
 
-    /* ---------- PDF Export (unchanged) ---------- */
+    /* ---------- Chart capture helpers ---------- */
 
-    async function buildStaticTimelineNode(plan){
+    async function capturePlanChartImage(plan){
       const aggr = aggregate(plan, state.tasks, getTeam);
       const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
       // A4 landscape content width ~1100px; respect padding used in .pdf-sheet (24px)
@@ -1284,7 +1284,6 @@
         }
         wrap.appendChild(row);
       });
-      // convert chart to image for PDF
       // place chart off-screen so it doesn't flash but remains renderable
       wrap.style.position='fixed';
       wrap.style.left='-10000px';
@@ -1297,6 +1296,11 @@
         console.warn('html-to-image failed', e);
       }
       document.body.removeChild(wrap);
+      return dataUrl;
+    }
+
+    async function buildStaticTimelineNode(plan){
+      const dataUrl = await capturePlanChartImage(plan);
       const card = document.createElement('div'); card.className='pdf-card';
       const head = document.createElement('div'); head.className='pdf-h3'; head.textContent='Mini Gantt'; card.appendChild(head);
       const img = document.createElement('img'); img.src = dataUrl || ''; img.style.width='100%'; card.appendChild(img);
@@ -1373,6 +1377,13 @@
         </style></head><body></body></html>`);
       w.document.body.appendChild(container);
       setTimeout(()=>{ w.focus(); w.print(); }, 250);
+    }
+
+    async function exportPlanImage(planId){
+      const p = state.proposals.find(x=>x.id===planId); if(!p) return;
+      const dataUrl = await capturePlanChartImage(p);
+      if(!dataUrl){ console.warn('capture failed'); return; }
+      window.open(dataUrl, '_blank');
     }
 
 
