@@ -9,7 +9,8 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
   const fontSize = Math.max(8, Math.min(16, Math.round(pxPerDay * 0.75)));
   root.style.fontSize = fontSize + 'px';
   const laneHeight = options.laneHeight || 44;
-  const barHeight = Math.floor(laneHeight / 2);
+  const lanePad = options.lanePad || Math.max(2, Math.floor(laneHeight * 0.1));
+  const barHeight = laneHeight - lanePad * 2;
 
   // basic rendering using absolute positioning
   const dayMs = 86400000;
@@ -34,7 +35,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       bar.style.width = `${((eOff - sOff + 1) / totalDays) * 100}%`;
       bar.style.background = r.color || '#6f42c1';
       bar.textContent = r.version || '';
-      bar.style.top = `${(laneHeight - barHeight) / 2}px`;
+      bar.style.top = lanePad + 'px';
       bar.style.height = `${barHeight}px`;
       laneDiv.appendChild(bar);
     });
@@ -60,7 +61,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       bar.style.width = `${((eOff - sOff + 1) / totalDays) * 100}%`;
       bar.style.background = s.color || '#dc3545';
       bar.textContent = s.name || '';
-      bar.style.top = `${(laneHeight - barHeight) / 2}px`;
+      bar.style.top = lanePad + 'px';
       bar.style.height = `${barHeight}px`;
       bar.style.fontSize = '0.75em';
       laneDiv.appendChild(bar);
@@ -87,7 +88,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       bar.style.color = '#fff';
       bar.style.fontSize = '0.75em';
       bar.textContent = getPhase(w.ph)?.name || w.ph;
-      bar.style.top = `${(laneHeight - barHeight) / 2}px`;
+      bar.style.top = lanePad + 'px';
       bar.style.height = `${barHeight}px`;
       laneDiv.appendChild(bar);
     });
@@ -112,7 +113,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       bar.style.left = `${(offset / totalDays) * 100}%`;
       bar.style.width = `${(info.days / totalDays) * 100}%`;
       if(lane.color) bar.style.background = lane.color;
-      bar.style.top = `${(laneHeight - barHeight) / 2}px`;
+      bar.style.top = lanePad + 'px';
       bar.style.height = `${barHeight}px`;
       laneDiv.appendChild(bar);
     });

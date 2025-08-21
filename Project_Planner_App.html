@@ -39,7 +39,7 @@
     .hover-label{position:absolute; top:0; transform:translateX(-50%); font-size:.75em; color:var(--bs-body-color); background:var(--bs-body-bg); border:1px solid var(--bs-border-color); padding:1px 4px; border-radius:4px; pointer-events:none; display:none}
     .lane{position:relative; height:44px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
     .lane-label{position:absolute; left:12px; top:10px; width:160px; font-weight:600}
-    .bar{position:absolute; top:10px; height:20px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
+    .bar{position:absolute; top:4px; height:36px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
     .release-bar{background:#6f42c1;color:#fff}
     .sprint-bar{background:#dc3545;color:#fff;font-size:.75em}
     .phase-bar{background:var(--bs-secondary);color:#fff;font-size:.75em}
@@ -140,9 +140,12 @@
           <h2 id="detail-title" class="h6 mb-0"></h2>
           <span class="badge text-bg-secondary" id="detail-team"></span>
           <span class="badge text-bg-secondary">Buffer <span id="detail-buffer"></span>%</span>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" id="laneMenuBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside">Lanes</button>
+            <div id="lane-menu" class="dropdown-menu p-2"></div>
+          </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <div id="lane-filters" class="d-flex align-items-center gap-2"></div>
           <button id="btn-export-plan-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Plan PDF</button>
           <button id="btn-export-plan-xlsx-basic" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Plan Excel (Basic)</button>
         </div>
@@ -836,16 +839,16 @@
         tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${team.sizes?.[k]||0}</td>`;
         tbTeam.appendChild(tr);
       });
-      const lf = byId('lane-filters');
-      lf.innerHTML = `<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="chkReleases"><label class="form-check-label" for="chkReleases"><span class="badge-lane"><span class="dot" style="background:#6f42c1"></span>Releases</span></label></div>`+
-        `<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="chkSprints"><label class="form-check-label" for="chkSprints"><span class="badge-lane"><span class="dot" style="background:#dc3545"></span>Sprints</span></label></div>`+
+      const lf = byId('lane-menu');
+      lf.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" id="chkReleases"><label class="form-check-label" for="chkReleases"><span class="badge-lane"><span class="dot" style="background:#6f42c1"></span>Releases</span></label></div>`+
+        `<div class="form-check"><input class="form-check-input" type="checkbox" id="chkSprints"><label class="form-check-label" for="chkSprints"><span class="badge-lane"><span class="dot" style="background:#dc3545"></span>Sprints</span></label></div>`+
         (p.lanes||[]).map(l=>
-        `<div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="${l.key}" id="chk${l.key}"><label class="form-check-label" for="chk${l.key}"><span class="badge-lane"><span class="dot" style="background:${l.color||effortTypeColor(l.key)}"></span>${l.name||effortTypeTitle(l.key)}</span></label></div>`
+        `<div class="form-check"><input class="form-check-input lane-filter" type="checkbox" value="${l.key}" id="chk${l.key}"><label class="form-check-label" for="chk${l.key}"><span class="badge-lane"><span class="dot" style="background:${l.color||effortTypeColor(l.key)}"></span>${l.name||effortTypeTitle(l.key)}</span></label></div>`
       ).join('');
-      document.querySelectorAll('.lane-filter').forEach(chk=>{
+      lf.querySelectorAll('.lane-filter').forEach(chk=>{
         chk.checked = !(p.hiddenLanes||[]).includes(chk.value);
         chk.onchange = ()=>{
-          p.hiddenLanes = Array.from(document.querySelectorAll('.lane-filter'))
+          p.hiddenLanes = Array.from(document.querySelectorAll('#lane-menu .lane-filter'))
             .filter(x=>!x.checked).map(x=>x.value);
           save();
           drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
@@ -883,7 +886,7 @@
       scroll.style.fontSize = fontSize + 'px';
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
       const width = totalDays * pxPerDay + labelPad;
-      const lanesOn = Array.from(document.querySelectorAll('.lane-filter')).filter(x=>x.checked).map(x=>x.value);
+      const lanesOn = Array.from(document.querySelectorAll('#lane-menu .lane-filter')).filter(x=>x.checked).map(x=>x.value);
       if(state.meta.showReleaseLane !== false && (state.releases||[]).length){
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='releases';
         const label = document.createElement('div'); label.className='lane-label'; label.textContent='Releases'; lane.appendChild(label);
