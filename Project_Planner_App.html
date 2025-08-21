@@ -165,14 +165,22 @@
         </div>
       </div>
 
-      <div class="card mb-3">
-        <div class="card-header">Phase schedule</div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table id="phaseDatesTable" class="table table-sm table-bordered mb-0 align-middle">
-              <thead class="table-dark"></thead>
-              <tbody></tbody>
-            </table>
+      <div class="accordion mb-3" id="phaseScheduleAcc">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#phaseScheduleCollapse">
+              Phase schedule
+            </button>
+          </h2>
+          <div id="phaseScheduleCollapse" class="accordion-collapse collapse" data-bs-parent="#phaseScheduleAcc">
+            <div class="accordion-body">
+              <div class="table-responsive">
+                <table id="phaseDatesTable" class="table table-sm table-bordered table-striped mb-0 align-middle">
+                  <thead class="table-dark"></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1008,11 +1016,13 @@
       const lanes = sched.lanes;
       const thead = byId('phaseDatesTable').querySelector('thead');
       const tbody = byId('phaseDatesTable').querySelector('tbody');
-      thead.innerHTML = `<tr><th>Phase</th><th>Start</th><th>End</th>${lanes.map(l=>`<th>${l.name||l.key} start</th><th>${l.name||l.key} end</th>`).join('')}</tr>`;
+      thead.innerHTML =
+        `<tr><th rowspan="2">Phase</th><th colspan="2">Phase</th>${lanes.map(l=>`<th colspan="2">${l.name||l.key}</th>`).join('')}</tr>`+
+        `<tr><th>Start</th><th>End</th>${lanes.map(()=>'<th>Start</th><th>End</th>').join('')}</tr>`;
       tbody.innerHTML = '';
       sched.phaseWindows.forEach(w=>{
         const phEnd = addBusinessDays(w.start, Math.max(1, daysBetween(w.start, w.end)) - 1);
-        let row = `<td>${getPhase(w.ph)?.name||w.ph}</td><td>${fmt(w.start)}</td><td>${fmt(phEnd)}</td>`;
+        let row = `<th scope="row">${getPhase(w.ph)?.name||w.ph}</th><td>${fmt(w.start)}</td><td>${fmt(phEnd)}</td>`;
         lanes.forEach(l=>{
           const li = w.lanes.find(x=> x.key===l.key);
           if(li){
