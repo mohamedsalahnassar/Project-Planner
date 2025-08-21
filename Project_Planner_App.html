@@ -1119,7 +1119,7 @@
         const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
         const left = parseInt(bar.style.left);
         const offsetPx = left - labelPad;
-        const days = Math.max(0, Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18)));
+        const days = Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18));
         const newDate = new Date(sched.chartStart.getTime() + days*dayMs);
         plan.overrides ||= {}; plan.overrides[bar.dataset.phase] ||= {}; plan.overrides[bar.dataset.phase][bar.dataset.lane] = iso(newDate);
         save(); openDetail(plan.id);
