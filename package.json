@@ -5,5 +5,8 @@
   "scripts": {
     "start": "./serve.sh",
     "test": "node --test"
+  },
+  "dependencies": {
+    "dhtmlx-gantt": "^9.0.14"
   }
 }
