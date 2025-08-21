@@ -20,6 +20,7 @@ export const state = {
     efficiency: 1,
     effortTypes: DEFAULT_EFFORT_TYPES.map(e=> ({...e})),
     showReleaseLane: true,
+    showSprintLane: true,
   }
 };
 
@@ -40,6 +41,7 @@ export function load(){
     if(!Array.isArray(state.sprints)) state.sprints = [];
     if(!Array.isArray(state.releases)) state.releases = [];
     if(typeof state.meta?.showReleaseLane !== 'boolean') state.meta.showReleaseLane = true;
+    if(typeof state.meta?.showSprintLane !== 'boolean') state.meta.showSprintLane = true;
     if(Array.isArray(state.meta?.effortTypes)){
       if(typeof state.meta.effortTypes[0] === 'string'){
         const oldList = state.meta.effortTypes;
@@ -74,6 +76,7 @@ export function replaceState(newState){
   if(!Array.isArray(state.sprints)) state.sprints = [];
   if(!Array.isArray(state.releases)) state.releases = [];
   if(typeof state.meta?.showReleaseLane !== 'boolean') state.meta.showReleaseLane = true;
+  if(typeof state.meta?.showSprintLane !== 'boolean') state.meta.showSprintLane = true;
   ensurePlanLanes();
 }
 

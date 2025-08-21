@@ -43,6 +43,7 @@
     .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
     .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
     .release-bar{background:#6f42c1;color:#fff}
+    .sprint-bar{background:#dc3545;color:#fff}
     .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
     .phase-badge{background:var(--bs-secondary);color:#fff}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
@@ -839,6 +840,7 @@
       });
       const lf = byId('lane-filters');
       lf.innerHTML = `<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="chkReleases"><label class="form-check-label" for="chkReleases"><span class="badge-lane"><span class="dot" style="background:#6f42c1"></span>Releases</span></label></div>`+
+        `<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="chkSprints"><label class="form-check-label" for="chkSprints"><span class="badge-lane"><span class="dot" style="background:#dc3545"></span>Sprints</span></label></div>`+
         (p.lanes||[]).map(l=>
         `<div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="${l.key}" id="chk${l.key}"><label class="form-check-label" for="chk${l.key}"><span class="badge-lane"><span class="dot" style="background:${l.color||effortTypeColor(l.key)}"></span>${l.name||effortTypeTitle(l.key)}</span></label></div>`
       ).join('');
@@ -855,6 +857,13 @@
       chkRel.checked = state.meta.showReleaseLane !== false;
       chkRel.onchange = ()=>{
         state.meta.showReleaseLane = chkRel.checked;
+        save();
+        drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+      };
+      const chkSpr = byId('chkSprints');
+      chkSpr.checked = state.meta.showSprintLane !== false;
+      chkSpr.onchange = ()=>{
+        state.meta.showSprintLane = chkSpr.checked;
         save();
         drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
       };
@@ -884,6 +893,21 @@
           const d0 = Math.max(0, Math.floor((start - sched.chartStart)/dayMs));
           const d1 = Math.floor((end - sched.chartStart)/dayMs);
           const bar = document.createElement('div'); bar.className='bar release-bar'; bar.textContent = r.version || '';
+          bar.style.left = (labelPad + d0*pxPerDay) + 'px';
+          bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
+          lane.appendChild(bar);
+        });
+        container.appendChild(lane);
+      }
+      if(state.meta.showSprintLane !== false && (state.sprints||[]).length){
+        const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='sprints';
+        const label = document.createElement('div'); label.className='lane-label'; label.textContent='Sprints'; lane.appendChild(label);
+        (state.sprints||[]).forEach(s=>{
+          const start = new Date(s.start); const end = new Date(s.end);
+          if(end < sched.chartStart || start > sched.chartEnd) return;
+          const d0 = Math.max(0, Math.floor((start - sched.chartStart)/dayMs));
+          const d1 = Math.floor((end - sched.chartStart)/dayMs);
+          const bar = document.createElement('div'); bar.className='bar sprint-bar'; bar.textContent = s.name || '';
           bar.style.left = (labelPad + d0*pxPerDay) + 'px';
           bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
           lane.appendChild(bar);

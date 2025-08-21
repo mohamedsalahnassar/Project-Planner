@@ -32,6 +32,29 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     root.appendChild(laneDiv);
   }
 
+  if(options.showSprints !== false && Array.isArray(options.sprints) && options.sprints.length){
+    const laneDiv = document.createElement('div');
+    laneDiv.className = 'gantt-lane sprints';
+    const label = document.createElement('span');
+    label.className = 'gantt-label';
+    label.textContent = 'Sprints';
+    laneDiv.appendChild(label);
+    options.sprints.forEach(s => {
+      const start = new Date(s.start);
+      const end = new Date(s.end);
+      const sOff = Math.max(0, Math.floor((start - sched.chartStart) / dayMs));
+      const eOff = Math.floor((end - sched.chartStart) / dayMs);
+      const bar = document.createElement('div');
+      bar.className = 'gantt-bar';
+      bar.style.left = `${(sOff / totalDays) * 100}%`;
+      bar.style.width = `${((eOff - sOff + 1) / totalDays) * 100}%`;
+      bar.style.background = s.color || '#dc3545';
+      bar.textContent = s.name || '';
+      laneDiv.appendChild(bar);
+    });
+    root.appendChild(laneDiv);
+  }
+
   sched.lanes.forEach(lane => {
     const laneDiv = document.createElement('div');
     laneDiv.className = `gantt-lane ${lane.cls || ''}`;
