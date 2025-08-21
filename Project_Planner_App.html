@@ -176,26 +176,6 @@
         </div>
       </div>
 
-      <div class="accordion mb-3" id="phaseScheduleAcc">
-        <div class="accordion-item">
-          <h2 class="accordion-header">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#phaseScheduleCollapse">
-              Phase schedule
-            </button>
-          </h2>
-          <div id="phaseScheduleCollapse" class="accordion-collapse collapse" data-bs-parent="#phaseScheduleAcc">
-            <div class="accordion-body">
-              <div class="table-responsive">
-                <table id="phaseDatesTable" class="table table-sm table-bordered table-striped mb-0 align-middle">
-                  <thead class="table-dark"></thead>
-                  <tbody></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="row row-cols-1 row-cols-lg-2 g-3">
         <div class="col">
           <div class="card h-100">
@@ -222,6 +202,18 @@
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header">Phase schedule</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="phaseDatesTable" class="table table-sm table-bordered table-striped mb-0 align-middle">
+              <thead class="table-dark"></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -539,6 +531,7 @@
 
   <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <!-- XLSX / XlsxPopulate / Chart.js resilient loaders -->
   <script>
@@ -1252,7 +1245,7 @@
 
     /* ---------- PDF Export (unchanged) ---------- */
 
-    function buildStaticTimelineNode(plan){
+    async function buildStaticTimelineNode(plan){
       const aggr = aggregate(plan, state.tasks, getTeam);
       const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
       // A4 landscape content width ~1100px; respect padding used in .pdf-sheet (24px)
@@ -1262,52 +1255,54 @@
       const pxPerDay = Math.max(3, Math.floor((pageWidth - labelPad) / totalDays));
       const width = totalDays * pxPerDay + labelPad;
       const wrap = document.createElement('div');
-      wrap.className = 'pdf-card';
-      const head = document.createElement('div'); head.className='pdf-h3'; head.textContent='Mini Gantt';
-      wrap.appendChild(head);
-      const container = document.createElement('div');
-      container.style.position='relative'; container.style.overflow='visible'; container.style.width = width+'px'; container.style.border='1px solid #333';
-      container.style.padding='0'; container.style.height = (plan.phaseIds.length*28 + 36)+'px';
-      const grid = document.createElement('div'); grid.style.position='absolute'; grid.style.left=labelPad+'px'; grid.style.top='0'; grid.style.bottom='0'; grid.style.right='0';
+      wrap.style.position='relative'; wrap.style.width = width+'px';
+      wrap.style.border='1px solid #333';
+      wrap.style.padding='0'; wrap.style.height = (plan.phaseIds.length*28 + 36)+'px';
       // vertical lines at week boundaries (Mondays)
       for(let d=0; d<totalDays; d++){
         const dt = addBusinessDays(sched.chartStart, d);
         if(dt.getDay() === 1){
           const x = labelPad + d*pxPerDay;
           const v = document.createElement('div'); v.style.position='absolute'; v.style.left=x+'px'; v.style.top='0'; v.style.bottom='0'; v.style.width='0'; v.style.borderLeft='1px dashed rgba(127,127,127,.5)';
-          container.appendChild(v);
+          wrap.appendChild(v);
         }
       }
       // y rows
-      plan.phaseIds.forEach((phId, idx)=>{
+      plan.phaseIds.forEach((phId)=>{
         const row = document.createElement('div'); row.style.position='relative'; row.style.height='28px'; row.style.borderTop='1px solid #333';
         const label = document.createElement('div'); label.textContent = getPhase(phId)?.name||phId; label.style.position='absolute'; label.style.left='8px'; label.style.top='4px'; label.style.width=(labelPad-16)+'px'; label.style.whiteSpace='nowrap'; label.style.overflow='hidden'; label.style.textOverflow='ellipsis';
         row.appendChild(label);
-        const barWrap = document.createElement('div'); barWrap.style.position='absolute'; barWrap.style.left=labelPad+'px'; barWrap.style.right='0'; barWrap.style.top='3px'; barWrap.style.height='22px';
         const seg = (sched.phaseWindows||[]).find(w => w.ph === phId);
         if(seg){
           const left = daysBetween(sched.chartStart, seg.start) * pxPerDay;
           const segDays = Math.max(1, daysBetween(seg.start, addBusinessDays(seg.end,1)));
           const w = segDays * pxPerDay;
           const bar = document.createElement('div');
-          bar.style.position='absolute'; bar.style.left = (labelPad + left)+'px'; bar.style.top='0'; bar.style.height='100%'; bar.style.width = w+'px';
+          bar.style.position='absolute'; bar.style.left = (labelPad + left)+'px'; bar.style.top='3px'; bar.style.height='22px'; bar.style.width = w+'px';
           bar.style.background='#4f46e5';
-          container.appendChild(bar);
+          wrap.appendChild(bar);
         }
-        container.appendChild(row);
+        wrap.appendChild(row);
       });
-      wrap.appendChild(container);
-      return wrap;
+      // convert chart to image for PDF
+      wrap.style.visibility='hidden';
+      document.body.appendChild(wrap);
+      const canvas = await html2canvas(wrap, {scale:2, useCORS:true});
+      document.body.removeChild(wrap);
+      const card = document.createElement('div'); card.className='pdf-card';
+      const head = document.createElement('div'); head.className='pdf-h3'; head.textContent='Mini Gantt'; card.appendChild(head);
+      const img = document.createElement('img'); img.src = canvas.toDataURL('image/png'); img.style.width='100%'; card.appendChild(img);
+      return card;
     }
 
-    function buildPlanBreakdownNode(plan){
+    async function buildPlanBreakdownNode(plan){
       const node = document.createElement('div');
       const title = document.createElement('div'); title.className='pdf-h2'; title.textContent = plan.title;
       const meta = document.createElement('div'); meta.className='pdf-meta';
       const aggr = aggregate(plan, state.tasks, getTeam); const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
       meta.textContent = `Team: ${getTeam(plan.teamId)?.name||'—'} • Buffer ${plan.bufferPct||0}% • ${fmt(sched.chartStart)} → ${fmt(sched.chartEnd)}`;
       node.appendChild(title); node.appendChild(meta);
-      node.appendChild(buildStaticTimelineNode(plan));
+      node.appendChild(await buildStaticTimelineNode(plan));
       plan.phaseIds.forEach(phId=>{
         const ph = getPhase(phId);
         const data = computeTaskEffortsForPhase(plan, phId);
@@ -1337,10 +1332,10 @@
       const h1 = document.createElement('div'); h1.className='pdf-h1'; h1.textContent = `Project: ${pr.name}`;
       const meta = document.createElement('div'); meta.className='pdf-meta'; meta.textContent = `${new Date().toLocaleString()} • Start ${state.meta.startDate} • Efficiency ${state.meta.efficiency} md/eng/day`;
       container.appendChild(h1); container.appendChild(meta);
-      state.proposals.filter(p=>p.projectId===projectId).forEach(p=>{
-        const block = buildPlanBreakdownNode(p);
+      for(const p of state.proposals.filter(p=>p.projectId===projectId)){
+        const block = await buildPlanBreakdownNode(p);
         container.appendChild(block);
-      });
+      }
       const opt = { margin: 10, filename: `${pr.name.replace(/\s+/g,'_')}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['css','legacy'] } };
       await html2pdf().from(container).set(opt).save();
     }
@@ -1352,7 +1347,7 @@
       const pr = getProject(p.projectId);
       const meta = document.createElement('div'); meta.className='pdf-meta'; meta.textContent = `Project: ${pr?.name||'—'} • Team: ${getTeam(p.teamId)?.name||'—'} • Phases: ${p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ')}`;
       container.appendChild(h1); container.appendChild(meta);
-      container.appendChild(buildPlanBreakdownNode(p));
+      container.appendChild(await buildPlanBreakdownNode(p));
       try{
         if(typeof html2pdf === 'function'){
           const opt = { margin: 10, filename: `Plan_${slug(p.title)}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['css','legacy'] } };
