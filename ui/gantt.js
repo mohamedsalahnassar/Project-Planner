@@ -12,10 +12,20 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
   const lanePad = options.lanePad || Math.max(2, Math.floor(laneHeight * 0.1));
   const barHeight = laneHeight - lanePad * 2;
 
-  // basic rendering using absolute positioning
+  // basic rendering using absolute positioning and business-day math
   const dayMs = 86400000;
-  // chartEnd is inclusive; add one day to capture the final date span
-  const totalDays = Math.max(1, Math.ceil((sched.chartEnd - sched.chartStart) / dayMs) + 1);
+  function addBusinessDays(d, n){
+    const x = new Date(d.getTime());
+    let added=0; while(added < n){ x.setDate(x.getDate()+1); const day=x.getDay(); if(day!==0 && day!==6) added++; }
+    return x;
+  }
+  function businessDaysBetween(a,b){
+    let count=0; const d=new Date(a.getTime());
+    while(d < b){ d.setDate(d.getDate()+1); const day=d.getDay(); if(day!==0 && day!==6) count++; }
+    return count;
+  }
+  // chartEnd is inclusive; convert to an exclusive offset of business days
+  const totalDays = Math.max(1, businessDaysBetween(sched.chartStart, addBusinessDays(sched.chartEnd,1)));
 
   if(options.showReleases !== false && Array.isArray(options.releases) && options.releases.length){
     const laneDiv = document.createElement('div');
@@ -28,13 +38,13 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     options.releases.forEach(r => {
       const start = new Date(r.codeFreeze);
       const end = new Date(r.releaseDate);
-      const sOff = Math.max(0, Math.floor((start - sched.chartStart) / dayMs));
-      const eOff = Math.floor((end - sched.chartStart) / dayMs);
+      const sOff = Math.max(0, businessDaysBetween(sched.chartStart, start));
+      const eOff = businessDaysBetween(sched.chartStart, addBusinessDays(end,1));
       bars.push({start:start.getTime(), end:end.getTime(), sOff, eOff, rel:r});
     });
     bars.sort((a,b)=>a.start-b.start);
     const trackEnd=[];
-    bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+    bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=addBusinessDays(new Date(b.end),1).getTime(); });
     const step = barHeight*0.5;
     const trackCount=trackEnd.length||1;
     laneDiv.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
@@ -42,7 +52,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
       bar.style.left = `${(b.sOff / totalDays) * 100}%`;
-      bar.style.width = `${((b.eOff - b.sOff + 1) / totalDays) * 100}%`;
+      bar.style.width = `${((b.eOff - b.sOff) / totalDays) * 100}%`;
       bar.style.background = b.rel.color || '#6f42c1';
       bar.textContent = b.rel.version || '';
       bar.style.top = (lanePad + b.track*step)+'px';
@@ -63,13 +73,13 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     options.sprints.forEach(s => {
       const start = new Date(s.start);
       const end = new Date(s.end);
-      const sOff = Math.max(0, Math.floor((start - sched.chartStart) / dayMs));
-      const eOff = Math.floor((end - sched.chartStart) / dayMs);
+      const sOff = Math.max(0, businessDaysBetween(sched.chartStart, start));
+      const eOff = businessDaysBetween(sched.chartStart, addBusinessDays(end,1));
       bars.push({start:start.getTime(), end:end.getTime(), sOff, eOff, spr:s});
     });
     bars.sort((a,b)=>a.start-b.start);
     const trackEnd=[];
-    bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+    bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=addBusinessDays(new Date(b.end),1).getTime(); });
     const step = barHeight*0.5;
     const trackCount=trackEnd.length||1;
     laneDiv.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
@@ -77,7 +87,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
       bar.style.left = `${(b.sOff / totalDays) * 100}%`;
-      bar.style.width = `${((b.eOff - b.sOff + 1) / totalDays) * 100}%`;
+      bar.style.width = `${((b.eOff - b.sOff) / totalDays) * 100}%`;
       bar.style.background = b.spr.color || '#dc3545';
       bar.textContent = b.spr.name || '';
       bar.style.top = (lanePad + b.track*step)+'px';
@@ -97,14 +107,13 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     laneDiv.appendChild(label);
     const bars = [];
     sched.phaseWindows.forEach(w => {
-      const sOff = Math.floor((w.start - sched.chartStart) / dayMs);
-      // treat phase end as inclusive so convert to an exclusive offset
-      const eOff = Math.floor((w.end - sched.chartStart) / dayMs) + 1;
+      const sOff = businessDaysBetween(sched.chartStart, w.start);
+      const eOff = businessDaysBetween(sched.chartStart, addBusinessDays(w.end,1));
       bars.push({start:w.start.getTime(), end:w.end.getTime(), sOff, eOff, ph:w.ph});
     });
     bars.sort((a,b)=>a.start-b.start);
     const trackEnd=[];
-    bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=b.end; });
+    bars.forEach(b=>{ let t=0; while(t<trackEnd.length && b.start<trackEnd[t]) t++; b.track=t; trackEnd[t]=addBusinessDays(new Date(b.end),1).getTime(); });
     const step = barHeight*0.5;
     const trackCount=trackEnd.length||1;
     laneDiv.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
@@ -146,7 +155,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       let t = 0;
       while(t < trackEnd.length && startMs < trackEnd[t]) t++;
       b.track = t;
-      trackEnd[t] = startMs + b.info.days * dayMs;
+      trackEnd[t] = addBusinessDays(b.info.start, b.info.days).getTime();
     });
     const step = barHeight*0.5;
     const trackCount = trackEnd.length || 1;
@@ -155,7 +164,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     bars.forEach(b => {
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
-      const offset = Math.floor((b.info.start - sched.chartStart) / dayMs);
+      const offset = businessDaysBetween(sched.chartStart, b.info.start);
       bar.style.left = `${(offset / totalDays) * 100}%`;
       bar.style.width = `${(b.info.days / totalDays) * 100}%`;
       if(lane.color) bar.style.background = lane.color;
