@@ -31,7 +31,16 @@ export function aggregate(plan, tasks, getTeam){
 }
 
 function duration(md, eng, eff){ if(!eng||eng<=0) return 0; return Math.max(1, Math.ceil(md/(eng*eff))); }
-function addDays(d, n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function addBusinessDays(d, n){
+  const x = new Date(d.getTime());
+  let added = 0;
+  while(added < n){
+    x.setDate(x.getDate()+1);
+    const day = x.getDay();
+    if(day !== 0 && day !== 6) added++;
+  }
+  return x;
+}
 
 export const DEFAULT_STAGGER_DAYS = 5;
 
@@ -59,7 +68,7 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
   let prevEnd = null;
   for(const ph of phases){
     const totals = aggr.phaseTotals[ph.id] || {earliest:null};
-    let phStart = prevEnd ? addDays(prevEnd, 1) : planStart;
+    let phStart = prevEnd ? addBusinessDays(prevEnd, 1) : planStart;
     if(totals.earliest && totals.earliest > phStart) phStart = totals.earliest;
     const laneOut = [];
     const feLanes = lanes.filter(l=> l.key!=='BE' && l.key!=='QA');
@@ -76,7 +85,7 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
       laneOut.push({key:beLane.key, start:beStart, days:beDays});
     }
     feLanes.forEach(l=>{
-      let start = addDays(phStart, stagger);
+      let start = addBusinessDays(phStart, stagger);
       const o = plan.overrides?.[ph.id] || {};
       if(o[l.key]) start = new Date(o[l.key]);
       const days = duration(totals[l.key]||0, aggr.team[l.key]||0, eff);
@@ -84,20 +93,20 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
       laneOut.push({key:l.key, start, days});
     });
     if(qaLane){
-      let start = addDays(phStart, stagger);
+      let start = addBusinessDays(phStart, stagger);
       const o = plan.overrides?.[ph.id] || {};
       if(o[qaLane.key]) start = new Date(o[qaLane.key]);
       else {
         const feMax = Math.max(0, ...feLanes.map(l=> dayMap[l.key]||0));
-        const base = feLanes.length ? startMap[feLanes[0].key] : addDays(phStart, stagger);
-        start = qaRule==='afterFE' ? addDays(base, feMax) : addDays(base, Math.floor(feMax*0.5));
+        const base = feLanes.length ? startMap[feLanes[0].key] : addBusinessDays(phStart, stagger);
+        start = qaRule==='afterFE' ? addBusinessDays(base, feMax) : addBusinessDays(base, Math.floor(feMax*0.5));
       }
       const days = duration(totals[qaLane.key]||0, aggr.team[qaLane.key]||0, eff);
       startMap[qaLane.key]=start; dayMap[qaLane.key]=days;
       laneOut.push({key:qaLane.key, start, days});
     }
     const phEnd = laneOut.reduce((max, l)=>{
-      const end = addDays(l.start, l.days);
+      const end = addBusinessDays(l.start, l.days);
       return end>max ? end : max;
     }, laneOut[0]?.start || phStart);
     const earliestStart = laneOut.reduce((min, l)=> l.start < min ? l.start : min, laneOut[0]?.start || phStart);
