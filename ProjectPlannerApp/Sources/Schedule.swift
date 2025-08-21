@@ -113,11 +113,11 @@ func computeSchedule(plan: Plan, aggr: Aggregation, efficiency: Double, startDat
         let webStart = addDays(phStart, stagger)
         let qaStart = addDays(iosStart, feMax/2)
 
-        let beEnd = addDays(beStart, beDays)
-        let iosEnd = addDays(iosStart, iosDays)
-        let andEnd = addDays(andStart, andDays)
-        let webEnd = addDays(webStart, webDays)
-        let qaEnd = addDays(qaStart, qaDays)
+        let beEnd = addDays(beStart, max(0, beDays - 1))
+        let iosEnd = addDays(iosStart, max(0, iosDays - 1))
+        let andEnd = addDays(andStart, max(0, andDays - 1))
+        let webEnd = addDays(webStart, max(0, webDays - 1))
+        let qaEnd = addDays(qaStart, max(0, qaDays - 1))
         let phEnd = [beEnd, iosEnd, andEnd, webEnd, qaEnd].max() ?? phStart
 
         let lanes = [

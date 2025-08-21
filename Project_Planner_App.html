@@ -1134,8 +1134,7 @@
         `<tr><th>Start</th><th>End</th>${lanes.map(()=>'<th>Start</th><th>End</th>').join('')}</tr>`;
       tbody.innerHTML = '';
       sched.phaseWindows.forEach(w=>{
-        const phEnd = addBusinessDays(w.start, Math.max(1, daysBetween(w.start, w.end)) - 1);
-        let row = `<th scope="row">${getPhase(w.ph)?.name||w.ph}</th><td>${fmt(w.start)}</td><td>${fmt(phEnd)}</td>`;
+        let row = `<th scope="row">${getPhase(w.ph)?.name||w.ph}</th><td>${fmt(w.start)}</td><td>${fmt(w.end)}</td>`;
         lanes.forEach(l=>{
           const li = w.lanes.find(x=> x.key===l.key);
           if(li){
@@ -1181,7 +1180,7 @@
         const aggr = aggregate(plan, state.tasks, getTeam);
         const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
         const win = sched.phaseWindows.find(w=> w.ph===phId);
-        const span = win ? `${fmt(win.start)} → ${fmt(win.end)} (${daysBetween(win.start, win.end)} days)` : '';
+        const span = win ? `${fmt(win.start)} → ${fmt(win.end)} (${daysBetween(win.start, win.end)+1} days)` : '';
         const data = computeTaskEffortsForPhase(plan, phId);
         const item = document.createElement('div'); item.className='accordion-item';
         item.innerHTML = `

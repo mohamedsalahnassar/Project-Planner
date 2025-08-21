@@ -106,7 +106,7 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
       laneOut.push({key:qaLane.key, start, days});
     }
     const phEnd = laneOut.reduce((max, l)=>{
-      const end = addBusinessDays(l.start, l.days);
+      const end = addBusinessDays(l.start, Math.max(1, l.days) - 1);
       return end>max ? end : max;
     }, laneOut[0]?.start || phStart);
     const earliestStart = laneOut.reduce((min, l)=> l.start < min ? l.start : min, laneOut[0]?.start || phStart);
