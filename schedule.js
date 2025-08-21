@@ -70,17 +70,19 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
       let beStart = phStart;
       const o = plan.overrides?.[ph.id] || {};
       if(o[beLane.key]) beStart = new Date(o[beLane.key]);
-      const beDays = duration(totals[beLane.key]||0, aggr.team[beLane.key]||0, eff);
+      const beMd = totals[beLane.key] || 0;
+      const beDays = beMd>0 ? duration(beMd, aggr.team[beLane.key]||0, eff) : 0;
       startMap[beLane.key]=beStart; dayMap[beLane.key]=beDays;
-      laneOut.push({key:beLane.key, start:beStart, days:beDays});
+      if(beDays>0) laneOut.push({key:beLane.key, start:beStart, days:beDays});
     }
     feLanes.forEach(l=>{
       let start = addDays(phStart, stagger);
       const o = plan.overrides?.[ph.id] || {};
       if(o[l.key]) start = new Date(o[l.key]);
-      const days = duration(totals[l.key]||0, aggr.team[l.key]||0, eff);
+      const md = totals[l.key] || 0;
+      const days = md>0 ? duration(md, aggr.team[l.key]||0, eff) : 0;
       startMap[l.key]=start; dayMap[l.key]=days;
-      laneOut.push({key:l.key, start, days});
+      if(days>0) laneOut.push({key:l.key, start, days});
     });
     if(qaLane){
       let start = addDays(phStart, stagger);
@@ -91,9 +93,10 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
         const base = feLanes.length ? startMap[feLanes[0].key] : addDays(phStart, stagger);
         start = qaRule==='afterFE' ? addDays(base, feMax) : addDays(base, Math.floor(feMax*0.5));
       }
-      const days = duration(totals[qaLane.key]||0, aggr.team[qaLane.key]||0, eff);
+      const qaMd = totals[qaLane.key] || 0;
+      const days = qaMd>0 ? duration(qaMd, aggr.team[qaLane.key]||0, eff) : 0;
       startMap[qaLane.key]=start; dayMap[qaLane.key]=days;
-      laneOut.push({key:qaLane.key, start, days});
+      if(days>0) laneOut.push({key:qaLane.key, start, days});
     }
     const phEnd = laneOut.reduce((max, l)=>{
       const end = addDays(l.start, l.days);

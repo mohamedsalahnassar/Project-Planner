@@ -99,6 +99,14 @@ test('computeSchedule handles custom effort types', () => {
   assert.strictEqual(lane.days, 3);
 });
 
+test('computeSchedule omits lanes without effort', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes: baseLanes};
+  const tasks = [{projectId:1, startDate:'2024-01-01', phaseIds:['p1'], efforts:[{platform:'BE', manDays:5}]}];
+  const aggr = aggregate(plan, tasks, getTeam);
+  const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
+  assert.deepStrictEqual(sched.phaseWindows[0].lanes.map(l=> l.key), ['BE']);
+});
+
 test('removeEffortType purges data', () => {
   state.meta.effortTypes = [
     {key:'BE', title:'BE', color:'#000'},
