@@ -10,7 +10,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
 
   const dayMs = 86400000;
   const totalDays = Math.max(1, Math.ceil((sched.chartEnd - sched.chartStart) / dayMs));
-  const barHeight = options.barHeight || 10;
+  const barHeight = options.barHeight || 6;
   const labelWidth = options.labelWidth || 120;
 
   sched.phaseWindows.forEach(pw => {
@@ -44,7 +44,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     const phaseDays = Math.max(1, Math.ceil((pw.end - pw.start) / dayMs));
     phaseBar.style.left = `${(phaseOffset / totalDays) * 100}%`;
     phaseBar.style.width = `${(phaseDays / totalDays) * 100}%`;
-    phaseBar.style.background = 'rgba(255,255,255,0.3)';
+    phaseBar.style.background = '#6fa8dc';
     phaseBar.style.borderRadius = '4px';
     phaseTrack.appendChild(phaseBar);
 
