@@ -1285,7 +1285,10 @@
         wrap.appendChild(row);
       });
       // convert chart to image for PDF
-      wrap.style.visibility='hidden';
+      // place chart off-screen so it doesn't flash but remains renderable
+      wrap.style.position='fixed';
+      wrap.style.left='-10000px';
+      wrap.style.top='0';
       document.body.appendChild(wrap);
       const canvas = await html2canvas(wrap, {scale:2, useCORS:true});
       document.body.removeChild(wrap);
