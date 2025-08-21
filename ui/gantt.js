@@ -8,7 +8,7 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
   const pxPerDay = options.pxPerDay || 18;
   const fontSize = Math.max(8, Math.min(16, Math.round(pxPerDay * 0.75)));
   root.style.fontSize = fontSize + 'px';
-  const laneHeight = options.laneHeight || 52;
+  const laneHeight = options.laneHeight || 44;
   const barHeight = Math.floor(laneHeight / 2);
 
   // basic rendering using absolute positioning
@@ -63,6 +63,32 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       bar.style.top = `${(laneHeight - barHeight) / 2}px`;
       bar.style.height = `${barHeight}px`;
       bar.style.fontSize = '0.75em';
+      laneDiv.appendChild(bar);
+    });
+    root.appendChild(laneDiv);
+  }
+
+  {
+    const laneDiv = document.createElement('div');
+    laneDiv.className = 'gantt-lane phases';
+    laneDiv.style.height = laneHeight + 'px';
+    const label = document.createElement('span');
+    label.className = 'gantt-label';
+    label.textContent = 'Phases';
+    laneDiv.appendChild(label);
+    sched.phaseWindows.forEach(w => {
+      const sOff = Math.floor((w.start - sched.chartStart) / dayMs);
+      const eOff = Math.floor((w.end - sched.chartStart) / dayMs);
+      const bar = document.createElement('div');
+      bar.className = 'gantt-bar';
+      bar.style.left = `${(sOff / totalDays) * 100}%`;
+      bar.style.width = `${((eOff - sOff + 1) / totalDays) * 100}%`;
+      bar.style.background = '#6c757d';
+      bar.style.color = '#fff';
+      bar.style.fontSize = '0.75em';
+      bar.textContent = getPhase(w.ph)?.name || w.ph;
+      bar.style.top = `${(laneHeight - barHeight) / 2}px`;
+      bar.style.height = `${barHeight}px`;
       laneDiv.appendChild(bar);
     });
     root.appendChild(laneDiv);

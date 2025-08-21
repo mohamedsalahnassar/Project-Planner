@@ -37,12 +37,12 @@
     .gridline.major{background:rgba(127,127,127,.28)}
     .hover-line{position:absolute; top:60px; bottom:0; width:1px; background:rgba(255,255,255,.3); pointer-events:none; display:none}
     .hover-label{position:absolute; top:0; transform:translateX(-50%); font-size:.75em; color:var(--bs-body-color); background:var(--bs-body-bg); border:1px solid var(--bs-border-color); padding:1px 4px; border-radius:4px; pointer-events:none; display:none}
-    .lane{position:relative; height:52px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
-    .lane-label{position:absolute; left:12px; top:14px; width:160px; font-weight:600}
-    .bar{position:absolute; top:14px; height:24px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
+    .lane{position:relative; height:44px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
+    .lane-label{position:absolute; left:12px; top:10px; width:160px; font-weight:600}
+    .bar{position:absolute; top:10px; height:20px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
     .release-bar{background:#6f42c1;color:#fff}
     .sprint-bar{background:#dc3545;color:#fff;font-size:.75em}
-    .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75em; display:flex; align-items:center; color:var(--bs-secondary-color)}
+    .phase-bar{background:var(--bs-secondary);color:#fff;font-size:.75em}
     .phase-badge{background:var(--bs-secondary);color:#fff}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
     .badge-lane .dot{width:.7rem;height:.7rem;border-radius:50%}
@@ -914,6 +914,19 @@
         });
         container.appendChild(lane);
       }
+      {
+        const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='phases';
+        const label = document.createElement('div'); label.className='lane-label'; label.textContent='Phases'; lane.appendChild(label);
+        sched.phaseWindows.forEach(w=>{
+          const d0 = Math.floor((w.start - sched.chartStart)/dayMs);
+          const d1 = Math.floor((w.end - sched.chartStart)/dayMs);
+          const bar = document.createElement('div'); bar.className='bar phase-bar'; bar.textContent = getPhase(w.ph)?.name || w.ph;
+          bar.style.left = (labelPad + d0*pxPerDay) + 'px';
+          bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
+          lane.appendChild(bar);
+        });
+        container.appendChild(lane);
+      }
       sched.lanes.filter(l=> lanesOn.includes(l.key)).forEach(l=>{
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane=l.key;
         const label = document.createElement('div'); label.className='lane-label'; label.textContent = l.name; lane.appendChild(label);
@@ -929,7 +942,7 @@
         });
         container.appendChild(lane);
       });
-      drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0, sched.phaseWindows);
+      drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0);
       const zr = byId('zoomRange'), zm = byId('zoomMinus'), zp = byId('zoomPlus'), zf = byId('zoomFit');
       zr.oninput = (e)=>{ p.pxPerDay = +e.target.value; save(); openDetail(p.id); };
       zm.onclick = ()=>{ p.pxPerDay = Math.max(6, (p.pxPerDay||pxPerDay)-2); save(); openDetail(p.id); };
@@ -944,8 +957,8 @@
       window.addEventListener('mouseup', ()=> isDown=false);
       scroll.addEventListener('mousemove', e=>{ if(!isDown) return; e.preventDefault(); const x=e.pageX - scroll.offsetLeft; const walk=(x-startX)*1.2; scroll.scrollLeft = scrollLeft - walk; });
     }
-    function drawRulerAndGrid(scroll, chartStart, totalDays, pxPerDay, contentHeight, phaseWindows){
-      scroll.querySelectorAll('.ruler,.grid,.phase-tag,.hover-line,.hover-label').forEach(n=> n.remove());
+    function drawRulerAndGrid(scroll, chartStart, totalDays, pxPerDay, contentHeight){
+      scroll.querySelectorAll('.ruler,.grid,.hover-line,.hover-label').forEach(n=> n.remove());
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
       const ruler = document.createElement('div'); ruler.className='ruler'; ruler.style.width = (totalDays*pxPerDay) + 'px';
       scroll.appendChild(ruler);
@@ -985,14 +998,6 @@
       monthRanges.slice(1).forEach(r=>{
         const x = labelPad + r.start*pxPerDay;
         const gl = document.createElement('div'); gl.className='gridline major'; gl.style.left = x+'px'; grid.appendChild(gl);
-      });
-      phaseWindows.forEach(w=>{
-        const d0 = Math.floor((w.start - chartStart)/dayMs);
-        const d1 = Math.floor((w.end - chartStart)/dayMs);
-        const x = labelPad + d0*pxPerDay;
-        const wpx = Math.max(1, (d1-d0+1)*pxPerDay);
-        const tag = document.createElement('div'); tag.className='phase-tag'; tag.style.left = x+'px'; tag.style.width = wpx+'px'; tag.textContent = w.ph;
-        scroll.appendChild(tag);
       });
       const hoverLine = document.createElement('div'); hoverLine.className='hover-line'; scroll.appendChild(hoverLine);
       const hoverLabel = document.createElement('div'); hoverLabel.className='hover-label'; ruler.appendChild(hoverLabel);
