@@ -14,10 +14,12 @@ export const state = {
   teams: [],
   phases: [],
   sprints: [],
+  releases: [],
   meta: {
     startDate: new Date().toISOString().slice(0,10),
     efficiency: 1,
-    effortTypes: DEFAULT_EFFORT_TYPES.map(e=> ({...e}))
+    effortTypes: DEFAULT_EFFORT_TYPES.map(e=> ({...e})),
+    showReleaseLane: true,
   }
 };
 
@@ -36,6 +38,8 @@ export function load(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) Object.assign(state, JSON.parse(raw));
     if(!Array.isArray(state.sprints)) state.sprints = [];
+    if(!Array.isArray(state.releases)) state.releases = [];
+    if(typeof state.meta?.showReleaseLane !== 'boolean') state.meta.showReleaseLane = true;
     if(Array.isArray(state.meta?.effortTypes)){
       if(typeof state.meta.effortTypes[0] === 'string'){
         const oldList = state.meta.effortTypes;
@@ -68,6 +72,8 @@ export function replaceState(newState){
   Object.keys(state).forEach(k => delete state[k]);
   Object.assign(state, newState);
   if(!Array.isArray(state.sprints)) state.sprints = [];
+  if(!Array.isArray(state.releases)) state.releases = [];
+  if(typeof state.meta?.showReleaseLane !== 'boolean') state.meta.showReleaseLane = true;
   ensurePlanLanes();
 }
 
@@ -78,6 +84,7 @@ export function mergeState(newData){
   if(Array.isArray(newData.teams)) newData.teams.forEach(t=> state.teams.push(t));
   if(Array.isArray(newData.phases)) newData.phases.forEach(ph=> state.phases.push(ph));
   if(Array.isArray(newData.sprints)) newData.sprints.forEach(s=> state.sprints.push(s));
+  if(Array.isArray(newData.releases)) newData.releases.forEach(r=> state.releases.push(r));
   if(newData.meta) Object.assign(state.meta, newData.meta);
   ensurePlanLanes();
 }
@@ -112,6 +119,24 @@ export function removeEffortType(key){
   state.proposals.forEach(p=>{
     if(p.overrides) Object.values(p.overrides).forEach(o=>{ delete o[key]; });
   });
+}
+
+export function addRelease(rel){
+  if(!Array.isArray(state.releases)) state.releases = [];
+  if(state.releases.some(r=>r.id===rel.id)) return;
+  state.releases.push({ id: rel.id, version: rel.version, codeFreeze: rel.codeFreeze, releaseDate: rel.releaseDate });
+}
+
+export function updateRelease(id, data){
+  const r = state.releases.find(x=>x.id===id);
+  if(!r) return;
+  if(data.version !== undefined) r.version = data.version;
+  if(data.codeFreeze !== undefined) r.codeFreeze = data.codeFreeze;
+  if(data.releaseDate !== undefined) r.releaseDate = data.releaseDate;
+}
+
+export function removeRelease(id){
+  state.releases = state.releases.filter(r=>r.id!==id);
 }
 
 const iso = d => d.toISOString().slice(0,10);

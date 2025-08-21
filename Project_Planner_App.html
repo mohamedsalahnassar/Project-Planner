@@ -42,6 +42,7 @@
     .lane{position:relative; height:64px; border-bottom:1px dashed var(--bs-border-color); display:flex; align-items:center}
     .lane-label{position:absolute; left:12px; top:18px; width:160px; font-weight:600}
     .bar{position:absolute; top:16px; height:32px; border-radius:.5rem; display:flex; align-items:center; padding:0 .6rem; color:#000; font-weight:700; border:1px solid rgba(0,0,0,.18); user-select:none}
+    .release-bar{background:#6f42c1;color:#fff}
     .phase-tag{position:absolute; top:66px; height:20px; padding:0 .5rem; border:1px dashed var(--bs-border-color); border-radius:.5rem; font-size:.75rem; display:flex; align-items:center; color:var(--bs-secondary-color)}
     .phase-badge{background:var(--bs-secondary);color:#fff}
     .badge-lane{display:inline-flex;align-items:center;gap:.3rem}
@@ -232,6 +233,9 @@
     <button class="nav-link" id="tab-sprints" data-bs-toggle="tab" data-bs-target="#pane-sprints" type="button" role="tab">Sprints</button>
   </li>
   <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-releases" data-bs-toggle="tab" data-bs-target="#pane-releases" type="button" role="tab">Releases</button>
+  </li>
+  <li class="nav-item" role="presentation">
     <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab">Tasks</button>
   </li>
   <li class="nav-item" role="presentation">
@@ -326,6 +330,22 @@
               <div class="table-responsive">
                 <table class="table table-hover align-middle" id="tbl-sprints">
                   <thead><tr><th style="width:25%">Name</th><th style="width:20%">Start</th><th style="width:20%">End</th><th style="width:15%">ID</th><th style="width:160px">Actions</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="pane-releases" role="tabpanel">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="input-group" style="max-width:360px">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input id="search-releases" class="form-control" placeholder="Search releases">
+                </div>
+                <button class="btn btn-primary" id="btn-add-release"><i class="bi bi-plus-lg"></i> Add Release</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle" id="tbl-releases">
+                  <thead><tr><th style="width:25%">Version</th><th style="width:20%">Code Freeze</th><th style="width:20%">Release</th><th style="width:15%">ID</th><th style="width:160px">Actions</th></tr></thead>
                   <tbody></tbody>
                 </table>
               </div>
@@ -788,7 +808,8 @@
         tbTeam.appendChild(tr);
       });
       const lf = byId('lane-filters');
-      lf.innerHTML = (p.lanes||[]).map(l=>
+      lf.innerHTML = `<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="chkReleases"><label class="form-check-label" for="chkReleases"><span class="badge-lane"><span class="dot" style="background:#6f42c1"></span>Releases</span></label></div>`+
+        (p.lanes||[]).map(l=>
         `<div class="form-check form-check-inline"><input class="form-check-input lane-filter" type="checkbox" value="${l.key}" id="chk${l.key}"><label class="form-check-label" for="chk${l.key}"><span class="badge-lane"><span class="dot" style="background:${l.color||effortTypeColor(l.key)}"></span>${l.name||effortTypeTitle(l.key)}</span></label></div>`
       ).join('');
       document.querySelectorAll('.lane-filter').forEach(chk=>{
@@ -800,6 +821,13 @@
           drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
         };
       });
+      const chkRel = byId('chkReleases');
+      chkRel.checked = state.meta.showReleaseLane !== false;
+      chkRel.onchange = ()=>{
+        state.meta.showReleaseLane = chkRel.checked;
+        save();
+        drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
+      };
       drawGantt(p, sched);
       renderPhaseBreakdownTables(p);
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
@@ -816,6 +844,21 @@
       const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
       const width = totalDays * pxPerDay + labelPad;
       const lanesOn = Array.from(document.querySelectorAll('.lane-filter')).filter(x=>x.checked).map(x=>x.value);
+      if(state.meta.showReleaseLane !== false && (state.releases||[]).length){
+        const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane='releases';
+        const label = document.createElement('div'); label.className='lane-label'; label.textContent='Releases'; lane.appendChild(label);
+        (state.releases||[]).forEach(r=>{
+          const start = new Date(r.codeFreeze); const end = new Date(r.releaseDate);
+          if(end < sched.chartStart || start > sched.chartEnd) return;
+          const d0 = Math.max(0, Math.floor((start - sched.chartStart)/dayMs));
+          const d1 = Math.floor((end - sched.chartStart)/dayMs);
+          const bar = document.createElement('div'); bar.className='bar release-bar'; bar.textContent = r.version || '';
+          bar.style.left = (labelPad + d0*pxPerDay) + 'px';
+          bar.style.width = (Math.max(1, d1 - d0 + 1)*pxPerDay) + 'px';
+          lane.appendChild(bar);
+        });
+        container.appendChild(lane);
+      }
       sched.lanes.filter(l=> lanesOn.includes(l.key)).forEach(l=>{
         const lane = document.createElement('div'); lane.className='lane'; lane.style.width = width+'px'; lane.dataset.lane=l.key;
         const label = document.createElement('div'); label.className='lane-label'; label.textContent = l.name; lane.appendChild(label);
@@ -1524,6 +1567,16 @@
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete sprint?')){ state.sprints = state.sprints.filter(x=>x.id!==s.id); save(); refreshManage(); } };
         tbSp.appendChild(tr);
       });
+      const filterRl = (byId('search-releases').value||'').toLowerCase();
+      const tbRl = byId('tbl-releases').querySelector('tbody'); tbRl.innerHTML='';
+      (state.releases||[]).filter(r=> (r.version+' '+r.id).toLowerCase().includes(filterRl)).forEach(r=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(r.version)}</td><td>${r.codeFreeze||''}</td><td>${r.releaseDate||''}</td><td><code>${r.id}</code></td>`+
+          `<td class="text-end"><button class=\"btn btn-sm btn-outline-primary\">Edit</button><button class=\"btn btn-sm btn-outline-danger ms-1\">Delete</button></td>`;
+        tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('release', r.id);
+        tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete release?')){ state.releases = state.releases.filter(x=>x.id!==r.id); save(); refreshManage(); } };
+        tbRl.appendChild(tr);
+      });
       const filterTk = (byId('search-tasks').value||'').toLowerCase();
       const tbTk = byId('tbl-tasks').querySelector('tbody'); tbTk.innerHTML='';
       state.tasks.filter(t=> (t.title+' '+t.id).toLowerCase().includes(filterTk)).forEach(t=>{
@@ -1566,6 +1619,7 @@
         }
       };
       byId('btn-add-sprint').onclick = ()=> openEditor('sprint', null);
+      byId('btn-add-release').onclick = ()=> openEditor('release', null);
       byId('btn-add-task').onclick = ()=> openEditor('task', null);
       byId('btn-add-effort-type').onclick = ()=> openEditor('effortType', null);
       byId('search-projects').oninput = refreshManage;
@@ -1573,6 +1627,7 @@
       byId('search-phases').oninput = refreshManage;
       byId('search-teams').oninput = refreshManage;
       byId('search-sprints').oninput = refreshManage;
+      byId('search-releases').oninput = refreshManage;
       byId('search-tasks').oninput = refreshManage;
       byId('search-effort-types').oninput = refreshManage;
       // Phase Tasks tab wiring
@@ -2011,6 +2066,25 @@
           save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
         del.onclick = ()=>{ if(confirm('Delete sprint?')){ state.sprints = state.sprints.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+      }
+
+      if(kind==='release'){
+        const isEdit = !!id;
+        const data = isEdit ? state.releases.find(x=>x.id===id) : { id:'REL'+Math.random().toString(36).slice(2,6), version:'', codeFreeze:'', releaseDate:'' };
+        title.textContent = isEdit ? 'Edit Release' : 'Add Release';
+        form.innerHTML = [
+          field('Version', `<input id="f-version" class="form-control" value="${escapeHtml(data.version||'')}">`),
+          field('Code Freeze', `<input id="f-freeze" type="date" class="form-control" value="${escapeHtml(data.codeFreeze||'')}">`),
+          field('Release', `<input id="f-release" type="date" class="form-control" value="${escapeHtml(data.releaseDate||'')}">`),
+          field('ID', idInputHtml(data.id, isEdit)),
+        ].join('');
+        byId('editSave').onclick = ()=>{
+          const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.releases, newId)) return alert('ID already exists.');
+          const obj = { id: isEdit? data.id : newId, version: val('f-version'), codeFreeze: val('f-freeze'), releaseDate: val('f-release') };
+          if(isEdit){ Object.assign(state.releases.find(x=>x.id===id), obj); } else { state.releases.push(obj); }
+          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+        };
+        del.onclick = ()=>{ if(confirm('Delete release?')){ state.releases = state.releases.filter(x=>x.id!==id); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
 
       if(kind==='effortType'){
