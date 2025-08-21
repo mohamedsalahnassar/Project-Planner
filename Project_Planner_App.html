@@ -165,6 +165,18 @@
         </div>
       </div>
 
+      <div class="card mb-3">
+        <div class="card-header">Phase schedule</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="phaseDatesTable" class="table table-sm table-bordered mb-0 align-middle">
+              <thead class="table-dark"></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="row row-cols-1 row-cols-lg-2 g-3">
         <div class="col">
           <div class="card h-100">
@@ -655,6 +667,16 @@
     function byId(id){ return document.getElementById(id); }
     function daysBetween(a,b){ return Math.ceil((b-a)/dayMs); }
     function fmt(d){ return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); }
+    function addBusinessDays(d,n){
+      const x = new Date(d.getTime());
+      let added = 0;
+      while(added < n){
+        x.setDate(x.getDate()+1);
+        const day = x.getDay();
+        if(day !== 0 && day !== 6) added++;
+      }
+      return x;
+    }
     function iso(d){ return d.toISOString().slice(0,10); }
     function escapeHtml(s){
       return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -829,6 +851,7 @@
         drawGantt(p, computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate));
       };
       drawGantt(p, sched);
+      renderPhaseDatesTable(sched);
       renderPhaseBreakdownTables(p);
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
@@ -979,6 +1002,29 @@
         const newDate = new Date(sched.chartStart.getTime() + days*dayMs);
         plan.overrides ||= {}; plan.overrides[bar.dataset.phase] ||= {}; plan.overrides[bar.dataset.phase][bar.dataset.lane] = iso(newDate);
         save(); openDetail(plan.id);
+      });
+    }
+    function renderPhaseDatesTable(sched){
+      const lanes = sched.lanes;
+      const thead = byId('phaseDatesTable').querySelector('thead');
+      const tbody = byId('phaseDatesTable').querySelector('tbody');
+      thead.innerHTML = `<tr><th>Phase</th><th>Start</th><th>End</th>${lanes.map(l=>`<th>${l.name||l.key} start</th><th>${l.name||l.key} end</th>`).join('')}</tr>`;
+      tbody.innerHTML = '';
+      sched.phaseWindows.forEach(w=>{
+        const phEnd = addBusinessDays(w.start, Math.max(1, daysBetween(w.start, w.end)) - 1);
+        let row = `<td>${getPhase(w.ph)?.name||w.ph}</td><td>${fmt(w.start)}</td><td>${fmt(phEnd)}</td>`;
+        lanes.forEach(l=>{
+          const li = w.lanes.find(x=> x.key===l.key);
+          if(li){
+            const le = addBusinessDays(li.start, Math.max(1, li.days) - 1);
+            row += `<td>${fmt(li.start)}</td><td>${fmt(le)}</td>`;
+          }else{
+            row += '<td></td><td></td>';
+          }
+        });
+        const tr = document.createElement('tr');
+        tr.innerHTML = row;
+        tbody.appendChild(tr);
       });
     }
 
