@@ -151,6 +151,54 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     root.appendChild(laneDiv);
   }
 
+  // Minimal Capacity Changes lane (read-only, non-intrusive)
+  if (Array.isArray(sched.splitPhaseWindows) && sched.splitPhaseWindows.length) {
+    const laneDiv = document.createElement('div');
+    laneDiv.className = 'gantt-lane capacity-changes';
+    const label = document.createElement('span');
+    label.className = 'gantt-label';
+    label.textContent = 'Capacity Changes';
+    laneDiv.appendChild(label);
+
+    // Collect bars for capacity change segments (segments after the first per phase)
+    const bars = [];
+    sched.splitPhaseWindows.forEach(pw => {
+      if (!pw.segments || pw.segments.length <= 1) return;
+      pw.segments.forEach((seg, idx) => {
+        if (idx === 0) return; // only show changes
+        const sOff = Math.max(0, businessDaysBetween(sched.chartStart, seg.start));
+        const eOff = businessDaysBetween(sched.chartStart, addBusinessDays(seg.end, 1));
+        bars.push({ start: seg.start.getTime(), end: seg.end.getTime(), sOff, eOff, seg });
+      });
+    });
+
+    bars.sort((a,b)=> a.start - b.start);
+
+    // Simple track layout to avoid overlaps
+    const trackEnd = [];
+    bars.forEach(b => { let t=0; while(t<trackEnd.length && b.start < trackEnd[t]) t++; b.track=t; trackEnd[t]=addBusinessDays(new Date(b.end),1).getTime(); });
+    const step = barHeight * 0.5;
+    const trackCount = trackEnd.length || 1;
+    laneDiv.style.height = (lanePad*2 + barHeight + (trackCount-1)*step)+'px';
+
+    bars.forEach(b => {
+      const bar = document.createElement('div');
+      bar.className = 'gantt-bar';
+      bar.style.left = `${(b.sOff / totalDays) * 100}%`;
+      bar.style.width = `${((b.eOff - b.sOff) / totalDays) * 100}%`;
+      bar.style.background = '#ffc107';
+      bar.style.border = '2px dashed #dc3545';
+      bar.style.color = '#000';
+      bar.style.fontSize = '0.75em';
+      bar.textContent = 'Capacity change';
+      bar.style.top = (lanePad + b.track*step)+'px';
+      bar.style.height = `${barHeight}px`;
+      laneDiv.appendChild(bar);
+    });
+
+    root.appendChild(laneDiv);
+  }
+
   sched.lanes.forEach(lane => {
     const laneDiv = document.createElement('div');
     laneDiv.className = `gantt-lane ${lane.cls || ''}`;
