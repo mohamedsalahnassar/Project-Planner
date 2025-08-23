@@ -26,9 +26,20 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     return x;
   }
   function businessDaysBetween(a,b){
-    let count=0; const d=new Date(a.getTime());
-    while(d < b){ d.setDate(d.getDate()+1); const day=d.getDay(); if(day!==0 && day!==6) count++; }
-    return count;
+    const start = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+    const end = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+    if(end <= start) return 0;
+    const msPerDay = 86400000;
+    const diffDays = Math.floor((end - start) / msPerDay);
+    const fullWeeks = Math.floor(diffDays / 7);
+    let business = diffDays - fullWeeks * 2;
+    const rem = diffDays % 7;
+    const startDay = start.getDay();
+    for(let i=0;i<rem;i++){
+      const day = (startDay + i + 1) % 7; // days after start
+      if(day === 0 || day === 6) business--;
+    }
+    return business < 0 ? 0 : business;
   }
   // chartEnd is inclusive; convert to an exclusive offset of business days
   const totalDays = Math.max(1, businessDaysBetween(sched.chartStart, addBusinessDays(sched.chartEnd,1)));
