@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { aggregate, computeSchedule } from '../schedule.js';
+import { aggregate, computeSchedule, computeDailyCapacity, findCapacityChangePoints, splitPhasesByCapacity } from '../schedule.js';
 import { state, removeEffortType, updateEffortType } from '../data.js';
 
 const dayMs = 86400000;
@@ -138,4 +138,43 @@ test('updateEffortType changes metadata and locked prevents deletion', () => {
   assert.deepStrictEqual(state.meta.effortTypes[0], {key:'iOS', title:'Apple', color:'#222', locked:true});
   removeEffortType('iOS');
   assert.strictEqual(state.meta.effortTypes.length, 1);
+});
+
+test('capacity: computeDailyCapacity + changePoints + splitPhases', () => {
+  const team = {memberAssignments:[
+    {id:'1',memberId:'1',specialty:'BE',startDate:'2024-01-01'},
+    {id:'2',memberId:'2',specialty:'BE',startDate:'2024-01-10'},
+    {id:'3',memberId:'3',specialty:'iOS',startDate:'2024-01-05', endDate:'2024-01-12'}
+  ]};
+  const caps = computeDailyCapacity(team, '2024-01-01', '2024-01-15');
+  assert.ok(Array.isArray(caps) && caps.length>0);
+  const cps = findCapacityChangePoints(caps);
+  assert.ok(cps.length>0);
+
+  const pw = [{ ph:'p1', start:new Date('2024-01-02'), end:new Date('2024-01-20'), lanes:[] }];
+  const split = splitPhasesByCapacity(pw, cps, caps);
+  assert.ok(split[0].segments && split[0].segments.length>1);
+});
+
+test('aggregate returns capacitySegments and changePoints', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes: baseLanes};
+  const tasks = sampleTasks();
+  const aggr = aggregate(plan, tasks, ()=>({memberAssignments:[
+    {id:'1',memberId:'1',specialty:'BE',startDate:'2024-01-01'},
+    {id:'2',memberId:'2',specialty:'BE',startDate:'2024-01-10'}
+  ]}));
+  assert.ok(Array.isArray(aggr.capacitySegments));
+  assert.ok(Array.isArray(aggr.changePoints));
+});
+
+test('computeSchedule carries splitPhaseWindows without altering original windows', () => {
+  const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes: baseLanes};
+  const tasks = sampleTasks();
+  const aggr = aggregate(plan, tasks, ()=>({memberAssignments:[
+    {id:'1',memberId:'1',specialty:'BE',startDate:'2024-01-01'},
+    {id:'2',memberId:'2',specialty:'BE',startDate:'2024-01-10'}
+  ]}));
+  const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
+  assert.ok(sched.phaseWindows.length>0);
+  assert.ok(sched.splitPhaseWindows.length>=sched.phaseWindows.length);
 });
