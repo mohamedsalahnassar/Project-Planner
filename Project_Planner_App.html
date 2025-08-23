@@ -654,9 +654,11 @@
       (plan.phaseIds||[]).forEach(phId=>{
         const base = (BASELINE[plan.id]||{})[phId];
         if(!base) return;
-        const tasks = getTasksByPhase(plan.projectId, phId).filter(t=> FE_IDS.has(t.id));
-        const feCount = Math.max(1, tasks.length);
-        tasks.forEach(t=>{
+        const tasks = getTasksByPhase(plan.projectId, phId);
+        if (!tasks || !Array.isArray(tasks)) return;
+        const filteredTasks = tasks.filter(t=> FE_IDS.has(t.id));
+        const feCount = Math.max(1, filteredTasks.length);
+        filteredTasks.forEach(t=>{
           if((t.efforts||[]).length) return;
           if(seen.has(t.id)) return;
           const perType = {};
@@ -1185,6 +1187,7 @@
 
     function computeTaskEffortsForPhase(plan, phaseId){
       const tasks = getTasksByPhase(plan.projectId, phaseId);
+      if (!tasks || !Array.isArray(tasks)) return {rows: [], totals: Object.fromEntries(effortTypes().map(k=>[k,0]))};
       const rows = [];
       const totals = Object.fromEntries(effortTypes().map(k=>[k,0])); totals.total=0;
       tasks.forEach(t=>{
@@ -1244,9 +1247,12 @@
         const sTable = document.createElement('table'); sTable.className='table table-sm table-bordered'; sTable.style.width='100%';
         sTable.innerHTML = `<thead class="table-light"><tr><th style="width:12%">Task</th><th>Title</th></tr></thead><tbody></tbody>`;
         const sBody = sTable.querySelector('tbody');
-          getTasksByPhase(plan.projectId, phId).filter(t=> t.viableProduct).forEach(t=>{
-            const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${escapeHtml(t.title)}</td>`; sBody.appendChild(tr);
-          });
+          const tasks = getTasksByPhase(plan.projectId, phId);
+          if (tasks && Array.isArray(tasks)) {
+            tasks.filter(t=> t.viableProduct).forEach(t=>{
+              const tr=document.createElement('tr'); tr.innerHTML = `<td><code>${t.id}</code></td><td>${escapeHtml(t.title)}</td>`; sBody.appendChild(tr);
+            });
+          }
         scopeCard.appendChild(sTable);
         item.querySelector('.accordion-body').appendChild(scopeCard);
 
@@ -2338,10 +2344,10 @@
             (state.meta.effortTypes||(state.meta.effortTypes=[])).push(obj);
             state.teams.forEach(tm=>{ tm.sizes[key]=tm.sizes[key]||0; });
           }
-          save(); refreshManage(); if(typeof renderEffTbl==='function') renderEffTbl(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
+          save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
         del.classList.toggle('d-none', !isEdit || data.locked);
-        del.onclick = ()=>{ if(confirm('Delete effort type?')){ removeEffortType(data.key); save(); refreshManage(); if(typeof renderEffTbl==='function') renderEffTbl(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
+        del.onclick = ()=>{ if(confirm('Delete effort type?')){ removeEffortType(data.key); save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
 
       if(kind==='task'){
