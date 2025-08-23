@@ -1,7 +1,8 @@
-import { getTaskPhaseIds } from './data.js';
+import { getTaskPhaseIds, getTeamSizesForDate, getTeamSizes } from './data.js';
 
-export function aggregate(plan, tasks, getTeam){
-  const team = { ...(getTeam(plan.teamId)?.sizes || {}) };
+export function aggregate(plan, tasks, getTeam, targetDate = null){
+  const team = getTeam(plan.teamId);
+  const teamSizes = targetDate ? getTeamSizesForDate(team, targetDate) : getTeamSizes(team);
   const buffer = (plan.bufferPct||0)/100;
   const planPh = (plan.phaseIds||[]).map(id=> String(id));
   const phaseTotals = {};
@@ -27,7 +28,7 @@ export function aggregate(plan, tasks, getTeam){
       phaseTotals[phId][k] = +(phaseTotals[phId][k] * (1+buffer)).toFixed(1);
     }
   }
-  return { team, buffer, phaseTotals };
+  return { team: teamSizes, buffer, phaseTotals };
 }
 
 function duration(md, eng, eff){ if(!eng||eng<=0) return 0; return Math.max(1, Math.ceil(md/(eng*eff))); }
@@ -75,6 +76,7 @@ export function computeSchedule(plan, aggr, eff, getPhase, startDate, options={}
   const stagger = options.staggerDays ?? DEFAULT_STAGGER_DAYS;
   const phaseWindows = [];
   let prevEnd = null;
+  
   for(const ph of phases){
     const totals = aggr.phaseTotals[ph.id] || {earliest:null};
     let phStart = prevEnd ? addBusinessDays(prevEnd, 1) : planStart;

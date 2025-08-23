@@ -5,7 +5,13 @@ import { state, removeEffortType, updateEffortType } from '../data.js';
 
 const dayMs = 86400000;
 function dummyPhase(id){ return {id, order:1}; }
-function getTeam(){ return {sizes:{BE:1,iOS:1,Android:1,Online:1,QA:1}}; }
+function getTeam(){ return {memberAssignments:[
+  {id:'1',memberId:'1',specialty:'BE',startDate:'2024-01-01'},
+  {id:'2',memberId:'2',specialty:'iOS',startDate:'2024-01-01'},
+  {id:'3',memberId:'3',specialty:'Android',startDate:'2024-01-01'},
+  {id:'4',memberId:'4',specialty:'Online',startDate:'2024-01-01'},
+  {id:'5',memberId:'5',specialty:'QA',startDate:'2024-01-01'}
+]}; }
 const baseLanes = ['BE','iOS','Android','Online','QA'].map(k=> ({key:k,name:k,color:'#000'}));
 function sampleTasks(){
   return [{
@@ -19,10 +25,16 @@ function sampleTasks(){
 test('aggregate applies buffer and handles zero team members', () => {
   const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], bufferPct:10};
   const tasks = sampleTasks();
-  const getZeroTeam = () => ({sizes:{BE:0,iOS:1,Android:1,Online:1,QA:1}});
+  const getZeroTeam = () => ({memberAssignments:[
+    {id:'2',memberId:'2',specialty:'iOS',startDate:'2024-01-01'},
+    {id:'3',memberId:'3',specialty:'Android',startDate:'2024-01-01'},
+    {id:'4',memberId:'4',specialty:'Online',startDate:'2024-01-01'},
+    {id:'5',memberId:'5',specialty:'QA',startDate:'2024-01-01'}
+  ]});
   const aggr = aggregate(plan, tasks, getZeroTeam);
   assert.strictEqual(aggr.phaseTotals['p1'].BE, 11);
-  assert.strictEqual(aggr.team.BE, 0);
+  // BE specialty is not in the team, so it won't be in the result
+  assert.strictEqual(aggr.team.BE, undefined);
 });
 
 test('aggregate counts assignments without phaseIds', () => {
@@ -90,7 +102,11 @@ test('computeSchedule handles custom effort types', () => {
   const lanes = [...baseLanes, {key:'DevOps', name:'DevOps', color:'#000'}];
   const plan = {id:1, projectId:1, teamId:1, phaseIds:['p1'], lanes};
   const tasks = [{projectId:1, startDate:'2024-01-01', phaseIds:['p1'], efforts:[{platform:'DevOps', manDays:6}]}];
-  const aggr = aggregate(plan, tasks, () => ({sizes:{BE:1,DevOps:2}}));
+  const aggr = aggregate(plan, tasks, () => ({memberAssignments:[
+    {id:'1',memberId:'1',specialty:'BE',startDate:'2024-01-01'},
+    {id:'2',memberId:'2',specialty:'DevOps',startDate:'2024-01-01'},
+    {id:'3',memberId:'3',specialty:'DevOps',startDate:'2024-01-01'}
+  ]}));
   const sched = computeSchedule(plan, aggr, 1, dummyPhase, '2024-01-01');
   const lane = sched.phaseWindows[0].lanes.find(l=> l.key==='DevOps');
   assert.ok(lane);
@@ -103,12 +119,16 @@ test('removeEffortType purges data', () => {
     {key:'DevOps', title:'DevOps', color:'#111'}
   ];
   state.tasks = [{efforts:[{platform:'BE',manDays:1},{platform:'DevOps',manDays:2}]}];
-  state.teams = [{sizes:{BE:1,DevOps:2}}];
+  state.teams = [{memberAssignments:[
+    {id:'1',memberId:'1',specialty:'BE',startDate:'2024-01-01'},
+    {id:'2',memberId:'2',specialty:'DevOps',startDate:'2024-01-01'},
+    {id:'3',memberId:'3',specialty:'DevOps',startDate:'2024-01-01'}
+  ]}];
   state.proposals = [{overrides:{p1:{BE:'2024-01-01',DevOps:'2024-01-02'}}}];
   removeEffortType('DevOps');
   assert.deepStrictEqual(state.meta.effortTypes, [{key:'BE', title:'BE', color:'#000'}]);
   assert.deepStrictEqual(state.tasks[0].efforts, [{platform:'BE',manDays:1}]);
-  assert.deepStrictEqual(state.teams[0].sizes, {BE:1});
+  assert.deepStrictEqual(state.teams[0].memberAssignments, [{id:'1',memberId:'1',specialty:'BE',startDate:'2024-01-01'}]);
   assert.deepStrictEqual(state.proposals[0].overrides.p1, {BE:'2024-01-01'});
 });
 

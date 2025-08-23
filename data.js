@@ -12,6 +12,7 @@ export const state = {
   proposals: [],
   tasks: [],
   teams: [],
+  teamMembers: [],
   phases: [],
   sprints: [],
   releases: [],
@@ -23,6 +24,163 @@ export const state = {
     showSprintLane: true,
   }
 };
+
+// Helper function to compute team sizes from member assignments
+export function getTeamSizes(team) {
+  if (!team || !Array.isArray(team.memberAssignments)) {
+    return {};
+  }
+  
+  const sizes = {};
+  
+  // Initialize all specialties to 0
+  const allSpecialties = new Set();
+  team.memberAssignments.forEach(assignment => {
+    if (assignment.specialty) allSpecialties.add(assignment.specialty);
+  });
+  allSpecialties.forEach(specialty => {
+    sizes[specialty] = 0;
+  });
+  
+  team.memberAssignments.forEach(assignment => {
+    if (assignment.specialty && assignment.startDate) {
+      const startDate = new Date(assignment.startDate);
+      const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
+      
+      // Only count members who are active (startDate <= current date < endDate or no endDate)
+      const now = new Date();
+      if (startDate <= now && (!endDate || now < endDate)) {
+        sizes[assignment.specialty] = (sizes[assignment.specialty] || 0) + 1;
+      }
+    }
+  });
+  
+  return sizes;
+}
+
+// Helper function to get team sizes for a specific date
+export function getTeamSizesForDate(team, targetDate) {
+  if (!team || !Array.isArray(team.memberAssignments)) {
+    return {};
+  }
+  
+  const sizes = {};
+  const date = new Date(targetDate);
+  
+  // Initialize all specialties to 0
+  const allSpecialties = new Set();
+  team.memberAssignments.forEach(assignment => {
+    if (assignment.specialty) allSpecialties.add(assignment.specialty);
+  });
+  allSpecialties.forEach(specialty => {
+    sizes[specialty] = 0;
+  });
+  
+  team.memberAssignments.forEach(assignment => {
+    if (assignment.specialty && assignment.startDate) {
+      const startDate = new Date(assignment.startDate);
+      const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
+      
+      // Only count members who are active on the target date
+      if (startDate <= date && (!endDate || date < endDate)) {
+        sizes[assignment.specialty] = (sizes[assignment.specialty] || 0) + 1;
+      }
+    }
+  });
+  
+  return sizes;
+}
+
+// Helper function to create a default team with sample member assignments
+export function createDefaultTeam() {
+  return {
+    id: Date.now().toString(),
+    name: 'Default Team',
+    memberAssignments: []
+  };
+}
+
+// Helper function to create a default team member
+export function createDefaultTeamMember() {
+  return {
+    id: Date.now().toString(),
+    name: 'New Team Member',
+    specialty: 'BE'
+  };
+}
+
+// Helper function to get team member by ID
+export function getTeamMember(memberId) {
+  return state.teamMembers.find(m => m.id === memberId);
+}
+
+// Helper function to get all team members
+export function getAllTeamMembers() {
+  return state.teamMembers || [];
+}
+
+// Helper function to add team member
+export function addTeamMember(member) {
+  if (!state.teamMembers) state.teamMembers = [];
+  state.teamMembers.push(member);
+}
+
+// Helper function to update team member
+export function updateTeamMember(memberId, data) {
+  const member = getTeamMember(memberId);
+  if (member) {
+    Object.assign(member, data);
+  }
+}
+
+// Helper function to delete team member
+export function deleteTeamMember(memberId) {
+  const index = state.teamMembers.findIndex(m => m.id === memberId);
+  if (index !== -1) {
+    state.teamMembers.splice(index, 1);
+  }
+}
+
+// Helper function to add member assignment to team
+export function addMemberAssignment(teamId, memberId, specialty, startDate, endDate = null) {
+  const team = state.teams.find(t => t.id === teamId);
+  if (!team) return false;
+  
+  if (!team.memberAssignments) team.memberAssignments = [];
+  
+  // Check for overlapping assignments
+  const hasOverlap = team.memberAssignments.some(assignment => 
+    assignment.memberId === memberId && 
+    assignment.specialty === specialty &&
+    !(endDate && assignment.startDate > endDate || assignment.endDate && startDate > assignment.endDate)
+  );
+  
+  if (hasOverlap) return false;
+  
+  const assignment = {
+    id: Date.now().toString(),
+    memberId,
+    specialty,
+    startDate,
+    endDate
+  };
+  
+  team.memberAssignments.push(assignment);
+  return true;
+}
+
+// Helper function to remove member assignment from team
+export function removeMemberAssignment(teamId, assignmentId) {
+  const team = state.teams.find(t => t.id === teamId);
+  if (!team || !team.memberAssignments) return false;
+  
+  const index = team.memberAssignments.findIndex(a => a.id === assignmentId);
+  if (index !== -1) {
+    team.memberAssignments.splice(index, 1);
+    return true;
+  }
+  return false;
+}
 
 export function defaultPlanLanes(){
   return getEffortTypes().map(e=> ({ key: e.key, name: e.title, color: e.color }));
@@ -40,6 +198,7 @@ export function load(){
     if(raw) Object.assign(state, JSON.parse(raw));
     if(!Array.isArray(state.sprints)) state.sprints = [];
     if(!Array.isArray(state.releases)) state.releases = [];
+    if(!Array.isArray(state.teamMembers)) state.teamMembers = [];
     if(typeof state.meta?.showReleaseLane !== 'boolean') state.meta.showReleaseLane = true;
     if(typeof state.meta?.showSprintLane !== 'boolean') state.meta.showSprintLane = true;
     if(Array.isArray(state.meta?.effortTypes)){
@@ -55,11 +214,50 @@ export function load(){
     }
     const present = new Set(state.meta.effortTypes.map(e=>e.key));
     DEFAULT_EFFORT_TYPES.forEach(d=>{ if(!present.has(d.key)) state.meta.effortTypes.push({...d}); });
+    
+    // Migrate existing teams from old structure to new structure
+    migrateTeamsToNewStructure();
+    
     ensurePlanLanes();
   }catch(e){
     console.error('Failed to load saved state', e);
   }
   return state;
+}
+
+// Migration function to convert old team structure to new structure
+function migrateTeamsToNewStructure() {
+  state.teams.forEach(team => {
+    if (team.members && Array.isArray(team.members) && !team.memberAssignments) {
+      // Convert old members array to new memberAssignments array
+      team.memberAssignments = team.members.map(member => ({
+        id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+        memberId: member.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+        specialty: member.specialty,
+        startDate: member.startDate,
+        endDate: member.endDate
+      }));
+      
+      // Add team members to the global teamMembers array if they don't exist
+      team.members.forEach(member => {
+        if (!state.teamMembers.find(tm => tm.id === member.id)) {
+          state.teamMembers.push({
+            id: member.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+            name: member.name,
+            specialty: member.specialty
+          });
+        }
+      });
+      
+      // Remove old members array
+      delete team.members;
+    }
+    
+    // Ensure memberAssignments exists
+    if (!team.memberAssignments) {
+      team.memberAssignments = [];
+    }
+  });
 }
 
 export function save(){
@@ -85,6 +283,7 @@ export function mergeState(newData){
   if(Array.isArray(newData.proposals)) newData.proposals.forEach(p=>{ if(!Array.isArray(p.lanes)) p.lanes = defaultPlanLanes(); state.proposals.push(p); });
   if(Array.isArray(newData.tasks)) newData.tasks.forEach(t=> state.tasks.push(t));
   if(Array.isArray(newData.teams)) newData.teams.forEach(t=> state.teams.push(t));
+  if(Array.isArray(newData.teamMembers)) newData.teamMembers.forEach(tm=> state.teamMembers.push(tm));
   if(Array.isArray(newData.phases)) newData.phases.forEach(ph=> state.phases.push(ph));
   if(Array.isArray(newData.sprints)) newData.sprints.forEach(s=> state.sprints.push(s));
   if(Array.isArray(newData.releases)) newData.releases.forEach(r=> state.releases.push(r));
@@ -118,7 +317,18 @@ export function removeEffortType(key){
   state.tasks.forEach(t=>{
     t.efforts = (t.efforts||[]).filter(e=> e.platform !== key);
   });
-  state.teams.forEach(tm=>{ if(tm.sizes) delete tm.sizes[key]; });
+  // Remove member assignments with the deleted specialty from all teams
+  state.teams.forEach(tm=>{ 
+    if(tm.memberAssignments) {
+      tm.memberAssignments = tm.memberAssignments.filter(a => a.specialty !== key);
+    }
+    // Legacy support for old teams with members
+    if(tm.members) {
+      tm.members = tm.members.filter(m => m.specialty !== key);
+    }
+    // Legacy support for old teams with sizes
+    if(tm.sizes) delete tm.sizes[key]; 
+  });
   state.proposals.forEach(p=>{
     if(p.overrides) Object.values(p.overrides).forEach(o=>{ delete o[key]; });
   });

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject, mergeState, ensureSprints, addRelease, updateRelease, removeRelease } from '../data.js';
+import { state, replaceState, assignTaskToPhase, removeTaskFromPhase, getTasksByPhase, getTasksByProject, mergeState, ensureSprints, addRelease, updateRelease, removeRelease, createDefaultTeam, getTeamSizes, getTeamSizesForDate, createDefaultTeamMember, addTeamMember, getTeamMember, updateTeamMember, deleteTeamMember } from '../data.js';
 
 globalThis.localStorage = {
   getItem(){ return null; },
@@ -173,4 +173,55 @@ test('release CRUD functions manage state.releases', () => {
   assert.equal(state.releases[0].version, '1.1');
   removeRelease('rel1');
   assert.equal(state.releases.length, 0);
+});
+
+test('team member functions work correctly', () => {
+  replaceState({ projects:[], proposals:[], tasks:[], teams:[], phases:[], sprints:[], releases:[], teamMembers:[], meta:{} });
+  
+  // Test createDefaultTeam
+  const team = createDefaultTeam();
+  assert.ok(team.id);
+  assert.ok(team.name);
+  assert.ok(Array.isArray(team.memberAssignments));
+  assert.equal(team.memberAssignments.length, 0);
+  
+  // Test createDefaultTeamMember
+  const member = createDefaultTeamMember();
+  assert.ok(member.id);
+  assert.ok(member.name);
+  assert.ok(member.specialty);
+  
+  // Test addTeamMember
+  addTeamMember(member);
+  assert.equal(state.teamMembers.length, 1);
+  
+  // Test getTeamMember
+  const retrievedMember = getTeamMember(member.id);
+  assert.deepStrictEqual(retrievedMember, member);
+  
+  // Test updateTeamMember
+  updateTeamMember(member.id, { name: 'Updated Name' });
+  assert.equal(retrievedMember.name, 'Updated Name');
+  
+  // Test deleteTeamMember
+  deleteTeamMember(member.id);
+  assert.equal(state.teamMembers.length, 0);
+  
+  // Test with member assignments
+  const teamWithAssignments = {
+    id: 'test-team',
+    name: 'Test Team',
+    memberAssignments: [
+      { id: '1', memberId: 'member1', specialty: 'BE', startDate: '2024-01-01', endDate: '2024-12-31' },
+      { id: '2', memberId: 'member2', specialty: 'iOS', startDate: '2024-01-01' }
+    ]
+  };
+  
+  const sizesBeforeEnd = getTeamSizesForDate(teamWithAssignments, '2024-06-01');
+  assert.equal(sizesBeforeEnd.BE, 1);
+  assert.equal(sizesBeforeEnd.iOS, 1);
+  
+  const sizesAfterEnd = getTeamSizesForDate(teamWithAssignments, '2025-01-01');
+  assert.equal(sizesAfterEnd.BE, 0);
+  assert.equal(sizesAfterEnd.iOS, 1);
 });

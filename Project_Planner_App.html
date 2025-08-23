@@ -176,42 +176,49 @@
         </div>
       </div>
 
-      <div class="row row-cols-1 row-cols-lg-2 g-3">
-        <div class="col">
-          <div class="card h-100">
-            <div class="card-header">Effort breakdown (totals by phase)</div>
-            <div class="card-body">
-              <div class="small text-secondary mb-2" id="detail-span"></div>
-              <div class="table-responsive">
-                <table id="effTable" class="table table-sm table-bordered mb-0 align-middle">
-                  <thead class="table-dark"></thead>
-                  <tbody></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+      <!-- Phase Schedule Table (moved up, right after chart) -->
+      <div class="card mt-3">
+        <div class="card-header d-flex align-items-center justify-content-between" style="cursor: pointer;" onclick="toggleCollapsible('phaseSchedule')">
+          <span><i class="bi bi-calendar-event"></i> Phase Schedule</span>
+          <i class="bi bi-chevron-down" id="phaseSchedule-icon"></i>
         </div>
-        <div class="col">
-          <div class="card h-100">
-            <div class="card-header">Team capacity &amp; structure</div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table id="teamTable" class="table table-sm table-bordered mb-0 align-middle">
-                  <thead class="table-dark"><tr><th>Role</th><th>Engineers</th></tr></thead>
-                  <tbody></tbody>
-                </table>
-              </div>
-            </div>
+        <div class="card-body" id="phaseSchedule-content">
+          <div class="table-responsive">
+            <table id="phaseDatesTable" class="table table-sm table-bordered table-striped mb-0 align-middle">
+              <thead class="table-dark"></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
 
+      <!-- Effort Breakdown Table -->
       <div class="card mt-3">
-        <div class="card-header">Phase schedule</div>
-        <div class="card-body">
+        <div class="card-header d-flex align-items-center justify-content-between" style="cursor: pointer;" onclick="toggleCollapsible('effortBreakdown')">
+          <span><i class="bi bi-pie-chart"></i> Effort Breakdown (totals by phase)</span>
+          <i class="bi bi-chevron-down" id="effortBreakdown-icon"></i>
+        </div>
+        <div class="card-body" id="effortBreakdown-content">
+          <div class="small text-secondary mb-2" id="detail-span"></div>
           <div class="table-responsive">
-            <table id="phaseDatesTable" class="table table-sm table-bordered table-striped mb-0 align-middle">
+            <table id="effTable" class="table table-sm table-bordered mb-0 align-middle">
               <thead class="table-dark"></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Capacity Table -->
+      <div class="card mt-3">
+        <div class="card-header d-flex align-items-center justify-content-between" style="cursor: pointer;" onclick="toggleCollapsible('teamCapacity')">
+          <span><i class="bi bi-people"></i> Team Capacity &amp; Structure</span>
+          <i class="bi bi-chevron-down" id="teamCapacity-icon"></i>
+        </div>
+        <div class="card-body" id="teamCapacity-content">
+          <div class="table-responsive">
+            <table id="teamTable" class="table table-sm table-bordered mb-0 align-middle">
+              <thead class="table-dark"><tr><th>Role</th><th>Engineers</th><th>Details</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -266,6 +273,9 @@
   </li>
   <li class="nav-item" role="presentation">
     <button class="nav-link" id="tab-effort-types" data-bs-toggle="tab" data-bs-target="#pane-effort-types" type="button" role="tab">Effort Types</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-team-members" data-bs-toggle="tab" data-bs-target="#pane-team-members" type="button" role="tab">Team Members</button>
   </li>
   <li class="nav-item" role="presentation">
     <button class="nav-link" id="tab-efforts" data-bs-toggle="tab" data-bs-target="#pane-efforts" type="button" role="tab">Efforts</button>
@@ -421,6 +431,22 @@
               </div>
             </div>
 
+            <div class="tab-pane fade" id="pane-team-members" role="tabpanel">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="input-group" style="max-width:360px">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input id="search-team-members" class="form-control" placeholder="Search team members">
+                </div>
+                <button class="btn btn-primary" id="btn-add-team-member"><i class="bi bi-plus-lg"></i> Add Team Member</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle" id="tbl-team-members">
+                  <thead><tr><th style="width:25%">Name</th><th style="width:20%">Specialty</th><th style="width:15%">ID</th><th style="width:160px">Actions</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
             <div class="tab-pane fade" id="pane-efforts" role="tabpanel">
   <div class="d-flex align-items-center gap-2 mb-2">
     <label class="form-label mb-0">Project</label>
@@ -564,7 +590,7 @@
   <script type="module">
       import { aggregate, computeSchedule } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
-      import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints, defaultPlanLanes } from './data.js';
+      import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints, defaultPlanLanes, getTeamSizes, getTeamSizesForDate, createDefaultTeam, getAllTeamMembers, getTeamMember, addTeamMember, updateTeamMember, deleteTeamMember, createDefaultTeamMember } from './data.js';
       load();
       ensureSprints();
     /* ===================== APP CODE (v20) ===================== */
@@ -581,6 +607,12 @@
     }
     function effortTypeColor(k){ return effortTypeMeta()[k]?.color || '#888'; }
     function effortTypeTitle(k){ return effortTypeMeta()[k]?.title || k; }
+
+    // Make these functions globally accessible
+    window.effortTypes = effortTypes;
+    window.effortTypeMeta = effortTypeMeta;
+    window.effortTypeColor = effortTypeColor;
+    window.effortTypeTitle = effortTypeTitle;
 
     const THEMES = {
       "Dark":     { bs:"dark", vars:{ bgStart:"#0e1e45", bgEnd:"transparent", ios:"#4e79a7", android:"#59a14f", web:"#f28e2c", be:"#9c755f", qa:"#edc948" } },
@@ -601,8 +633,49 @@
       meta: { version: 20, startDate: "2025-08-13", efficiency: 0.8, theme: "Dark", rtl: false, defaultPxPerDay: 18, effortTypes: DEFAULT_EFFORT_TYPES.map(e=> ({...e})) },
       projects: [{ id: "proj-sample", name: "Sample Project", description: "Generic project" }],
       teams: [
-        { id:"team-base", name:"Base Squad", sizes:Object.fromEntries(DEFAULT_EFFORT_TYPES.map(e=>[e.key, {BE:3,iOS:2,Android:2,Online:2,QA:3}[e.key]||0])) },
-        { id:"team-scaled", name:"Scaled Squad", sizes:Object.fromEntries(DEFAULT_EFFORT_TYPES.map(e=>[e.key, {BE:3,iOS:4,Android:4,Online:4,QA:4}[e.key]||0])) }
+        { 
+          id:"team-base", 
+          name:"Base Squad", 
+          members: [
+            { id: "member-1", name: "John Doe", specialty: "BE", startDate: "2025-08-13" },
+            { id: "member-2", name: "Jane Smith", specialty: "BE", startDate: "2025-08-13" },
+            { id: "member-3", name: "Bob Johnson", specialty: "BE", startDate: "2025-08-13" },
+            { id: "member-4", name: "Alice Brown", specialty: "iOS", startDate: "2025-08-13" },
+            { id: "member-5", name: "Charlie Wilson", specialty: "iOS", startDate: "2025-08-13" },
+            { id: "member-6", name: "Diana Davis", specialty: "Android", startDate: "2025-08-13" },
+            { id: "member-7", name: "Eve Evans", specialty: "Android", startDate: "2025-08-13" },
+            { id: "member-8", name: "Frank Foster", specialty: "Online", startDate: "2025-08-13" },
+            { id: "member-9", name: "Grace Green", specialty: "Online", startDate: "2025-08-13" },
+            { id: "member-10", name: "Henry Hill", specialty: "QA", startDate: "2025-08-13" },
+            { id: "member-11", name: "Ivy Irving", specialty: "QA", startDate: "2025-08-13" },
+            { id: "member-12", name: "Jack Jackson", specialty: "QA", startDate: "2025-08-13" }
+          ]
+        },
+        { 
+          id:"team-scaled", 
+          name:"Scaled Squad", 
+          members: [
+            { id: "member-13", name: "Kate King", specialty: "BE", startDate: "2025-08-13" },
+            { id: "member-14", name: "Liam Lee", specialty: "BE", startDate: "2025-08-13" },
+            { id: "member-15", name: "Mia Miller", specialty: "BE", startDate: "2025-08-13" },
+            { id: "member-16", name: "Noah Nelson", specialty: "iOS", startDate: "2025-08-13" },
+            { id: "member-17", name: "Olivia Olson", specialty: "iOS", startDate: "2025-08-13" },
+            { id: "member-18", name: "Paul Parker", specialty: "iOS", startDate: "2025-08-13" },
+            { id: "member-19", name: "Quinn Quinn", specialty: "iOS", startDate: "2025-08-13" },
+            { id: "member-20", name: "Ruby Rose", specialty: "Android", startDate: "2025-08-13" },
+            { id: "member-21", name: "Sam Smith", specialty: "Android", startDate: "2025-08-13" },
+            { id: "member-22", name: "Tom Taylor", specialty: "Android", startDate: "2025-08-13" },
+            { id: "member-23", name: "Uma Underwood", specialty: "Android", startDate: "2025-08-13" },
+            { id: "member-24", name: "Victor Vega", specialty: "Online", startDate: "2025-08-13" },
+            { id: "member-25", name: "Wendy White", specialty: "Online", startDate: "2025-08-13" },
+            { id: "member-26", name: "Xander Xavier", specialty: "Online", startDate: "2025-08-13" },
+            { id: "member-27", name: "Yara Young", specialty: "Online", startDate: "2025-08-13" },
+            { id: "member-28", name: "Zoe Zimmerman", specialty: "QA", startDate: "2025-08-13" },
+            { id: "member-29", name: "Adam Adams", specialty: "QA", startDate: "2025-08-13" },
+            { id: "member-30", name: "Betty Baker", specialty: "QA", startDate: "2025-08-13" },
+            { id: "member-31", name: "Carl Carter", specialty: "QA", startDate: "2025-08-13" }
+          ]
+        }
       ],
       phases: [
         { id:"P1", name:"Phase 1", description:"Entry points + Survey/Registration + Dashboard core", order:1, color:"#0d6efd" },
@@ -848,7 +921,19 @@
         currentPlanId = planId;
         byId('plansLayer').style.display='none';
         byId('detail').style.display='block';
-        const aggr = aggregate(p, state.tasks, getTeam);
+        
+        // Get team for date-aware capacity calculation
+        const team = getTeam(p.teamId);
+        
+        // Create a date-aware team getter function
+        const getTeamWithDate = (teamId, targetDate = null) => {
+          if (targetDate) {
+            return { ...team, sizes: getTeamSizesForDate(team, targetDate) };
+          }
+          return team;
+        };
+        
+        const aggr = aggregate(p, state.tasks, getTeamWithDate);
         const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
         const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
       byId('detail-title').textContent = p.title;
@@ -866,11 +951,43 @@
         tr.innerHTML = `<td>${getPhase(pid)?.name||pid}</td>${cells}`;
         tb.appendChild(tr);
       });
-      const team = getTeam(p.teamId) || {sizes:{}};
+      const teamSizes = getTeamSizes(team);
       const tbTeam = byId('teamTable').querySelector('tbody'); tbTeam.innerHTML = '';
+      
+      // Add team member details
+      if (team && team.memberAssignments && team.memberAssignments.length > 0) {
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = `<th colspan="3" class="table-info">Team Members (${team.memberAssignments.length})</th>`;
+        tbTeam.appendChild(headerRow);
+        
+        team.memberAssignments.forEach(assignment => {
+          const member = getTeamMember(assignment.memberId);
+          if (member) {
+            const tr = document.createElement('tr');
+            const endDateText = assignment.endDate ? ` - ${assignment.endDate}` : '';
+            const specialtyColor = effortTypeColor(assignment.specialty) || '#6c757d';
+            tr.innerHTML = `
+              <td><i class="bi bi-person-circle"></i> ${escapeHtml(member.name)}</td>
+              <td><span class="badge" style="background-color: ${specialtyColor}; color: white;">${assignment.specialty}</span></td>
+              <td><small class="text-muted">${assignment.startDate}${endDateText}</small></td>
+            `;
+            tbTeam.appendChild(tr);
+          }
+        });
+        
+        const separatorRow = document.createElement('tr');
+        separatorRow.innerHTML = `<td colspan="3" class="table-light"><hr class="my-1"></td>`;
+        tbTeam.appendChild(separatorRow);
+      }
+      
+      // Add capacity summary
+      const summaryRow = document.createElement('tr');
+      summaryRow.innerHTML = `<th colspan="3" class="table-info">Current Capacity</th>`;
+      tbTeam.appendChild(summaryRow);
+      
       effortTypes().forEach(k=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${team.sizes?.[k]||0}</td>`;
+        tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${teamSizes[k]||0}</td><td><small class="text-muted">engineers</small></td>`;
         tbTeam.appendChild(tr);
       });
       const lf = byId('lane-menu');
@@ -886,7 +1003,7 @@
             .filter(x=>!x.checked).map(x=>x.value);
           save();
           const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
-          const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+          const sched = computeSchedule(p, aggregate(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
           drawGantt(p, sched);
           renderPhaseDatesTable(sched);
         };
@@ -897,7 +1014,7 @@
         state.meta.showReleaseLane = chkRel.checked;
         save();
         const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
-        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
         drawGantt(p, sched);
         renderPhaseDatesTable(sched);
       };
@@ -907,13 +1024,17 @@
         state.meta.showSprintLane = chkSpr.checked;
         save();
         const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
-        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeam), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
         drawGantt(p, sched);
         renderPhaseDatesTable(sched);
       };
       drawGantt(p, sched);
       renderPhaseDatesTable(sched);
       renderPhaseBreakdownTables(p);
+      
+      // Initialize collapsible sections
+      initializeCollapsibles();
+      
       byId('zoomRange').value = p.pxPerDay || state.meta.defaultPxPerDay || 18;
       byId('fontRange').value = p.fontScale || 1;
       byId('btn-back-plans').onclick = ()=> { openProject(p.projectId); };
@@ -1411,7 +1532,16 @@
       const pr = getProject(projectId);
       const sheet = [["Project", pr?.name||"—"], ["Generated", new Date().toLocaleString()], [""], ["Plan","Team","Phases","Buffer%","Start","End", ...effortTypes().map(k=>effortTypeTitle(k))]];
       state.proposals.filter(p=>p.projectId===projectId).forEach(p=>{
-        const aggr = aggregate(p, state.tasks, getTeam);
+        // Get team for date-aware capacity calculation
+        const team = getTeam(p.teamId);
+        const getTeamWithDate = (teamId, targetDate = null) => {
+          if (targetDate) {
+            return { ...team, sizes: getTeamSizesForDate(team, targetDate) };
+          }
+          return team;
+        };
+        
+        const aggr = aggregate(p, state.tasks, getTeamWithDate);
         const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
         const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
         const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
@@ -1430,7 +1560,16 @@
       XLSX.writeFile(wb, (p?.title||"Plan")+"_Delivery.xlsx");
     }
     function buildPlanSheetsForExcelBasic(wb, plan){
-      const aggr = aggregate(plan, state.tasks, getTeam);
+      // Get team for date-aware capacity calculation
+      const team = getTeam(plan.teamId);
+      const getTeamWithDate = (teamId, targetDate = null) => {
+        if (targetDate) {
+          return { ...team, sizes: getTeamSizesForDate(team, targetDate) };
+        }
+        return team;
+      };
+      
+      const aggr = aggregate(plan, state.tasks, getTeamWithDate);
       const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
       const overview = [
         ["Delivery Plan", plan.title],
@@ -1711,6 +1850,15 @@
     byId('btn-manage').onclick = ()=>{ refreshManage(); manageModal.show(); };
     byId('btn-save-manage').onclick = ()=>{ save(); refreshManage(); manageModal.hide(); };
 
+    // Modal helper functions
+    function openEditModal() {
+      editModal.show();
+    }
+
+    function closeEditModal() {
+      editModal.hide();
+    }
+
     function refreshManage(){
       const filterP = (byId('search-projects').value||'').toLowerCase();
       const tbP = byId('tbl-projects').querySelector('tbody'); tbP.innerHTML='';
@@ -1779,7 +1927,9 @@
       headTm.innerHTML = '<th>Name</th>' + effortTypes().map(t=>`<th>${effortTypeTitle(t)}</th>`).join('') + '<th style="width:15%">ID</th><th style="width:160px">Actions</th>';
       state.teams.filter(t=> (t.name+' '+t.id).toLowerCase().includes(filterTm)).forEach(t=>{
         const tr = document.createElement('tr');
-        const cells = effortTypes().map(k=>`<td>${t.sizes[k]||0}</td>`).join('');
+        // Calculate current team sizes from member assignments
+        const teamSizes = getTeamSizes(t);
+        const cells = effortTypes().map(k=>`<td>${teamSizes[k]||0}</td>`).join('');
         tr.innerHTML = `<td>${t.name}</td>${cells}<td><code>${t.id}</code></td>
           <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('team', t.id);
@@ -1860,6 +2010,7 @@
       byId('btn-add-release').onclick = ()=> openEditor('release', null);
       byId('btn-add-task').onclick = ()=> openEditor('task', null);
       byId('btn-add-effort-type').onclick = ()=> openEditor('effortType', null);
+      byId('btn-add-team-member').onclick = ()=> openTeamMemberEditor();
       byId('search-projects').oninput = refreshManage;
       byId('search-plans').oninput = refreshManage;
       byId('search-phases').oninput = refreshManage;
@@ -1868,6 +2019,11 @@
       byId('search-releases').oninput = refreshManage;
       byId('search-tasks').oninput = refreshManage;
       byId('search-effort-types').oninput = refreshManage;
+      
+      // Render team members table
+      renderTeamMembersTable();
+      
+      byId('search-team-members').oninput = renderTeamMembersTable;
       // Phase Tasks tab wiring
       const ptProjSel = byId('pt-proj');
       const ptBoard = byId('phaseTaskContainers');
@@ -2264,21 +2420,122 @@
       }
       if(kind==='team'){
         const isEdit = !!id;
-        const data = isEdit ? state.teams.find(x=>x.id===id) : Object.assign({ id:'team-'+Math.random().toString(36).slice(2,6), name:'', sizes:Object.fromEntries(effortTypes().map(k=>[k,0])) }, structuredClone(prefill));
+        const data = isEdit ? state.teams.find(x=>x.id===id) : Object.assign({ id:'team-'+Math.random().toString(36).slice(2,6), name:'', memberAssignments:[] }, structuredClone(prefill));
+        
+        // Ensure memberAssignments array exists and handle legacy teams
+        if (!data.memberAssignments) {
+          data.memberAssignments = [];
+          // If this is an existing team with members, convert it to memberAssignments
+          if (data.members && Array.isArray(data.members)) {
+            data.members.forEach(member => {
+              data.memberAssignments.push({
+                id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+                memberId: member.id,
+                specialty: member.specialty,
+                startDate: member.startDate,
+                endDate: member.endDate
+              });
+            });
+          }
+          // If this is an existing team with sizes, convert it to memberAssignments
+          else if (data.sizes && typeof data.sizes === 'object') {
+            Object.entries(data.sizes).forEach(([specialty, count]) => {
+              for (let i = 0; i < count; i++) {
+                // Create a placeholder team member
+                const placeholderMember = {
+                  id: `legacy-${specialty}-${i}-${Date.now()}`,
+                  name: `${specialty} Developer ${i + 1}`,
+                  specialty: specialty
+                };
+                state.teamMembers.push(placeholderMember);
+                
+                data.memberAssignments.push({
+                  id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+                  memberId: placeholderMember.id,
+                  specialty: specialty,
+                  startDate: new Date().toISOString().slice(0, 10),
+                  endDate: null
+                });
+              }
+            });
+          }
+        }
+        
         title.textContent = isEdit? 'Edit Team' : 'Add Team';
-        const sizeInputs = effortTypes().map(k=>{
-          const fid = 'f-'+k.toLowerCase();
-          return `<div class="col">${field(effortTypeTitle(k), `<input id="${fid}" class="form-control" type="number" value="${data.sizes[k]||0}">`)}</div>`;
+        
+        // Build member assignments list HTML
+        const assignmentsList = data.memberAssignments.map((assignment, index) => {
+          const member = getTeamMember(assignment.memberId);
+          const memberName = member ? member.name : 'Unknown Member';
+          return `
+            <div class="member-assignment-row border rounded p-2 mb-2" data-index="${index}">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'memberId', this.value)">
+                    <option value="">Select Member</option>
+                    ${getAllTeamMembers().map(m => `<option value="${m.id}" ${assignment.memberId === m.id ? 'selected' : ''}>${m.name} (${m.specialty})</option>`).join('')}
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'specialty', this.value)">
+                    ${effortTypes().map(k => `<option value="${k}" ${assignment.specialty === k ? 'selected' : ''}>${effortTypeTitle(k)}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <input class="form-control form-control-sm" type="date" value="${assignment.startDate || ''}" onchange="updateAssignmentField(${index}, 'startDate', this.value)">
+                </div>
+                <div class="col-md-2">
+                  <input class="form-control form-control-sm" type="date" value="${assignment.endDate || ''}" onchange="updateAssignmentField(${index}, 'endDate', this.value)">
+                </div>
+                <div class="col-md-1">
+                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${index})">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
         }).join('');
+        
         form.innerHTML = [
           field('Name', `<input id="f-name" class="form-control" value="${escapeHtml(data.name)}">`),
-          `<div class="row g-2">${sizeInputs}</div>`,
+          field('Member Assignments', `
+            <div id="assignments-container">
+              ${assignmentsList}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addAssignment()">
+              <i class="bi bi-plus"></i> Add Member Assignment
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2 ms-2" onclick="addAllAvailableMembers()">
+              <i class="bi bi-people"></i> Add All Available Members
+            </button>
+            <div class="small text-muted mt-2">
+              <i class="bi bi-info-circle"></i> 
+              Add team members first in the "Team Members" tab, then assign them to this team with start/end dates.
+            </div>
+          `),
           field('ID', idInputHtml(data.id, isEdit)),
         ].join('');
+        
+        // Store the current team data for assignment operations
+        window.currentTeamData = data;
+        
         byId('editSave').onclick = ()=>{
           const newId = val('f-id'); if(!isEdit && !ensureUniqueId(state.teams, newId)) return alert('ID already exists.');
-          const sizes = {}; effortTypes().forEach(k=>{ const fid='f-'+k.toLowerCase(); sizes[k] = +val(fid) || 0; });
-          const obj = { id: isEdit? data.id : newId, name:val('f-name'), sizes };
+          
+          // Ensure memberAssignments array exists and validate all assignments before saving
+          if (!window.currentTeamData.memberAssignments) {
+            window.currentTeamData.memberAssignments = [];
+          }
+          
+          const assignments = window.currentTeamData.memberAssignments;
+          for (let i = 0; i < assignments.length; i++) {
+            if (!window.validateAssignment(assignments[i])) {
+              return; // Stop if validation fails
+            }
+          }
+          
+          const obj = { id: isEdit? data.id : newId, name:val('f-name'), memberAssignments: assignments };
           if(isEdit){ Object.assign(state.teams.find(x=>x.id===id), obj); } else { state.teams.push(obj); }
           save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
@@ -2342,7 +2599,10 @@
           if(isEdit){ Object.assign(data, obj); }
           else {
             (state.meta.effortTypes||(state.meta.effortTypes=[])).push(obj);
-            state.teams.forEach(tm=>{ tm.sizes[key]=tm.sizes[key]||0; });
+            // Legacy support for old teams with sizes
+            state.teams.forEach(tm=>{ 
+              if(tm.sizes) tm.sizes[key]=tm.sizes[key]||0; 
+            });
           }
           save(); refreshManage(); buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide();
         };
@@ -2487,6 +2747,386 @@
       if(!currentPlanId){ alert('Open a plan first (Details view).'); return; }
       exportPlanExcel(currentPlanId);
     };
+
+    // Collapsible Table Functions
+    window.toggleCollapsible = function(sectionId) {
+      const content = document.getElementById(sectionId + '-content');
+      const icon = document.getElementById(sectionId + '-icon');
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.className = 'bi bi-chevron-down';
+        localStorage.setItem('collapsible_' + sectionId, 'expanded');
+      } else {
+        content.style.display = 'none';
+        icon.className = 'bi bi-chevron-right';
+        localStorage.setItem('collapsible_' + sectionId, 'collapsed');
+      }
+    };
+
+    // Initialize collapsible sections
+    window.initializeCollapsibles = function() {
+      const sections = ['phaseSchedule', 'effortBreakdown', 'teamCapacity'];
+      sections.forEach(sectionId => {
+        const content = document.getElementById(sectionId + '-content');
+        const icon = document.getElementById(sectionId + '-icon');
+        const state = localStorage.getItem('collapsible_' + sectionId) || 'collapsed';
+        
+        if (state === 'collapsed') {
+          content.style.display = 'none';
+          icon.className = 'bi bi-chevron-right';
+        } else {
+          content.style.display = 'block';
+          icon.className = 'bi bi-chevron-down';
+        }
+      });
+    };
+
+    // Team Member CRUD Functions
+    window.openTeamMemberEditor = function(memberId = null) {
+      const member = memberId ? getTeamMember(memberId) : createDefaultTeamMember();
+      const isEdit = !!memberId;
+      
+      byId('editTitle').textContent = isEdit ? 'Edit Team Member' : 'Add Team Member';
+      byId('editForm').innerHTML = `
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-control" id="member-name" value="${escapeHtml(member.name)}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Specialty</label>
+          <select class="form-select" id="member-specialty" required>
+            ${window.effortTypes().map(et => `<option value="${et}" ${member.specialty === et ? 'selected' : ''}>${window.effortTypeTitle(et)}</option>`).join('')}
+          </select>
+        </div>
+      `;
+      
+      byId('editDelete').classList.toggle('d-none', !isEdit);
+      byId('editDelete').onclick = () => {
+        if (confirm('Are you sure you want to delete this team member?')) {
+          deleteTeamMember(memberId);
+          save();
+          renderTeamMembersTable();
+          closeEditModal();
+        }
+      };
+      
+      byId('editSave').onclick = () => {
+        const name = byId('member-name').value.trim();
+        const specialty = byId('member-specialty').value;
+        
+        if (!name) {
+          alert('Please enter a name');
+          return;
+        }
+        
+        // Check for duplicate names (excluding current member if editing)
+        const existingMembers = getAllTeamMembers();
+        const duplicateMember = existingMembers.find(m => 
+          m.name.toLowerCase() === name.toLowerCase() && 
+          (!isEdit || m.id !== memberId)
+        );
+        
+        if (duplicateMember) {
+          alert('A team member with this name already exists. Please choose a different name.');
+          return;
+        }
+        
+        if (isEdit) {
+          updateTeamMember(memberId, { name, specialty });
+        } else {
+          const newMember = createDefaultTeamMember();
+          newMember.name = name;
+          newMember.specialty = specialty;
+          addTeamMember(newMember);
+        }
+        
+        save();
+        renderTeamMembersTable();
+        closeEditModal();
+      };
+      
+      openEditModal();
+    };
+
+    window.duplicateTeamMember = function(memberId) {
+      const originalMember = getTeamMember(memberId);
+      if (!originalMember) return;
+      
+      const newMember = createDefaultTeamMember();
+      newMember.name = originalMember.name + ' (Copy)';
+      newMember.specialty = originalMember.specialty;
+      
+      // Check if name already exists and make it unique
+      let counter = 1;
+      while (getAllTeamMembers().some(m => m.name === newMember.name)) {
+        newMember.name = originalMember.name + ` (Copy ${counter})`;
+        counter++;
+      }
+      
+      addTeamMember(newMember);
+      save();
+      renderTeamMembersTable();
+    };
+
+    window.renderTeamMembersTable = function() {
+      const tbody = byId('tbl-team-members').querySelector('tbody');
+      tbody.innerHTML = '';
+      
+      const members = getAllTeamMembers();
+      const searchTerm = byId('search-team-members').value.toLowerCase();
+      const filteredMembers = members.filter(m => 
+        m.name.toLowerCase().includes(searchTerm) || 
+        m.specialty.toLowerCase().includes(searchTerm)
+      );
+      
+      filteredMembers.forEach(member => {
+        const tr = document.createElement('tr');
+        const specialtyColor = window.effortTypeColor(member.specialty) || '#6c757d';
+        tr.innerHTML = `
+          <td>${escapeHtml(member.name)}</td>
+          <td><span class="badge" style="background-color: ${specialtyColor}; color: white;">${member.specialty}</span></td>
+          <td><small class="text-muted">${member.id}</small></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary" onclick="openTeamMemberEditor('${member.id}')">Edit</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="duplicateTeamMember('${member.id}')">Duplicate</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteTeamMember('${member.id}'); save(); renderTeamMembersTable();">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    };
+
+    // Team Member Assignment Functions
+    window.addAllAvailableMembers = function() {
+      if (!window.currentTeamData.memberAssignments) {
+        window.currentTeamData.memberAssignments = [];
+      }
+      
+      const allMembers = getAllTeamMembers();
+      const existingMemberIds = window.currentTeamData.memberAssignments.map(a => a.memberId);
+      const availableMembers = allMembers.filter(m => !existingMemberIds.includes(m.id));
+      
+      if (availableMembers.length === 0) {
+        alert('All available team members are already assigned to this team.');
+        return;
+      }
+      
+      const today = new Date().toISOString().slice(0, 10);
+      
+      availableMembers.forEach(member => {
+        const newAssignment = {
+          id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+          memberId: member.id,
+          specialty: member.specialty,
+          startDate: today,
+          endDate: null
+        };
+        
+        window.currentTeamData.memberAssignments.push(newAssignment);
+      });
+      
+      refreshAssignmentsList();
+    };
+
+    window.addAssignment = function() {
+      if (!window.currentTeamData.memberAssignments) {
+        window.currentTeamData.memberAssignments = [];
+      }
+      
+      const newAssignment = {
+        id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+        memberId: '',
+        specialty: 'BE',
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: null
+      };
+      
+      window.currentTeamData.memberAssignments.push(newAssignment);
+      refreshAssignmentsList();
+    };
+
+    window.removeAssignment = function(index) {
+      if (!window.currentTeamData.memberAssignments) return;
+      window.currentTeamData.memberAssignments.splice(index, 1);
+      refreshAssignmentsList();
+    };
+
+    window.updateAssignmentField = function(index, field, value) {
+      if (!window.currentTeamData.memberAssignments || !window.currentTeamData.memberAssignments[index]) return;
+      window.currentTeamData.memberAssignments[index][field] = value;
+    };
+
+    window.validateAssignment = function(assignment) {
+      if (!assignment.memberId) {
+        alert('Please select a team member for all assignments');
+        return false;
+      }
+      if (!assignment.specialty) {
+        alert('Please select a specialty for all assignments');
+        return false;
+      }
+      if (!assignment.startDate) {
+        alert('Please set a start date for all assignments');
+        return false;
+      }
+      if (assignment.endDate && assignment.endDate <= assignment.startDate) {
+        alert('End date must be after start date');
+        return false;
+      }
+      return true;
+    };
+
+    window.refreshAssignmentsList = function() {
+      const container = byId('assignments-container');
+      if (!container) return;
+      
+      const assignments = window.currentTeamData.memberAssignments || [];
+      const assignmentsList = assignments.map((assignment, index) => {
+        const member = getTeamMember(assignment.memberId);
+        const memberName = member ? member.name : 'Unknown Member';
+        return `
+          <div class="member-assignment-row border rounded p-2 mb-2" data-index="${index}">
+            <div class="row g-2">
+              <div class="col-md-3">
+                <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'memberId', this.value)">
+                  <option value="">Select Member</option>
+                  ${getAllTeamMembers().map(m => `<option value="${m.id}" ${assignment.memberId === m.id ? 'selected' : ''}>${m.name} (${m.specialty})</option>`).join('')}
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'specialty', this.value)">
+                  ${effortTypes().map(k => `<option value="${k}" ${assignment.specialty === k ? 'selected' : ''}>${effortTypeTitle(k)}</option>`).join('')}
+                </select>
+              </div>
+              <div class="col-md-2">
+                <input class="form-control form-control-sm" type="date" value="${assignment.startDate || ''}" onchange="updateAssignmentField(${index}, 'startDate', this.value)">
+              </div>
+              <div class="col-md-2">
+                <input class="form-control form-control-sm" type="date" value="${assignment.endDate || ''}" onchange="updateAssignmentField(${index}, 'endDate', this.value)">
+              </div>
+              <div class="col-md-1">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${index})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = assignmentsList;
+    };
+
+    // Team Member Management Functions - Make them globally accessible
+    window.addMember = function() {
+      if (!window.currentTeamData) return;
+      
+      // Ensure members array exists
+      if (!window.currentTeamData.members) {
+        window.currentTeamData.members = [];
+      }
+      
+      const newMember = {
+        id: 'member-' + Math.random().toString(36).slice(2, 8),
+        name: '',
+        specialty: effortTypes()[0] || 'BE',
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: ''
+      };
+      
+      window.currentTeamData.members.push(newMember);
+      window.refreshMembersList();
+    }
+    
+    window.validateMember = function(member) {
+      if (!member.name || member.name.trim() === '') {
+        alert('Member name is required');
+        return false;
+      }
+      
+      if (!member.specialty) {
+        alert('Member specialty is required');
+        return false;
+      }
+      
+      if (!member.startDate) {
+        alert('Member start date is required');
+        return false;
+      }
+      
+      if (member.endDate && member.endDate < member.startDate) {
+        alert('End date must be after start date');
+        return false;
+      }
+      
+      return true;
+    }
+    
+    window.removeMember = function(index) {
+      if (!window.currentTeamData) return;
+      
+      // Ensure members array exists
+      if (!window.currentTeamData.members) {
+        window.currentTeamData.members = [];
+      }
+      
+      if (index >= 0 && index < window.currentTeamData.members.length) {
+        window.currentTeamData.members.splice(index, 1);
+        window.refreshMembersList();
+      }
+    }
+    
+    window.updateMemberField = function(index, field, value) {
+      if (!window.currentTeamData) return;
+      
+      // Ensure members array exists
+      if (!window.currentTeamData.members) {
+        window.currentTeamData.members = [];
+      }
+      
+      if (index >= 0 && index < window.currentTeamData.members.length) {
+        window.currentTeamData.members[index][field] = value;
+      }
+    }
+    
+    window.refreshMembersList = function() {
+      const container = document.getElementById('members-container');
+      if (!container || !window.currentTeamData) return;
+      
+      // Ensure members array exists
+      if (!window.currentTeamData.members) {
+        window.currentTeamData.members = [];
+      }
+      
+      const membersList = window.currentTeamData.members.map((member, index) => `
+        <div class="member-row border rounded p-2 mb-2" data-index="${index}">
+          <div class="row g-2">
+            <div class="col-md-3">
+              <input class="form-control form-control-sm" placeholder="Name" value="${escapeHtml(member.name || '')}" onchange="updateMemberField(${index}, 'name', this.value)">
+            </div>
+            <div class="col-md-3">
+              <select class="form-control form-control-sm" onchange="updateMemberField(${index}, 'specialty', this.value)">
+                ${effortTypes().map(k => `<option value="${k}" ${member.specialty === k ? 'selected' : ''}>${effortTypeTitle(k)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <input class="form-control form-control-sm" type="date" value="${member.startDate || ''}" onchange="updateMemberField(${index}, 'startDate', this.value)">
+            </div>
+            <div class="col-md-2">
+              <input class="form-control form-control-sm" type="date" value="${member.endDate || ''}" onchange="updateMemberField(${index}, 'endDate', this.value)">
+            </div>
+            <div class="col-md-2">
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMember(${index})">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      container.innerHTML = membersList;
+    }
 
     // Boot
     function initApp(){
