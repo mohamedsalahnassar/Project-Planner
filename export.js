@@ -5,7 +5,7 @@ export function exportPlanJSON(plan){
 export function importPlanJSON(json){
   const obj = JSON.parse(json);
   if(!obj || typeof obj !== 'object') throw new Error('Invalid JSON');
-  if(!obj.id || !obj.name) throw new Error('Missing required fields');
+  if(!obj.id || !Array.isArray(obj.phaseIds)) throw new Error('Missing required fields');
   return obj;
 }
 

@@ -1326,7 +1326,7 @@
         data.rows.forEach(r=>{
           const cells = effortTypes().map(t=>`<td style=\"text-align:right\">${r[t].toFixed(1)}</td>`).join('');
           const tr=document.createElement('tr');
-          tr.innerHTML = `<td><code>${r.id}</code></td><td>${r.title}</td>${cells}<td style=\"text-align:right\">${r.total.toFixed(1)}</td>`;
+          tr.innerHTML = `<td><code>${escapeHtml(r.id)}</code></td><td>${escapeHtml(r.title)}</td>${cells}<td style=\"text-align:right\">${r.total.toFixed(1)}</td>`;
           tb.appendChild(tr);
         });
         const totalsCells = effortTypes().map(t=>`<th style=\"text-align:right\">${data.totals[t].toFixed(1)}</th>`).join('');
@@ -1691,7 +1691,7 @@
       const tbP = byId('tbl-projects').querySelector('tbody'); tbP.innerHTML='';
       state.projects.filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterP)).forEach(p=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.name}</td><td>${p.description||''}</td><td><code>${p.id}</code></td>
+        tr.innerHTML = `<td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.description||'')}</td><td><code>${escapeHtml(p.id)}</code></td>
           <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('project', p.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('project', p.id);
@@ -1712,8 +1712,8 @@
         const sumEff = keys.reduce((s,k)=>s+totals[k],0) || 1;
         const seg = Object.fromEntries(keys.map(k=>[k, totals[k]]));
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.title}</td><td>${getProject(p.projectId)?.name||'—'}</td><td>${getTeam(p.teamId)?.name||'—'}</td>
-          <td>${p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ')}</td>
+        tr.innerHTML = `<td>${escapeHtml(p.title)}</td><td>${escapeHtml(getProject(p.projectId)?.name||'—')}</td><td>${escapeHtml(getTeam(p.teamId)?.name||'—')}</td>
+          <td>${p.phaseIds.map(id=> escapeHtml(getPhase(id)?.name||id)).join(' · ')}</td>
           <td>${p.bufferPct||0}</td>
           <td><div class="mini-timeline"><div class="mini-phase">
             ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(127,127,127,.6)"></div>`).join('')}
@@ -1735,7 +1735,7 @@
       const tbPh = byId('tbl-phases').querySelector('tbody'); tbPh.innerHTML='';
       state.phases.slice().sort((a,b)=>(a.order||0)-(b.order||0)).filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterPh)).forEach(p=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.name}</td><td>${p.description||''}</td><td>${p.order||1}</td><td><code>${p.id}</code></td>
+        tr.innerHTML = `<td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.description||'')}</td><td>${p.order||1}</td><td><code>${escapeHtml(p.id)}</code></td>
           <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('phase', p.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('phase', p.id);
