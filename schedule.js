@@ -182,8 +182,8 @@ export function businessDaysBetween(start, end) {
   const endDate = new Date(end);
   endDate.setHours(0, 0, 0, 0);
   
-  // Count business days from start to end (inclusive)
-  while (current <= endDate) {
+  // Count business days from start to end (exclusive of end date)
+  while (current < endDate) {
     const day = current.getDay();
     if (day !== 0 && day !== 6) {
       count++;
