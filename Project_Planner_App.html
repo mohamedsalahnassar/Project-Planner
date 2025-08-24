@@ -2629,7 +2629,13 @@
       state.projects.filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterP)).forEach(p=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.description||'')}</td><td><code>${escapeHtml(p.id)}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Project" data-bs-toggle="tooltip"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Project" data-bs-toggle="tooltip"><i class="bi bi-files"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete Project" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('project', p.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('project', p.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete project?')){
@@ -2854,7 +2860,13 @@
       state.phases.slice().sort((a,b)=>(a.order||0)-(b.order||0)).filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterPh)).forEach(p=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.description||'')}</td><td>${p.order||1}</td><td><code>${escapeHtml(p.id)}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Phase" data-bs-toggle="tooltip"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Phase" data-bs-toggle="tooltip"><i class="bi bi-files"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete Phase" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('phase', p.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('phase', p.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete phase?')){
@@ -2876,7 +2888,13 @@
         const teamSizes = getTeamSizes(t);
         const cells = effortTypes().map(k=>`<td>${teamSizes[k]||0}</td>`).join('');
         tr.innerHTML = `<td>${t.name}</td>${cells}<td><code>${t.id}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Team" data-bs-toggle="tooltip"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Team" data-bs-toggle="tooltip"><i class="bi bi-files"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete Team" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('team', t.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('team', t.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete team?')){
@@ -2891,7 +2909,13 @@
       state.sprints.filter(s=> (s.name+' '+s.id).toLowerCase().includes(filterSp)).forEach(s=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(s.name)}</td><td>${s.start}</td><td>${s.end}</td><td><code>${s.id}</code></td>`+
-          `<td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          `<td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Sprint" data-bs-toggle="tooltip"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Sprint" data-bs-toggle="tooltip"><i class="bi bi-files"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete Sprint" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('sprint', s.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('sprint', s.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete sprint?')){ state.sprints = state.sprints.filter(x=>x.id!==s.id); save(); refreshManage(); } };
@@ -2902,7 +2926,13 @@
       (state.releases||[]).filter(r=> (r.version+' '+r.id).toLowerCase().includes(filterRl)).forEach(r=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(r.version)}</td><td>${r.codeFreeze||''}</td><td>${r.releaseDate||''}</td><td><code>${r.id}</code></td>`+
-          `<td class="text-end"><button class=\"btn btn-sm btn-outline-primary\">Edit</button><button class=\"btn btn-sm btn-outline-secondary ms-1\">Duplicate</button><button class=\"btn btn-sm btn-outline-danger ms-1\">Delete</button></td>`;
+          `<td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Release" data-bs-toggle="tooltip"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Release" data-bs-toggle="tooltip"><i class="bi bi-files"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete Release" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('release', r.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('release', r.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete release?')){ state.releases = state.releases.filter(x=>x.id!==r.id); save(); refreshManage(); } };
@@ -2915,7 +2945,13 @@
         const asg = (t.assignments||[]).map(a=> `${a.proposalId}/${a.phaseId}`).join(', ');
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${t.title}</td><td>${t.startDate||''}</td><td>${getProject(t.projectId)?.name||'—'}</td><td>${t.viableProduct?'Yes':'No'}</td><td>${eff||'-'}</td><td><code>${t.id}</code></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
+          <td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Task" data-bs-toggle="tooltip"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Task" data-bs-toggle="tooltip"><i class="bi bi-files"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete Task" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('task', t.id);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('task', t.id);
         tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
@@ -2930,7 +2966,13 @@
         tr.innerHTML = `<td>${escapeHtml(et.title)}</td>`+
           `<td><div class="d-flex align-items-center gap-2"><span class="badge" style="background:${et.color}">&nbsp;</span><code>${et.color}</code></div></td>`+
           `<td><code>${et.key}</code></td>`+
-          `<td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button>${et.locked?'' : '<button class="btn btn-sm btn-outline-danger ms-1">Delete</button>'}</td>`;
+          `<td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Effort Type" data-bs-toggle="tooltip"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Effort Type" data-bs-toggle="tooltip"><i class="bi bi-files"></i></button>
+              ${et.locked ? '' : '<button class="btn btn-sm btn-outline-danger" title="Delete Effort Type" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>'}
+            </div>
+          </td>`;
         tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('effortType', et.key);
         tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('effortType', et.key);
         if(!et.locked){ tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete effort type?')){ removeEffortType(et.key); save(); refreshManage(); } }; }
@@ -3236,8 +3278,8 @@
         /* Effort type management moved to separate CRUD */
       }
 
-      // Initialize tooltips on manage modal tabs
-      const tooltipTriggerList = [].slice.call(document.querySelectorAll('#manageTabs [data-bs-toggle="tooltip"]'));
+      // Initialize tooltips on manage modal tabs and action buttons
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
       tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
       });
@@ -4109,9 +4151,11 @@
           <td><span class="badge" style="background-color: ${specialtyColor}; color: white;">${member.specialty}</span></td>
           <td><small class="text-muted">${member.id}</small></td>
           <td class="text-end">
-            <button class="btn btn-sm btn-outline-primary" onclick="openTeamMemberEditor('${member.id}')">Edit</button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="duplicateTeamMember('${member.id}')">Duplicate</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteTeamMember('${member.id}'); save(); renderTeamMembersTable();">Delete</button>
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn btn-sm btn-outline-primary" title="Edit Team Member" data-bs-toggle="tooltip" onclick="openTeamMemberEditor('${member.id}')"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Duplicate Team Member" data-bs-toggle="tooltip" onclick="duplicateTeamMember('${member.id}')"><i class="bi bi-files"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete Team Member" data-bs-toggle="tooltip" onclick="deleteTeamMember('${member.id}'); save(); renderTeamMembersTable();"><i class="bi bi-trash"></i></button>
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
