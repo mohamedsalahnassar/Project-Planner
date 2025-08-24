@@ -32,7 +32,7 @@ export function importTeamJSON(json){
     obj.memberAssignments = [];
   } else {
     obj.memberAssignments.forEach(assignment => {
-      if(!assignment.id || !assignment.memberId || !assignment.specialty || !assignment.startDate) {
+      if(!assignment.id || !assignment.memberId || !assignment.startDate) {
         throw new Error('Invalid team member assignment data');
       }
     });
@@ -43,7 +43,7 @@ export function importTeamJSON(json){
 
 // Helper function to validate team member assignment data
 export function validateTeamMemberAssignment(assignment){
-  if(!assignment.id || !assignment.memberId || !assignment.specialty || !assignment.startDate) {
+  if(!assignment.id || !assignment.memberId || !assignment.startDate) {
     throw new Error('Invalid team member assignment data');
   }
   

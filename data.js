@@ -33,24 +33,32 @@ export function getTeamSizes(team) {
   
   const sizes = {};
   
-  // Initialize all specialties to 0
+  // Get all specialties from team members
   const allSpecialties = new Set();
   team.memberAssignments.forEach(assignment => {
-    if (assignment.specialty) allSpecialties.add(assignment.specialty);
+    const member = state.teamMembers.find(m => m.id === assignment.memberId);
+    if (member && member.specialty) {
+      allSpecialties.add(member.specialty);
+    }
   });
+  
+  // Initialize all specialties to 0
   allSpecialties.forEach(specialty => {
     sizes[specialty] = 0;
   });
   
   team.memberAssignments.forEach(assignment => {
-    if (assignment.specialty && assignment.startDate) {
-      const startDate = new Date(assignment.startDate);
-      const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
-      
-      // Only count members who are active (startDate <= current date < endDate or no endDate)
-      const now = new Date();
-      if (startDate <= now && (!endDate || now < endDate)) {
-        sizes[assignment.specialty] = (sizes[assignment.specialty] || 0) + 1;
+    if (assignment.startDate) {
+      const member = state.teamMembers.find(m => m.id === assignment.memberId);
+      if (member && member.specialty) {
+        const startDate = new Date(assignment.startDate);
+        const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
+        
+        // Only count members who are active (startDate <= current date < endDate or no endDate)
+        const now = new Date();
+        if (startDate <= now && (!endDate || now < endDate)) {
+          sizes[member.specialty] = (sizes[member.specialty] || 0) + 1;
+        }
       }
     }
   });
@@ -67,23 +75,31 @@ export function getTeamSizesForDate(team, targetDate) {
   const sizes = {};
   const date = new Date(targetDate);
   
-  // Initialize all specialties to 0
+  // Get all specialties from team members
   const allSpecialties = new Set();
   team.memberAssignments.forEach(assignment => {
-    if (assignment.specialty) allSpecialties.add(assignment.specialty);
+    const member = state.teamMembers.find(m => m.id === assignment.memberId);
+    if (member && member.specialty) {
+      allSpecialties.add(member.specialty);
+    }
   });
+  
+  // Initialize all specialties to 0
   allSpecialties.forEach(specialty => {
     sizes[specialty] = 0;
   });
   
   team.memberAssignments.forEach(assignment => {
-    if (assignment.specialty && assignment.startDate) {
-      const startDate = new Date(assignment.startDate);
-      const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
-      
-      // Only count members who are active on the target date
-      if (startDate <= date && (!endDate || date < endDate)) {
-        sizes[assignment.specialty] = (sizes[assignment.specialty] || 0) + 1;
+    if (assignment.startDate) {
+      const member = state.teamMembers.find(m => m.id === assignment.memberId);
+      if (member && member.specialty) {
+        const startDate = new Date(assignment.startDate);
+        const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
+        
+        // Only count members who are active on the target date
+        if (startDate <= date && (!endDate || date < endDate)) {
+          sizes[member.specialty] = (sizes[member.specialty] || 0) + 1;
+        }
       }
     }
   });
@@ -142,16 +158,15 @@ export function deleteTeamMember(memberId) {
 }
 
 // Helper function to add member assignment to team
-export function addMemberAssignment(teamId, memberId, specialty, startDate, endDate = null) {
+export function addMemberAssignment(teamId, memberId, startDate, endDate = null) {
   const team = state.teams.find(t => t.id === teamId);
   if (!team) return false;
   
   if (!team.memberAssignments) team.memberAssignments = [];
   
-  // Check for overlapping assignments
+  // Check for overlapping assignments for the same member
   const hasOverlap = team.memberAssignments.some(assignment => 
     assignment.memberId === memberId && 
-    assignment.specialty === specialty &&
     !(endDate && assignment.startDate > endDate || assignment.endDate && startDate > assignment.endDate)
   );
   
@@ -160,7 +175,6 @@ export function addMemberAssignment(teamId, memberId, specialty, startDate, endD
   const assignment = {
     id: Date.now().toString(),
     memberId,
-    specialty,
     startDate,
     endDate
   };
@@ -233,7 +247,6 @@ function migrateTeamsToNewStructure() {
       team.memberAssignments = team.members.map(member => ({
         id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
         memberId: member.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
-        specialty: member.specialty,
         startDate: member.startDate,
         endDate: member.endDate
       }));
@@ -317,12 +330,9 @@ export function removeEffortType(key){
   state.tasks.forEach(t=>{
     t.efforts = (t.efforts||[]).filter(e=> e.platform !== key);
   });
-  // Remove member assignments with the deleted specialty from all teams
+  // Note: Member assignments no longer store specialty, so no need to filter them
+  // Legacy support for old teams with members
   state.teams.forEach(tm=>{ 
-    if(tm.memberAssignments) {
-      tm.memberAssignments = tm.memberAssignments.filter(a => a.specialty !== key);
-    }
-    // Legacy support for old teams with members
     if(tm.members) {
       tm.members = tm.members.filter(m => m.specialty !== key);
     }
