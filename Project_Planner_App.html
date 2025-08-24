@@ -150,11 +150,7 @@
           <button id="btn-back-projects" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Projects</button>
           <h2 id="plans-title" class="h6 mb-0"></h2>
         </div>
-        <div class="d-flex align-items-center gap-2">
-          <button id="btn-export-project-pdf" class="btn btn-primary btn-sm"><i class="bi bi-filetype-pdf"></i> Export Project PDF</button>
-          <button id="btn-open-efforts" class="btn btn-outline-secondary btn-sm"><i class="bi bi-sliders"></i> Edit Task Efforts</button>
-          <button id="btn-export-project-xlsx-basic" class="btn btn-success btn-sm"><i class="bi bi-filetype-xlsx"></i> Export Project Excel (Basic)</button>
-        </div>
+
       </div>
       <div id="plansGrid" class="row g-3"></div>
     </div>
@@ -983,9 +979,7 @@
       plans.forEach(p=> grid.appendChild(createEnhancedPlanCard(p)));
       byId('btn-back-projects').onclick = ()=> { try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); };
-      byId('btn-export-project-pdf').onclick = ()=> exportProjectPDF(projectId);
-      byId('btn-export-project-xlsx-basic').onclick = ()=> exportProjectExcel(projectId);
-      if(byId('btn-open-efforts')){ byId('btn-open-efforts').onclick = ()=>{ const mm=new bootstrap.Modal(byId('manageModal')); mm.show(); byId('tab-efforts').click(); byId('eff-proj').value = projectId; byId('eff-proj').dispatchEvent(new Event('change')); }; }
+
     }
     // Enhanced plan metrics calculation
     function calculatePlanMetrics(p) {
@@ -1003,7 +997,13 @@
       const durationDays = Math.ceil(duration / (1000 * 60 * 60 * 24));
       const complexity = totalEffort > 100 ? 'High' : totalEffort > 50 ? 'Medium' : 'Low';
       const team = getTeam(p.teamId);
-      const teamSize = team ? (team.members ? team.members.length : 0) : 0;
+      const teamSize = team ? (team.memberAssignments ? team.memberAssignments.length : 0) : 0;
+
+      // Calculate sprints (assuming 2-week sprints)
+      const sprintsCount = Math.ceil(durationDays / 14);
+
+      // Calculate average daily effort
+      const avgDailyEffort = teamSize > 0 ? (totalEffort / durationDays / teamSize).toFixed(1) : 0;
 
       // Determine status based on dates
       const now = new Date();
@@ -1026,6 +1026,8 @@
         durationDays,
         complexity,
         teamSize,
+        sprintsCount,
+        avgDailyEffort,
         status,
         statusColor,
         keys,
@@ -1071,15 +1073,22 @@
             </div>
 
             <!-- Key Metrics -->
-            <div class="row g-2 mb-3">
-              <div class="col-6">
+            <div class="row g-3 mb-3">
+              <div class="col-4">
                 <div class="border rounded p-2 text-center">
                   <div class="small text-secondary">Duration</div>
                   <div class="fw-bold">${metrics.durationDays}</div>
                   <div class="small text-secondary">days</div>
                 </div>
               </div>
-              <div class="col-6">
+              <div class="col-4">
+                <div class="border rounded p-2 text-center">
+                  <div class="small text-secondary">Sprints</div>
+                  <div class="fw-bold">${metrics.sprintsCount}</div>
+                  <div class="small text-secondary">2-week</div>
+                </div>
+              </div>
+              <div class="col-4">
                 <div class="border rounded p-2 text-center">
                   <div class="small text-secondary">Effort</div>
                   <div class="fw-bold">${metrics.totalEffort}</div>
@@ -1088,21 +1097,37 @@
               </div>
             </div>
 
-            <!-- Timeline -->
+                        <!-- Timeline -->
             <div class="mb-3">
               <div class="small text-secondary mb-1">
                 <i class="bi bi-calendar-range me-1"></i>
                 ${startStr} → ${endStr}
-        </div>
-        <div class="mini-timeline">
-          <div class="mini-phase">
-                  ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(255,255,255,.35)"></div>`).join('')}
-          </div>
-          <div class="mini-platforms">
-                  ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};flex:${metrics.totals[k]}"></div>`).join('')}
-          </div>
-        </div>
-        </div>
+              </div>
+              <div class="border rounded p-2 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="small fw-bold">Phase Progress</div>
+                  <div class="small text-secondary">${p.phaseIds.length} phases</div>
+                </div>
+                <div class="progress-stacked" style="height: 8px;">
+                  ${(() => {
+                    const totalPhases = p.phaseIds.length;
+                    const phaseWidth = 100 / totalPhases;
+                    return p.phaseIds.map((phId, i) => {
+                      const phase = getPhase(phId);
+                      const phaseColor = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'][i % 6];
+                      return `<div class="progress" style="width: ${phaseWidth}%;" role="progressbar">
+                        <div class="progress-bar bg-${phaseColor}" style="width: 100%;"
+                             title="${phase?.name || phId}"></div>
+                      </div>`;
+                    }).join('');
+                  })()}
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                  <div class="small text-secondary">Complexity: <span class="badge bg-${metrics.complexity === 'High' ? 'danger' : metrics.complexity === 'Medium' ? 'warning' : 'success'}">${metrics.complexity}</span></div>
+                  <div class="small text-secondary">Avg: ${metrics.avgDailyEffort} md/day</div>
+                </div>
+              </div>
+            </div>
 
             <!-- Phases -->
             <div class="mb-3">
@@ -1121,6 +1146,9 @@
                 </button>
                 <button class="btn btn-sm btn-outline-secondary" data-action="edit" title="Edit Plan">
                   <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-info" data-action="effort" title="Edit Task Efforts">
+                  <i class="bi bi-bar-chart-line"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-info" data-action="duplicate" title="Duplicate Plan">
                   <i class="bi bi-files"></i>
@@ -1157,9 +1185,24 @@
         openEditor('plan', p.id);
       };
 
+      col.querySelector('[data-action=effort]').onclick = (e) => {
+        e.stopPropagation();
+        // Open edit efforts for this project
+        const project = getProject(p.projectId);
+        if (project) {
+          const mm = new bootstrap.Modal(byId('manageModal'));
+          mm.show();
+          byId('tab-efforts').click();
+          byId('eff-proj').value = p.projectId;
+          byId('eff-proj').dispatchEvent(new Event('change'));
+        }
+      };
+
       col.querySelector('[data-action=duplicate]').onclick = (e) => {
         e.stopPropagation();
         duplicateEntity('plan', p.id);
+        // Refresh the plans listing to show the duplicated plan
+        setTimeout(() => refreshPlansListing(), 100);
       };
 
       col.querySelector('[data-action=delete]').onclick = (e) => {
@@ -1167,7 +1210,7 @@
         if (confirm(`Delete plan "${p.title}"?`)) {
           state.proposals = state.proposals.filter(x => x.id !== p.id);
           save();
-          refreshManage();
+          refreshPlansListing();
         }
       };
 
