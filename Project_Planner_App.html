@@ -1039,6 +1039,9 @@
       // Calculate average daily effort
       const avgDailyEffort = teamSize > 0 ? (totalEffort / durationDays / teamSize).toFixed(1) : 0;
 
+      // Collect phases (used for risk overlap calculation)
+      const phases = p.phaseIds.map(id => getPhase(id)).filter(ph => ph);
+
       // Calculate risk level based on multiple factors
       const riskLevel = (() => {
         let riskScore = 0;
@@ -1171,7 +1174,7 @@
               <div class="d-flex align-items-center gap-2 small text-secondary mt-1">
                 <i class="bi bi-calendar-range"></i>
                 <span>${startStr} → ${endStr}</span>
-          </div>
+        </div>
         </div>
 
             <!-- Key Metrics -->
