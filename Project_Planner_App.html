@@ -1321,21 +1321,21 @@
 
       col.querySelector('[data-action=effort]').onclick = (e) => {
         e.stopPropagation();
-        // Open edit efforts for this project
-        const project = getProject(p.projectId);
-        if (project) {
-          const mm = new bootstrap.Modal(byId('manageModal'));
-          mm.show();
-          byId('tab-efforts').click();
-          // Use setTimeout to ensure the modal is fully loaded before setting the value
-          setTimeout(() => {
-            const projectSelect = byId('eff-proj');
-            if (projectSelect) {
-              projectSelect.value = p.projectId;
-              projectSelect.dispatchEvent(new Event('change'));
-            }
-          }, 100);
-        }
+        // Ensure manage modal contents (including Efforts tab) are populated
+        refreshManage();
+        const mm = new bootstrap.Modal(byId('manageModal'));
+        mm.show();
+        byId('tab-efforts').click();
+        // After modal/tab is visible, select the correct project and render
+        setTimeout(() => {
+          const projectSelect = byId('eff-proj');
+          if (projectSelect) {
+            projectSelect.innerHTML = (state.projects||[]).map(pr=>`<option value="${pr.id}">${escapeHtml(pr.name)}</option>`).join('');
+            projectSelect.value = p.projectId;
+            projectSelect.dispatchEvent(new Event('change'));
+          }
+          if (typeof window.renderEffTbl === 'function') window.renderEffTbl();
+        }, 50);
       };
 
       col.querySelector('[data-action=duplicate]').onclick = (e) => {
