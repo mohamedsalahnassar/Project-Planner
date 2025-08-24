@@ -303,7 +303,7 @@ export function aggregate(plan, tasks, getTeam, targetDate = null, teamMembers =
   return { team: teamSizes, buffer, phaseTotals, capacitySegments, changePoints };
 }
 
-function duration(md, eng, eff, startDate = null, capacitySegments = null, specialty = null, buffer = 0){ 
+export function duration(md, eng, eff, startDate = null, capacitySegments = null, specialty = null, buffer = 0){ 
   if(!eng||eng<=0) return 0; 
   
   // Use capacity-aware calculation if we have the required data
