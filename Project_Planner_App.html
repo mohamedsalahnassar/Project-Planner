@@ -270,45 +270,69 @@
         </div>
         <div class="modal-body">
           <ul class="nav nav-tabs" id="manageTabs" role="tablist">
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="tab-projects" data-bs-toggle="tab" data-bs-target="#pane-projects" type="button" role="tab"><i class="bi bi-folder2-open me-1"></i> Projects</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-plans" data-bs-toggle="tab" data-bs-target="#pane-plans" type="button" role="tab"><i class="bi bi-diagram-3 me-1"></i> Delivery Plans</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-phases" data-bs-toggle="tab" data-bs-target="#pane-phases" type="button" role="tab"><i class="bi bi-list-check me-1"></i> Phases</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-teams" data-bs-toggle="tab" data-bs-target="#pane-teams" type="button" role="tab"><i class="bi bi-people me-1"></i> Teams</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-sprints" data-bs-toggle="tab" data-bs-target="#pane-sprints" type="button" role="tab"><i class="bi bi-flag me-1"></i> Sprints</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-releases" data-bs-toggle="tab" data-bs-target="#pane-releases" type="button" role="tab"><i class="bi bi-rocket-takeoff me-1"></i> Releases</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab"><i class="bi bi-card-checklist me-1"></i> Tasks</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-phase-tasks" data-bs-toggle="tab" data-bs-target="#pane-phase-tasks" type="button" role="tab"><i class="bi bi-kanban me-1"></i> Phase Tasks</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-effort-types" data-bs-toggle="tab" data-bs-target="#pane-effort-types" type="button" role="tab"><i class="bi bi-sliders me-1"></i> Effort Types</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-team-members" data-bs-toggle="tab" data-bs-target="#pane-team-members" type="button" role="tab"><i class="bi bi-person-badge me-1"></i> Team Members</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-efforts" data-bs-toggle="tab" data-bs-target="#pane-efforts" type="button" role="tab"><i class="bi bi-graph-up me-1"></i> Efforts</button>
-  </li>
-  <li class="nav-item ms-auto" role="presentation">
-    <button class="nav-link" id="tab-general" data-bs-toggle="tab" data-bs-target="#pane-general" type="button" role="tab"><i class="bi bi-gear"></i> General</button>
-  </li>
-</ul>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="tab-teams" data-bs-toggle="tab" data-bs-target="#pane-teams" type="button" role="tab" title="Manage team configurations and capacity settings" data-bs-toggle="tooltip">
+                <i class="bi bi-people me-1"></i> Teams
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-team-members" data-bs-toggle="tab" data-bs-target="#pane-team-members" type="button" role="tab" title="Manage individual team members and their specialties" data-bs-toggle="tooltip">
+                <i class="bi bi-person-badge me-1"></i> Team Members
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-projects" data-bs-toggle="tab" data-bs-target="#pane-projects" type="button" role="tab" title="Create and manage project definitions" data-bs-toggle="tooltip">
+                <i class="bi bi-folder2-open me-1"></i> Projects
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-plans" data-bs-toggle="tab" data-bs-target="#pane-plans" type="button" role="tab" title="View and manage delivery plans for projects" data-bs-toggle="tooltip">
+                <i class="bi bi-diagram-3 me-1"></i> Delivery Plans
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-phases" data-bs-toggle="tab" data-bs-target="#pane-phases" type="button" role="tab" title="Define project phases and their properties" data-bs-toggle="tooltip">
+                <i class="bi bi-list-check me-1"></i> Phases
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-sprints" data-bs-toggle="tab" data-bs-target="#pane-sprints" type="button" role="tab" title="Configure sprint settings and schedules" data-bs-toggle="tooltip">
+                <i class="bi bi-flag me-1"></i> Sprints
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-releases" data-bs-toggle="tab" data-bs-target="#pane-releases" type="button" role="tab" title="Plan and track product releases" data-bs-toggle="tooltip">
+                <i class="bi bi-rocket-takeoff me-1"></i> Releases
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab" title="Manage project tasks and their details" data-bs-toggle="tooltip">
+                <i class="bi bi-card-checklist me-1"></i> Tasks
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-phase-tasks" data-bs-toggle="tab" data-bs-target="#pane-phase-tasks" type="button" role="tab" title="Assign tasks to specific project phases" data-bs-toggle="tooltip">
+                <i class="bi bi-kanban me-1"></i> Phase Tasks
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-effort-types" data-bs-toggle="tab" data-bs-target="#pane-effort-types" type="button" role="tab" title="Define effort categories and specialties" data-bs-toggle="tooltip">
+                <i class="bi bi-sliders me-1"></i> Effort Types
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-efforts" data-bs-toggle="tab" data-bs-target="#pane-efforts" type="button" role="tab" title="Set task effort estimates by specialty" data-bs-toggle="tooltip">
+                <i class="bi bi-graph-up me-1"></i> Efforts
+              </button>
+            </li>
+            <li class="nav-item ms-auto" role="presentation">
+              <button class="nav-link" id="tab-general" data-bs-toggle="tab" data-bs-target="#pane-general" type="button" role="tab" title="General application settings and preferences" data-bs-toggle="tooltip">
+                <i class="bi bi-gear me-1"></i> General
+              </button>
+            </li>
+          </ul>
           <div class="tab-content pt-3">
-            <div class="tab-pane fade show active" id="pane-projects" role="tabpanel">
+            <div class="tab-pane fade" id="pane-projects" role="tabpanel">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="input-group" style="max-width:360px">
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -413,7 +437,7 @@
               </div>
             </div>
 
-            <div class="tab-pane fade" id="pane-teams" role="tabpanel">
+            <div class="tab-pane fade show active" id="pane-teams" role="tabpanel">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="input-group" style="max-width:360px">
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -3211,6 +3235,44 @@
         };
         /* Effort type management moved to separate CRUD */
       }
+
+      // Initialize tooltips on manage modal tabs
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('#manageTabs [data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+
+      // Add keyboard navigation for tabs
+      const tabButtons = document.querySelectorAll('#manageTabs button[role="tab"]');
+      tabButtons.forEach((tab, index) => {
+        tab.addEventListener('keydown', (e) => {
+          let newIndex = index;
+          
+          switch(e.key) {
+            case 'ArrowRight':
+              e.preventDefault();
+              newIndex = (index + 1) % tabButtons.length;
+              break;
+            case 'ArrowLeft':
+              e.preventDefault();
+              newIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+              break;
+            case 'Home':
+              e.preventDefault();
+              newIndex = 0;
+              break;
+            case 'End':
+              e.preventDefault();
+              newIndex = tabButtons.length - 1;
+              break;
+            default:
+              return;
+          }
+          
+          tabButtons[newIndex].focus();
+          tabButtons[newIndex].click();
+        });
+      });
 
       byId('gen-start').value = state.meta.startDate;
       byId('gen-eff').value = state.meta.efficiency;
