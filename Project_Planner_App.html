@@ -980,7 +980,7 @@
       byId('plans-title').textContent = pr.name + " — Delivery Plans";
       const grid = byId('plansGrid'); grid.innerHTML='';
       const plans = state.proposals.filter(p=>p.projectId===projectId);
-      plans.forEach(p=> grid.appendChild(planCard(p)));
+      plans.forEach(p=> grid.appendChild(createEnhancedPlanCard(p)));
       byId('btn-back-projects').onclick = ()=> { try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); };
       byId('btn-export-project-pdf').onclick = ()=> exportProjectPDF(projectId);
