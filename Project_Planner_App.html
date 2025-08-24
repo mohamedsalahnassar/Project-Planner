@@ -21,6 +21,14 @@
     .mini-timeline{border-radius:.5rem;border:1px solid var(--bs-border-color); overflow:hidden}
     .mini-phase{height:8px;background:var(--bs-border-color);opacity:.6; position:relative}
     .mini-platforms{height:8px;display:flex;width:100%}
+
+    /* Enhanced plans listing styles */
+    .card-hover{transition:all 0.2s ease-in-out;cursor:pointer}
+    .card-hover:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.15)}
+    .plans-metrics{background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%);border:1px solid #dee2e6}
+    .plans-status-badge{font-size:0.7rem;font-weight:600;padding:0.25rem 0.5rem}
+    .plans-action-btn{transition:all 0.15s ease-in-out}
+    .plans-action-btn:hover{transform:scale(1.05)}
     .seg{height:8px;flex:1 1 0}
     .gantt-wrap{border:1px solid var(--bs-border-color); border-radius:.75rem; overflow:hidden}
     .gantt-toolbar{position:sticky;top:0;z-index:2;background:var(--bs-body-bg);border-bottom:1px solid var(--bs-border-color)}
@@ -318,18 +326,75 @@
             </div>
 
             <div class="tab-pane fade" id="pane-plans" role="tabpanel">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="input-group" style="max-width:360px">
+              <!-- Enhanced Plans Header -->
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+                <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1" style="max-width: 500px;">
+                  <div class="input-group">
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
-                  <input id="search-plans" class="form-control" placeholder="Search delivery plans">
+                    <input id="search-plans" class="form-control" placeholder="Search plans by title, project, team...">
                 </div>
-                <button class="btn btn-primary" id="btn-add-plan"><i class="bi bi-plus-lg"></i> Add Delivery Plan</button>
               </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <select id="sort-plans" class="form-select form-select-sm" style="width: auto;">
+                    <option value="title">Sort by Title</option>
+                    <option value="project">Sort by Project</option>
+                    <option value="team">Sort by Team</option>
+                    <option value="duration">Sort by Duration</option>
+                    <option value="complexity">Sort by Complexity</option>
+                    <option value="recent">Recently Updated</option>
+                  </select>
+                  <select id="filter-status" class="form-select form-select-sm" style="width: auto;">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="draft">Draft</option>
+                  </select>
+                  <button class="btn btn-primary" id="btn-add-plan">
+                    <i class="bi bi-plus-lg me-1"></i> Add Plan
+                  </button>
+                </div>
+              </div>
+
+              <!-- View Toggle -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="btn-group" role="group">
+                  <input type="radio" class="btn-check" name="plans-view" id="view-cards" autocomplete="off" checked>
+                  <label class="btn btn-outline-secondary btn-sm" for="view-cards">
+                    <i class="bi bi-grid me-1"></i> Cards
+                  </label>
+                  <input type="radio" class="btn-check" name="plans-view" id="view-table" autocomplete="off">
+                  <label class="btn btn-outline-secondary btn-sm" for="view-table">
+                    <i class="bi bi-table me-1"></i> Table
+                  </label>
+                </div>
+                <div class="text-muted small">
+                  <span id="plans-count">0</span> plans found
+                </div>
+              </div>
+
+              <!-- Cards View -->
+              <div id="plans-cards-view" class="row g-3">
+                <!-- Cards will be populated here -->
+              </div>
+
+              <!-- Table View -->
+              <div id="plans-table-view" class="d-none">
               <div class="table-responsive">
                 <table class="table table-hover align-middle" id="tbl-plans">
-                  <thead><tr><th>Title</th><th>Project</th><th>Team</th><th>Phases</th><th>Buffer%</th><th style="width:260px">Mini Timeline</th><th style="width:160px">Actions</th></tr></thead>
+                    <thead class="table-light">
+                      <tr>
+                        <th>Plan</th>
+                        <th>Project</th>
+                        <th>Team</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                        <th>Complexity</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
                   <tbody></tbody>
                 </table>
+                </div>
               </div>
             </div>
 
@@ -922,48 +987,190 @@
       byId('btn-export-project-xlsx-basic').onclick = ()=> exportProjectExcel(projectId);
       if(byId('btn-open-efforts')){ byId('btn-open-efforts').onclick = ()=>{ const mm=new bootstrap.Modal(byId('manageModal')); mm.show(); byId('tab-efforts').click(); byId('eff-proj').value = projectId; byId('eff-proj').dispatchEvent(new Event('change')); }; }
     }
-    function planCard(p){
+    // Enhanced plan metrics calculation
+    function calculatePlanMetrics(p) {
       const aggr = aggregate(p, state.tasks, getTeam);
       const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
       const keys = effortTypes();
       sched.lanes.forEach(l=>{ if(!l.name) l.name = effortTypeTitle(l.key); if(!l.color) l.color = effortTypeColor(l.key); });
+
       const totals = Object.fromEntries(keys.map(k=>[k,0]));
       Object.values(aggr.phaseTotals).forEach(pt=>{ keys.forEach(k=>{ totals[k]+=(pt[k]||0); }); });
       keys.forEach(k=> totals[k] = +totals[k].toFixed(1));
-      const sumEff = keys.reduce((s,k)=> s+totals[k],0) || 1;
-      const seg = Object.fromEntries(keys.map(k=>[k, totals[k]]));
-      const startStr = fmt(sched.chartStart), endStr = fmt(sched.chartEnd);
+
+      const totalEffort = keys.reduce((s,k)=> s+totals[k],0);
+      const duration = sched.chartEnd - sched.chartStart;
+      const durationDays = Math.ceil(duration / (1000 * 60 * 60 * 24));
+      const complexity = totalEffort > 100 ? 'High' : totalEffort > 50 ? 'Medium' : 'Low';
+      const team = getTeam(p.teamId);
+      const teamSize = team ? (team.members ? team.members.length : 0) : 0;
+
+      // Determine status based on dates
+      const now = new Date();
+      const startDate = new Date(sched.chartStart);
+      const endDate = new Date(sched.chartEnd);
+      let status = 'draft';
+      let statusColor = 'secondary';
+
+      if (startDate <= now && endDate >= now) {
+        status = 'active';
+        statusColor = 'success';
+      } else if (endDate < now) {
+        status = 'completed';
+        statusColor = 'primary';
+      }
+
+      return {
+        totals,
+        totalEffort,
+        durationDays,
+        complexity,
+        teamSize,
+        status,
+        statusColor,
+        keys,
+        sched,
+        aggr,
+        startDate: sched.chartStart,
+        endDate: sched.chartEnd
+      };
+    }
+
+    function createEnhancedPlanCard(p) {
+      const metrics = calculatePlanMetrics(p);
+      const keys = metrics.keys;
+      const startStr = fmt(metrics.startDate), endStr = fmt(metrics.endDate);
       const phases = p.phaseIds.map(id=> getPhase(id)?.name||id).join(' · ');
-      const col = document.createElement('div'); col.className='col-12 col-md-6';
-      col.innerHTML = `<div class="card card-hover h-100" data-plan="${p.id}"><div class="card-body d-flex flex-column gap-2">
-        <div class="d-flex justify-content-between align-items-start gap-2">
-          <div><h5 class="card-title mb-0">${p.title}</h5><div class="text-secondary small">${p.description||''}</div></div>
-          <div class="text-end">
-            <div class="small text-secondary">${startStr} → ${endStr}</div>
-            <div class="small">Team: <b>${getTeam(p.teamId)?.name||'—'}</b></div>
-            <div class="small">Phases: ${phases}</div>
+      const project = getProject(p.projectId);
+      const team = getTeam(p.teamId);
+
+      const col = document.createElement('div');
+      col.className='col-12 col-md-6 col-lg-4';
+      col.innerHTML = `
+        <div class="card card-hover h-100 shadow-sm" data-plan="${p.id}" style="transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;">
+          <div class="card-body d-flex flex-column">
+            <!-- Header with Status -->
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="flex-grow-1">
+                <h6 class="card-title mb-1 text-truncate">${escapeHtml(p.title)}</h6>
+                <div class="text-secondary small mb-2">${escapeHtml(p.description || 'No description')}</div>
           </div>
+              <span class="badge bg-${metrics.statusColor} ms-2" style="font-size: 0.7rem;">${metrics.status.toUpperCase()}</span>
+            </div>
+
+            <!-- Project & Team Info -->
+            <div class="mb-2">
+              <div class="d-flex align-items-center gap-2 small text-secondary mb-1">
+                <i class="bi bi-folder"></i>
+                <span class="text-truncate">${escapeHtml(project?.name || 'No Project')}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2 small text-secondary">
+                <i class="bi bi-people"></i>
+                <span>${escapeHtml(team?.name || 'No Team')} (${metrics.teamSize} members)</span>
+              </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <div class="border rounded p-2 text-center">
+                  <div class="small text-secondary">Duration</div>
+                  <div class="fw-bold">${metrics.durationDays}</div>
+                  <div class="small text-secondary">days</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="border rounded p-2 text-center">
+                  <div class="small text-secondary">Effort</div>
+                  <div class="fw-bold">${metrics.totalEffort}</div>
+                  <div class="small text-secondary">md</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="mb-3">
+              <div class="small text-secondary mb-1">
+                <i class="bi bi-calendar-range me-1"></i>
+                ${startStr} → ${endStr}
         </div>
         <div class="mini-timeline">
           <div class="mini-phase">
-            ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(255,255,255,.35)"><span class="position-absolute top-100 start-0 translate-middle-x" style="font-size:.65rem">${getPhase(phId)?.name||phId}</span></div>`).join('')}
+                  ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(255,255,255,.35)"></div>`).join('')}
           </div>
           <div class="mini-platforms">
-            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};flex:${seg[k]}"></div>`).join('')}
+                  ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};flex:${metrics.totals[k]}"></div>`).join('')}
           </div>
         </div>
-        <div class="row row-cols-${keys.length} g-2 text-center">
-            ${keys.map(k=> `<div class="col"><div class="border rounded p-2"><div class="small text-secondary">${effortTypeTitle(k)}</div><div class="fw-bold">${totals[k]}</div><div class="small text-secondary">md</div></div></div>`).join('')}
         </div>
-        <div class="d-flex justify-content-end gap-2 mt-2">
-          <button class="btn btn-sm btn-outline-secondary" data-act="phase"><i class="bi bi-kanban"></i></button>
-          <button class="btn btn-sm btn-outline-secondary" data-act="dup"><i class="bi bi-files"></i></button>
+
+            <!-- Phases -->
+            <div class="mb-3">
+              <div class="small text-secondary mb-1">
+                <i class="bi bi-list-check me-1"></i>
+                ${p.phaseIds.length} Phase${p.phaseIds.length !== 1 ? 's' : ''}
         </div>
-        </div></div>`;
+              <div class="small text-truncate">${phases}</div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="d-flex justify-content-between align-items-center mt-auto">
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-primary" data-action="view" title="View Plan">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" data-action="edit" title="Edit Plan">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-info" data-action="duplicate" title="Duplicate Plan">
+                  <i class="bi bi-files"></i>
+                </button>
+              </div>
+              <button class="btn btn-sm btn-outline-danger" data-action="delete" title="Delete Plan">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add event listeners
         const card = col.querySelector('.card');
-        card.onclick = ()=> openDetail(p.id);
-        col.querySelector('[data-act=dup]').onclick = (e)=>{ e.stopPropagation(); duplicateEntity('plan', p.id); };
-        col.querySelector('[data-act=phase]').onclick = (e)=>{ e.stopPropagation(); const mm=new bootstrap.Modal(byId('manageModal')); mm.show(); byId('tab-phase-tasks').click(); byId('pt-proj').value = p.projectId; byId('pt-proj').dispatchEvent(new Event('change')); };
+      card.onclick = (e) => {
+        if (!e.target.closest('button')) {
+          openDetail(p.id);
+        }
+      };
+
+      // Add hover effect
+      card.onmouseenter = () => card.style.transform = 'translateY(-2px)';
+      card.onmouseleave = () => card.style.transform = 'translateY(0)';
+
+      // Action buttons
+      col.querySelector('[data-action=view]').onclick = (e) => {
+        e.stopPropagation();
+        openDetail(p.id);
+      };
+
+      col.querySelector('[data-action=edit]').onclick = (e) => {
+        e.stopPropagation();
+        openEditor('plan', p.id);
+      };
+
+      col.querySelector('[data-action=duplicate]').onclick = (e) => {
+        e.stopPropagation();
+        duplicateEntity('plan', p.id);
+      };
+
+      col.querySelector('[data-action=delete]').onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete plan "${p.title}"?`)) {
+          state.proposals = state.proposals.filter(x => x.id !== p.id);
+          save();
+          refreshManage();
+        }
+      };
+
         return col;
       }
 
@@ -2181,6 +2388,15 @@
     }
 
     function refreshManage(){
+      // Setup plans listing if not already done
+      if (typeof window.plansListingSetup === 'undefined') {
+        setupPlansListing();
+        window.plansListingSetup = true;
+      }
+
+      // Refresh plans listing
+      refreshPlansListing();
+
       const filterP = (byId('search-projects').value||'').toLowerCase();
       const tbP = byId('tbl-projects').querySelector('tbody'); tbP.innerHTML='';
       state.projects.filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterP)).forEach(p=>{
@@ -2196,35 +2412,210 @@
         } };
         tbP.appendChild(tr);
       });
-      const filterPl = (byId('search-plans').value||'').toLowerCase();
-      const tbPl = byId('tbl-plans').querySelector('tbody'); tbPl.innerHTML='';
-      state.proposals.filter(p=> (p.title+' '+p.id).toLowerCase().includes(filterPl)).forEach(p=>{
-        const aggr = aggregate(p, state.tasks, getTeam);
-        const keys = effortTypes();
-        const totals = Object.fromEntries(keys.map(k=>[k,0]));
-        Object.values(aggr.phaseTotals).forEach(pt=>{ keys.forEach(k=>{ totals[k]+=(pt[k]||0); }); });
-        const sumEff = keys.reduce((s,k)=>s+totals[k],0) || 1;
-        const seg = Object.fromEntries(keys.map(k=>[k, totals[k]]));
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(p.title)}</td><td>${escapeHtml(getProject(p.projectId)?.name||'—')}</td><td>${escapeHtml(getTeam(p.teamId)?.name||'—')}</td>
-          <td>${p.phaseIds.map(id=> escapeHtml(getPhase(id)?.name||id)).join(' · ')}</td>
-          <td>${p.bufferPct||0}</td>
-          <td><div class="mini-timeline"><div class="mini-phase">
-            ${p.phaseIds.map((phId, i)=>`<div class="position-absolute top-0" style="left:${Math.round((i/p.phaseIds.length)*100)}%;height:8px;border-left:1px solid rgba(127,127,127,.6)"></div>`).join('')}
-          </div>
-          <div class="mini-platforms">
-            ${keys.map(k=>`<div class="seg" style="background:${effortTypeColor(k)};flex:${seg[k]}"></div>`).join('')}
-          </div></div></td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary">Edit</button><button class="btn btn-sm btn-outline-secondary ms-1">Duplicate</button><button class="btn btn-sm btn-outline-danger ms-1">Delete</button></td>`;
-        tr.querySelector('.btn-outline-primary').onclick = ()=> openEditor('plan', p.id);
-        tr.querySelector('.btn-outline-secondary').onclick = ()=> duplicateEntity('plan', p.id);
-        tr.querySelector('.btn-outline-danger').onclick = ()=>{ if(confirm('Delete plan?')){
-          state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==p.id));
-          state.proposals = state.proposals.filter(x=>x.id!==p.id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
-      buildProjects();
-        } };
-        tbPl.appendChild(tr);
+
+    // Enhanced plans listing with sorting, filtering, and view toggle
+    function setupPlansListing() {
+      // Add event listeners for controls
+      const searchInput = byId('search-plans');
+      const sortSelect = byId('sort-plans');
+      const filterSelect = byId('filter-status');
+      const viewCards = byId('view-cards');
+      const viewTable = byId('view-table');
+
+      if (searchInput) {
+        searchInput.addEventListener('input', debounce(refreshPlansListing, 300));
+      }
+
+      if (sortSelect) {
+        sortSelect.addEventListener('change', refreshPlansListing);
+      }
+
+      if (filterSelect) {
+        filterSelect.addEventListener('change', refreshPlansListing);
+      }
+
+      if (viewCards) {
+        viewCards.addEventListener('change', refreshPlansListing);
+      }
+
+      if (viewTable) {
+        viewTable.addEventListener('change', refreshPlansListing);
+      }
+    }
+
+    // Debounce function for search
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+    function refreshPlansListing() {
+      const searchTerm = (byId('search-plans')?.value || '').toLowerCase();
+      const sortBy = byId('sort-plans')?.value || 'title';
+      const filterStatus = byId('filter-status')?.value || 'all';
+      const isCardsView = byId('view-cards')?.checked;
+
+      // Filter plans
+      let filteredPlans = state.proposals.filter(p => {
+        const matchesSearch = (p.title + ' ' + p.id + ' ' + (getProject(p.projectId)?.name || '') + ' ' + (getTeam(p.teamId)?.name || '')).toLowerCase().includes(searchTerm);
+
+        if (!matchesSearch) return false;
+
+        if (filterStatus === 'all') return true;
+
+        const metrics = calculatePlanMetrics(p);
+        return metrics.status === filterStatus;
       });
+
+      // Sort plans
+      filteredPlans.sort((a, b) => {
+        switch (sortBy) {
+          case 'project':
+            return (getProject(a.projectId)?.name || '').localeCompare(getProject(b.projectId)?.name || '');
+          case 'team':
+            return (getTeam(a.teamId)?.name || '').localeCompare(getTeam(b.teamId)?.name || '');
+          case 'duration':
+            const metricsA = calculatePlanMetrics(a);
+            const metricsB = calculatePlanMetrics(b);
+            return metricsA.durationDays - metricsB.durationDays;
+          case 'complexity':
+            const complexityA = calculatePlanMetrics(a);
+            const complexityB = calculatePlanMetrics(b);
+            return complexityA.totalEffort - complexityB.totalEffort;
+          case 'recent':
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+          case 'title':
+          default:
+            return a.title.localeCompare(b.title);
+        }
+      });
+
+      // Update count
+      const countEl = byId('plans-count');
+      if (countEl) {
+        countEl.textContent = filteredPlans.length;
+      }
+
+      // Clear existing content
+      const cardsContainer = byId('plans-cards-view');
+      const tableContainer = byId('plans-table-view');
+
+      if (isCardsView) {
+        cardsContainer.classList.remove('d-none');
+        tableContainer.classList.add('d-none');
+        cardsContainer.innerHTML = '';
+
+        filteredPlans.forEach(p => {
+          const card = createEnhancedPlanCard(p);
+          cardsContainer.appendChild(card);
+        });
+      } else {
+        cardsContainer.classList.add('d-none');
+        tableContainer.classList.remove('d-none');
+        const tbody = byId('tbl-plans').querySelector('tbody');
+        tbody.innerHTML = '';
+
+        filteredPlans.forEach(p => {
+          const row = createEnhancedPlanTableRow(p);
+          tbody.appendChild(row);
+        });
+      }
+    }
+
+    function createEnhancedPlanTableRow(p) {
+      const metrics = calculatePlanMetrics(p);
+      const startStr = fmt(metrics.startDate), endStr = fmt(metrics.endDate);
+      const project = getProject(p.projectId);
+      const team = getTeam(p.teamId);
+      const phases = p.phaseIds.map(id => getPhase(id)?.name || id).join(' · ');
+
+        const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div>
+            <div class="fw-bold">${escapeHtml(p.title)}</div>
+            <div class="small text-secondary">${escapeHtml(p.description || 'No description')}</div>
+          </div>
+        </td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-folder text-secondary"></i>
+            <span>${escapeHtml(project?.name || 'No Project')}</span>
+          </div>
+        </td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-people text-secondary"></i>
+            <span>${escapeHtml(team?.name || 'No Team')}</span>
+          </div>
+        </td>
+        <td>
+          <span class="badge bg-${metrics.statusColor}">${metrics.status.toUpperCase()}</span>
+        </td>
+        <td>
+          <div class="text-center">
+            <div class="fw-bold">${metrics.durationDays}</div>
+            <div class="small text-secondary">days</div>
+          </div>
+        </td>
+        <td>
+          <div class="text-center">
+            <div class="fw-bold">${metrics.complexity}</div>
+            <div class="small text-secondary">${metrics.totalEffort} md</div>
+          </div>
+        </td>
+        <td class="text-end">
+          <div class="d-flex gap-1 justify-content-end">
+            <button class="btn btn-sm btn-outline-primary" data-action="view" title="View Plan">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" data-action="edit" title="Edit Plan">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-info" data-action="duplicate" title="Duplicate Plan">
+              <i class="bi bi-files"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" data-action="delete" title="Delete Plan">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </td>
+      `;
+
+      // Add event listeners
+      tr.querySelector('[data-action=view]').onclick = (e) => {
+        e.stopPropagation();
+        openDetail(p.id);
+      };
+
+      tr.querySelector('[data-action=edit]').onclick = (e) => {
+        e.stopPropagation();
+        openEditor('plan', p.id);
+      };
+
+      tr.querySelector('[data-action=duplicate]').onclick = (e) => {
+        e.stopPropagation();
+        duplicateEntity('plan', p.id);
+      };
+
+      tr.querySelector('[data-action=delete]').onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete plan "${p.title}"?`)) {
+          state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==p.id));
+          state.proposals = state.proposals.filter(x => x.id !== p.id);
+          save();
+          refreshPlansListing();
+        }
+      };
+
+      return tr;
+    }
       const filterPh = (byId('search-phases').value||'').toLowerCase();
       const tbPh = byId('tbl-phases').querySelector('tbody'); tbPh.innerHTML='';
       state.phases.slice().sort((a,b)=>(a.order||0)-(b.order||0)).filter(p=> (p.name+' '+p.id).toLowerCase().includes(filterPh)).forEach(p=>{
