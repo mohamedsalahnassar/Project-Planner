@@ -1344,13 +1344,20 @@
         const originalText = button.innerHTML;
         button.disabled = true;
         button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-        duplicateEntity('plan', p.id);
-        // Stay on same screen and immediately refresh listing
-        setTimeout(() => {
-          refreshPlansListing();
+        try {
+          const copy = structuredClone(p);
+          copy.id = 'prop' + Math.random().toString(36).slice(2,7);
+          copy.title = (p.title || 'Plan') + ' Copy';
+          // Ensure lanes array exists for new plan
+          copy.lanes = (copy.lanes && copy.lanes.length) ? copy.lanes : (typeof defaultPlanLanes === 'function' ? defaultPlanLanes() : []);
+          (state.proposals || (state.proposals = [])).push(copy);
+          save();
+          // Re-render current project's plans
+          openProject(p.projectId);
+        } finally {
           button.disabled = false;
           button.innerHTML = originalText;
-        }, 50);
+        }
       };
 
       col.querySelector('[data-action=delete]').onclick = (e) => {
@@ -1363,7 +1370,8 @@
           state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==p.id));
           state.proposals = state.proposals.filter(x => x.id !== p.id);
           save();
-          refreshPlansListing();
+          // Re-render current project's plans immediately
+          openProject(p.projectId);
           setTimeout(() => {
             button.disabled = false;
             button.innerHTML = originalText;
@@ -2801,8 +2809,13 @@
 
       tr.querySelector('[data-action=duplicate]').onclick = (e) => {
         e.stopPropagation();
-        duplicateEntity('plan', p.id);
-        setTimeout(() => refreshPlansListing(), 50);
+        const copy = structuredClone(p);
+        copy.id = 'prop' + Math.random().toString(36).slice(2,7);
+        copy.title = (p.title || 'Plan') + ' Copy';
+        copy.lanes = (copy.lanes && copy.lanes.length) ? copy.lanes : (typeof defaultPlanLanes === 'function' ? defaultPlanLanes() : []);
+        (state.proposals || (state.proposals = [])).push(copy);
+        save();
+        openProject(p.projectId);
       };
 
       tr.querySelector('[data-action=delete]').onclick = (e) => {
