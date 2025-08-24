@@ -994,18 +994,15 @@
 
       const totalEffort = keys.reduce((s,k)=> s+totals[k],0);
       
-      // Calculate duration based on actual phase dates
-      const phases = p.phaseIds.map(id => getPhase(id)).filter(ph => ph);
+      // Calculate duration based on scheduled phase windows (same logic as Phase Schedule table)
       let planStartDate = sched.chartStart;
       let planEndDate = sched.chartEnd;
-
-      if (phases.length > 0) {
-        // Find earliest start and latest end from all phases
-        const phaseStarts = phases.map(ph => new Date(ph.startDate || sched.chartStart)).filter(d => !isNaN(d.getTime()));
-        const phaseEnds = phases.map(ph => new Date(ph.endDate || sched.chartEnd)).filter(d => !isNaN(d.getTime()));
-        
-        if (phaseStarts.length > 0) planStartDate = new Date(Math.min(...phaseStarts.map(d => d.getTime())));
-        if (phaseEnds.length > 0) planEndDate = new Date(Math.max(...phaseEnds.map(d => d.getTime())));
+      const windows = Array.isArray(sched.phaseWindows) ? sched.phaseWindows : [];
+      if (windows.length > 0) {
+        const starts = windows.map(w => w.start instanceof Date ? w.start.getTime() : new Date(w.start).getTime()).filter(n => !isNaN(n));
+        const ends = windows.map(w => w.end instanceof Date ? w.end.getTime() : new Date(w.end).getTime()).filter(n => !isNaN(n));
+        if (starts.length) planStartDate = new Date(Math.min(...starts));
+        if (ends.length) planEndDate = new Date(Math.max(...ends));
       }
 
       // Normalize to start-of-day and include end date for duration calculations
