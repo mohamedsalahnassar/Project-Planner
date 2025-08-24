@@ -271,37 +271,37 @@
         <div class="modal-body">
           <ul class="nav nav-tabs" id="manageTabs" role="tablist">
   <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="tab-projects" data-bs-toggle="tab" data-bs-target="#pane-projects" type="button" role="tab">Projects</button>
+    <button class="nav-link active" id="tab-projects" data-bs-toggle="tab" data-bs-target="#pane-projects" type="button" role="tab"><i class="bi bi-folder2-open me-1"></i> Projects</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-plans" data-bs-toggle="tab" data-bs-target="#pane-plans" type="button" role="tab">Delivery Plans</button>
+    <button class="nav-link" id="tab-plans" data-bs-toggle="tab" data-bs-target="#pane-plans" type="button" role="tab"><i class="bi bi-diagram-3 me-1"></i> Delivery Plans</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-phases" data-bs-toggle="tab" data-bs-target="#pane-phases" type="button" role="tab">Phases</button>
+    <button class="nav-link" id="tab-phases" data-bs-toggle="tab" data-bs-target="#pane-phases" type="button" role="tab"><i class="bi bi-list-check me-1"></i> Phases</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-teams" data-bs-toggle="tab" data-bs-target="#pane-teams" type="button" role="tab">Teams</button>
+    <button class="nav-link" id="tab-teams" data-bs-toggle="tab" data-bs-target="#pane-teams" type="button" role="tab"><i class="bi bi-people me-1"></i> Teams</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-sprints" data-bs-toggle="tab" data-bs-target="#pane-sprints" type="button" role="tab">Sprints</button>
+    <button class="nav-link" id="tab-sprints" data-bs-toggle="tab" data-bs-target="#pane-sprints" type="button" role="tab"><i class="bi bi-flag me-1"></i> Sprints</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-releases" data-bs-toggle="tab" data-bs-target="#pane-releases" type="button" role="tab">Releases</button>
+    <button class="nav-link" id="tab-releases" data-bs-toggle="tab" data-bs-target="#pane-releases" type="button" role="tab"><i class="bi bi-rocket-takeoff me-1"></i> Releases</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab">Tasks</button>
+    <button class="nav-link" id="tab-tasks" data-bs-toggle="tab" data-bs-target="#pane-tasks" type="button" role="tab"><i class="bi bi-card-checklist me-1"></i> Tasks</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-phase-tasks" data-bs-toggle="tab" data-bs-target="#pane-phase-tasks" type="button" role="tab">Phase Tasks</button>
+    <button class="nav-link" id="tab-phase-tasks" data-bs-toggle="tab" data-bs-target="#pane-phase-tasks" type="button" role="tab"><i class="bi bi-kanban me-1"></i> Phase Tasks</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-effort-types" data-bs-toggle="tab" data-bs-target="#pane-effort-types" type="button" role="tab">Effort Types</button>
+    <button class="nav-link" id="tab-effort-types" data-bs-toggle="tab" data-bs-target="#pane-effort-types" type="button" role="tab"><i class="bi bi-sliders me-1"></i> Effort Types</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-team-members" data-bs-toggle="tab" data-bs-target="#pane-team-members" type="button" role="tab">Team Members</button>
+    <button class="nav-link" id="tab-team-members" data-bs-toggle="tab" data-bs-target="#pane-team-members" type="button" role="tab"><i class="bi bi-person-badge me-1"></i> Team Members</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-efforts" data-bs-toggle="tab" data-bs-target="#pane-efforts" type="button" role="tab">Efforts</button>
+    <button class="nav-link" id="tab-efforts" data-bs-toggle="tab" data-bs-target="#pane-efforts" type="button" role="tab"><i class="bi bi-graph-up me-1"></i> Efforts</button>
   </li>
   <li class="nav-item ms-auto" role="presentation">
     <button class="nav-link" id="tab-general" data-bs-toggle="tab" data-bs-target="#pane-general" type="button" role="tab"><i class="bi bi-gear"></i> General</button>
@@ -634,7 +634,6 @@
       </div>
     </div>
   </div>
-
   <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
@@ -1318,7 +1317,6 @@
         e.stopPropagation();
         openEditor('plan', p.id);
       };
-
       col.querySelector('[data-action=effort]').onclick = (e) => {
         e.stopPropagation();
         // Ensure manage modal contents (including Efforts tab) are populated
@@ -2259,8 +2257,6 @@
       if(!dataUrl){ console.warn('capture failed'); return; }
       window.open(dataUrl, '_blank');
     }
-
-
     /* ---------- Basic Excel Export (SheetJS) ---------- */
     async function exportProjectExcel(projectId){
       if(!await ensureXLSX()){ alert("Excel library couldn't be loaded. Use CSV export instead from Data ▸ Export Tasks (CSV)."); return; }
@@ -2594,7 +2590,6 @@
     function closeEditModal() {
       editModal.hide();
     }
-
     function refreshManage(){
       // Setup plans listing if not already done
       if (typeof window.plansListingSetup === 'undefined') {
@@ -3323,6 +3318,7 @@
         del.onclick = ()=>{ if(confirm('Delete plan?')){ state.tasks.forEach(t=> t.assignments = (t.assignments||[]).filter(a=>a.proposalId!==id)); state.proposals = state.proposals.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
+
       if(kind==='phase'){
         const isEdit = !!id;
         const data = isEdit ? state.phases.find(x=>x.id===id) : Object.assign({ id:'PH'+Math.random().toString(36).slice(2,6), name:'', description:'', order:1, color:'#6c757d' }, structuredClone(prefill));
@@ -3344,6 +3340,7 @@
         del.onclick = ()=>{ if(confirm('Delete phase?')){ state.proposals.forEach(p=> p.phaseIds=(p.phaseIds||[]).filter(x=>x!==id)); state.tasks.forEach(t=> t.assignments=(t.assignments||[]).filter(a=>a.phaseId!==id)); state.phases = state.phases.filter(x=>x.id!==id); save(); refreshManage(); try{ let need=false; (state.tasks||[]).forEach(t=>{ if(!t.efforts || !t.efforts.length) need=true; }); if(need){ seedEffortsFromBaselineGlobal(); save(); } }catch(e){}
       buildProjects(); bootstrap.Modal.getInstance(byId('editModal')).hide(); } };
       }
+
       if(kind==='team'){
         const isEdit = !!id;
         const data = isEdit ? state.teams.find(x=>x.id===id) : Object.assign({ id:'team-'+Math.random().toString(36).slice(2,6), name:'', memberAssignments:[] }, structuredClone(prefill));
@@ -3618,7 +3615,6 @@
       populateExportImportPanel();
       exportImportModal.show();
     };
-    
     // Populate export/import panel dropdowns
     function populateExportImportPanel() {
       // Populate team select dropdown
@@ -3945,7 +3941,6 @@
         }
       });
     };
-
     // Team Member CRUD Functions
     window.openTeamMemberEditor = function(memberId = null) {
       const member = memberId ? getTeamMember(memberId) : createDefaultTeamMember();
@@ -4289,7 +4284,6 @@
       
       container.innerHTML = membersList;
     }
-
     // Boot
     function initApp(){
       fillThemes();
@@ -4599,7 +4593,6 @@
               </div>
             </div>
           </div>
-
           <div class="row g-4">
             <!-- Export Section -->
             <div class="col-lg-4">
