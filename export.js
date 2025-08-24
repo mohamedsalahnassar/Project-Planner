@@ -66,6 +66,47 @@ export function validateTeamMemberAssignment(assignment){
   return true;
 }
 
+// Export team members to CSV
+export function exportTeamMembersCSV(teamMembers){
+  if(!Array.isArray(teamMembers) || teamMembers.length === 0) {
+    return '';
+  }
+  
+  const headers = ['ID', 'Name', 'Specialty', 'Start Date', 'End Date'];
+  const rows = teamMembers.map(member => [
+    member.id,
+    member.name,
+    member.specialty,
+    member.startDate || '',
+    member.endDate || ''
+  ]);
+  
+  return [headers, ...rows]
+    .map(row => row.map(cell => `"${cell}"`).join(','))
+    .join('\n');
+}
+
+// Export teams to CSV
+export function exportTeamsCSV(teams){
+  if(!Array.isArray(teams) || teams.length === 0) {
+    return '';
+  }
+  
+  const headers = ['Team ID', 'Team Name', 'Member Count', 'Member Details'];
+  const rows = teams.map(team => [
+    team.id,
+    team.name,
+    team.memberAssignments ? team.memberAssignments.length : 0,
+    team.memberAssignments ? 
+      team.memberAssignments.map(ma => `${ma.memberId} (${ma.startDate}${ma.endDate ? ` - ${ma.endDate}` : ''})`).join('; ') : 
+      'No members'
+  ]);
+  
+  return [headers, ...rows]
+    .map(row => row.map(cell => `"${cell}"`).join(','))
+    .join('\n');
+}
+
 // Helper function to export team member
 export function exportTeamMemberJSON(member){
   return JSON.stringify(member, null, 2);
