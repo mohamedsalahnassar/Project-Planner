@@ -946,8 +946,11 @@
       state.projects.forEach(pr=>{
         const plans = state.proposals.filter(p=>p.projectId===pr.id);
         const details = plans.map(pl=>{
-          const aggr = aggregate(pl, state.tasks, getTeam);
-          const sched = computeSchedule(pl, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+          const aggr = (typeof aggregateWithTeamMembers==='function')
+            ? aggregateWithTeamMembers(pl, state.tasks, getTeam)
+            : aggregate(pl, state.tasks, getTeam, null, state.teamMembers);
+          const visLanes = (pl.lanes||[]).filter(l=> !(pl.hiddenLanes||[]).includes(l.key));
+          const sched = computeSchedule(pl, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
           return `<li>${pl.title}: ${fmt(sched.chartStart)} → ${fmt(sched.chartEnd)}</li>`;
         }).join('');
         const col = document.createElement('div'); col.className='col-12 col-md-6 col-xl-4';
@@ -983,8 +986,11 @@
     }
     // Enhanced plan metrics calculation
     function calculatePlanMetrics(p) {
-      const aggr = aggregate(p, state.tasks, getTeam);
-      const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+      const aggr = (typeof aggregateWithTeamMembers==='function')
+        ? aggregateWithTeamMembers(p, state.tasks, getTeam)
+        : aggregate(p, state.tasks, getTeam, null, state.teamMembers);
+      const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
+      const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
       const keys = effortTypes();
       sched.lanes.forEach(l=>{ if(!l.name) l.name = effortTypeTitle(l.key); if(!l.color) l.color = effortTypeColor(l.key); });
 
