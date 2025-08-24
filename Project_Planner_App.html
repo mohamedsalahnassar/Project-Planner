@@ -69,10 +69,48 @@
     .capacity-indicator{transition:transform .15s ease-in-out}
     .capacity-indicator:hover{transform:scale(1.2)}
     .capacity-tooltip{pointer-events:none}
+    
+    /* Toast styling */
+    #toast-container .toast {
+      min-width: 300px;
+      max-width: 400px;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+      border-radius: 0.5rem;
+      transition: opacity 0.3s ease-in;
+    }
+    
+    #toast-container .toast .toast-body {
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem;
+      word-wrap: break-word;
+    }
+    
+    #toast-container .toast .btn-close {
+      filter: brightness(0) invert(1);
+    }
+    
+    /* Responsive toast positioning */
+    @media (max-width: 768px) {
+      #toast-container {
+        top: 0;
+        right: 0;
+        left: 0;
+        padding: 0.5rem;
+      }
+      
+      #toast-container .toast {
+        min-width: auto;
+        max-width: none;
+        margin-bottom: 0.5rem;
+      }
+    }
 
   </style>
 </head>
 <body>
+  <!-- Toast Container for Notifications -->
+  <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+  
   <header class="app-header py-2 px-3">
     <div class="d-flex align-items-center justify-content-between gap-2">
       <div class="d-flex align-items-center gap-3">
@@ -1527,10 +1565,16 @@
           renderPhaseDatesTable(newSched);
           renderPhaseBreakdownTables(plan);
           
-          // Show notification
+          // Show toast notification
           const specialty = bar.dataset.lane;
           const phaseName = getPhase(bar.dataset.phase)?.name || bar.dataset.phase;
-          alert(`Rescheduled ${specialty} work in ${phaseName} to start on ${newDate.toLocaleDateString()}`);
+          const oldStartDate = sched.phaseWindows.find(w => w.ph === bar.dataset.phase)?.lanes.find(l => l.key === specialty)?.start;
+          const oldDateText = oldStartDate ? oldStartDate.toLocaleDateString() : 'original date';
+          
+          showToast(
+            `${specialty} work in ${phaseName} rescheduled from ${oldDateText} to ${newDate.toLocaleDateString()}`,
+            'success'
+          );
         });
       }
     function renderPhaseDatesTable(sched){
@@ -3562,6 +3606,87 @@
       chartContainer.appendChild(svg);
     };
 
+    // Toast notification function
+    window.showToast = function(message, type = 'info', duration = 4000) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      
+      const toastId = 'toast-' + Date.now();
+      const toast = document.createElement('div');
+      const bgClass = type === 'success' ? 'success' : 
+                     type === 'error' ? 'danger' : 
+                     type === 'warning' ? 'warning' : 
+                     type === 'primary' ? 'primary' : 'info';
+      
+      toast.className = `toast align-items-center text-white bg-${bgClass} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      toast.id = toastId;
+      
+      const iconClass = type === 'success' ? 'bi-check-circle' : 
+                       type === 'error' ? 'bi-exclamation-triangle' : 
+                       type === 'warning' ? 'bi-exclamation-triangle' : 
+                       type === 'primary' ? 'bi-info-circle' : 'bi-info-circle';
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            <i class="bi ${iconClass} me-2"></i>
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Initialize Bootstrap toast
+      try {
+        const bsToast = new bootstrap.Toast(toast, {
+          autohide: true,
+          delay: duration
+        });
+        bsToast.show();
+      } catch (e) {
+        // Fallback if Bootstrap is not available
+        toast.style.opacity = '1';
+        setTimeout(() => {
+          toast.style.transition = 'opacity 0.5s ease-out';
+          toast.style.opacity = '0';
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 500);
+        }, duration);
+      }
+      
+      // Auto-remove from DOM after hiding
+      toast.addEventListener('hidden.bs.toast', () => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      });
+    }
+    
+    // Utility toast functions for common scenarios
+    window.showSuccessToast = function(message, duration = 4000) {
+      showToast(message, 'success', duration);
+    };
+    
+    window.showErrorToast = function(message, duration = 6000) {
+      showToast(message, 'error', duration);
+    };
+    
+    window.showWarningToast = function(message, duration = 5000) {
+      showToast(message, 'warning', duration);
+    };
+    
+    window.showInfoToast = function(message, duration = 4000) {
+      showToast(message, 'info', duration);
+    };
+    
     // Global function to get team with date context for capacity calculations
     window.getTeamWithDate = function(teamId, targetDate = null) {
       const team = getTeam(teamId);
