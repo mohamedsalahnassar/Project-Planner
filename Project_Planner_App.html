@@ -1008,8 +1008,14 @@
         if (phaseEnds.length > 0) planEndDate = new Date(Math.max(...phaseEnds.map(d => d.getTime())));
       }
 
-      // Calculate working days between plan start and end
-      const workingDays = businessDaysBetween(planStartDate, planEndDate);
+      // Normalize to start-of-day and include end date for duration calculations
+      const normStart = new Date(planStartDate); normStart.setHours(0,0,0,0);
+      const normEnd = new Date(planEndDate); normEnd.setHours(0,0,0,0);
+      // Include the end date by adding 1 day for exclusive end in businessDaysBetween
+      const inclusiveEnd = new Date(normEnd); inclusiveEnd.setDate(inclusiveEnd.getDate()+1);
+
+      // Calculate working days between plan start and end (inclusive)
+      const workingDays = businessDaysBetween(normStart, inclusiveEnd);
       const durationDays = workingDays;
 
       // Calculate sprints that overlap with plan period
@@ -1018,9 +1024,10 @@
           return Math.ceil(durationDays / 10); // Default: 2 weeks = ~10 working days
         }
         return state.sprints.filter(sprint => {
-          const sprintStart = new Date(sprint.start);
-          const sprintEnd = new Date(sprint.end);
-          return (sprintStart <= planEndDate && sprintEnd >= planStartDate);
+          const ss = new Date(sprint.start); ss.setHours(0,0,0,0);
+          const se = new Date(sprint.end); se.setHours(0,0,0,0);
+          // Overlap if sprint starts before or on inclusive end, and sprint ends after or on normStart
+          return (ss <= inclusiveEnd && se >= normStart);
         }).length;
       })();
 
