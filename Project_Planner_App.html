@@ -993,17 +993,108 @@
       keys.forEach(k=> totals[k] = +totals[k].toFixed(1));
 
       const totalEffort = keys.reduce((s,k)=> s+totals[k],0);
-      const duration = sched.chartEnd - sched.chartStart;
-      const durationDays = Math.ceil(duration / (1000 * 60 * 60 * 24));
+      
+      // Calculate duration based on actual phase dates
+      const phases = p.phaseIds.map(id => getPhase(id)).filter(ph => ph);
+      let planStartDate = sched.chartStart;
+      let planEndDate = sched.chartEnd;
+
+      if (phases.length > 0) {
+        // Find earliest start and latest end from all phases
+        const phaseStarts = phases.map(ph => new Date(ph.startDate || sched.chartStart)).filter(d => !isNaN(d.getTime()));
+        const phaseEnds = phases.map(ph => new Date(ph.endDate || sched.chartEnd)).filter(d => !isNaN(d.getTime()));
+        
+        if (phaseStarts.length > 0) planStartDate = new Date(Math.min(...phaseStarts.map(d => d.getTime())));
+        if (phaseEnds.length > 0) planEndDate = new Date(Math.max(...phaseEnds.map(d => d.getTime())));
+      }
+
+      // Calculate working days between plan start and end
+      const workingDays = businessDaysBetween(planStartDate, planEndDate);
+      const durationDays = workingDays;
+
+      // Calculate sprints that overlap with plan period
+      const sprintsCount = (() => {
+        if (!state.sprints || state.sprints.length === 0) {
+          return Math.ceil(durationDays / 10); // Default: 2 weeks = ~10 working days
+        }
+        return state.sprints.filter(sprint => {
+          const sprintStart = new Date(sprint.start);
+          const sprintEnd = new Date(sprint.end);
+          return (sprintStart <= planEndDate && sprintEnd >= planStartDate);
+        }).length;
+      })();
+
       const complexity = totalEffort > 100 ? 'High' : totalEffort > 50 ? 'Medium' : 'Low';
       const team = getTeam(p.teamId);
       const teamSize = team ? (team.memberAssignments ? team.memberAssignments.length : 0) : 0;
 
-      // Calculate sprints (assuming 2-week sprints)
-      const sprintsCount = Math.ceil(durationDays / 14);
+      // Calculate resource utilization
+      const availableWorkDays = durationDays * teamSize; // total person-days available
+      const resourceUtilization = availableWorkDays > 0 ? Math.min(100, Math.round((totalEffort / availableWorkDays) * 100)) : 0;
 
       // Calculate average daily effort
       const avgDailyEffort = teamSize > 0 ? (totalEffort / durationDays / teamSize).toFixed(1) : 0;
+
+      // Calculate risk level based on multiple factors
+      const riskLevel = (() => {
+        let riskScore = 0;
+
+        // Complexity factor (0-3 points)
+        if (complexity === 'High') riskScore += 3;
+        else if (complexity === 'Medium') riskScore += 2;
+        else riskScore += 1; // Low complexity = lower risk
+
+        // Team size factor (0-3 points)
+        if (teamSize <= 1) riskScore += 3; // Very high risk
+        else if (teamSize <= 3) riskScore += 2; // High risk
+        else if (teamSize <= 5) riskScore += 1; // Medium risk
+        // 6+ members = low risk (0 points)
+
+        // Duration factor (0-3 points)
+        if (durationDays > 120) riskScore += 3; // Very long project
+        else if (durationDays > 90) riskScore += 2; // Long project
+        else if (durationDays > 60) riskScore += 1; // Medium project
+        // <=60 days = low risk (0 points)
+
+        // Buffer factor (0-2 points)
+        if (p.bufferPct <= 5) riskScore += 2; // Very low buffer
+        else if (p.bufferPct <= 10) riskScore += 1; // Low buffer
+        // >10% buffer = low risk (0 points)
+
+        // Utilization factor (0-2 points)
+        if (resourceUtilization > 120) riskScore += 2; // Over-utilized
+        else if (resourceUtilization > 100) riskScore += 1; // Fully utilized
+        // <=100% = manageable (0 points)
+
+        // Phase overlap factor (0-1 points)
+        if (phases.length > 1) {
+          const hasOverlaps = phases.some((ph1, i) =>
+            phases.slice(i + 1).some(ph2 => {
+              const start1 = new Date(ph1.startDate || planStartDate);
+              const end1 = new Date(ph1.endDate || planEndDate);
+              const start2 = new Date(ph2.startDate || planStartDate);
+              const end2 = new Date(ph2.endDate || planEndDate);
+              return (start1 < end2 && end1 > start2); // Overlapping phases
+            })
+          );
+          if (hasOverlaps) riskScore += 1; // Concurrent phases increase risk
+        }
+
+        // Risk level determination
+        if (riskScore >= 8) return 'Critical';
+        else if (riskScore >= 6) return 'High';
+        else if (riskScore >= 4) return 'Medium';
+        else if (riskScore >= 2) return 'Low';
+        else return 'Minimal';
+      })();
+
+      // Find the critical path (phase with most effort)
+      const criticalPhase = Object.entries(aggr.phaseTotals).reduce((max, [phaseId, efforts]) => {
+        const total = Object.values(efforts).reduce((sum, eff) => sum + (eff || 0), 0);
+        return total > max.total ? { phaseId, total } : max;
+      }, { phaseId: null, total: 0 });
+
+      const criticalPhaseName = criticalPhase.phaseId ? (getPhase(criticalPhase.phaseId)?.name || criticalPhase.phaseId) : 'None';
 
       // Determine status based on dates
       const now = new Date();
@@ -1028,13 +1119,16 @@
         teamSize,
         sprintsCount,
         avgDailyEffort,
+        riskLevel,
+        resourceUtilization,
+        criticalPhaseName,
         status,
         statusColor,
         keys,
         sched,
         aggr,
-        startDate: sched.chartStart,
-        endDate: sched.chartEnd
+        startDate: planStartDate,
+        endDate: planEndDate
       };
     }
 
@@ -1058,19 +1152,19 @@
                 <div class="text-secondary small mb-2">${escapeHtml(p.description || 'No description')}</div>
           </div>
               <span class="badge bg-${metrics.statusColor} ms-2" style="font-size: 0.7rem;">${metrics.status.toUpperCase()}</span>
-            </div>
+        </div>
 
             <!-- Project & Team Info -->
             <div class="mb-2">
               <div class="d-flex align-items-center gap-2 small text-secondary mb-1">
                 <i class="bi bi-folder"></i>
                 <span class="text-truncate">${escapeHtml(project?.name || 'No Project')}</span>
-              </div>
+          </div>
               <div class="d-flex align-items-center gap-2 small text-secondary">
                 <i class="bi bi-people"></i>
                 <span>${escapeHtml(team?.name || 'No Team')} (${metrics.teamSize} members)</span>
-              </div>
-            </div>
+          </div>
+        </div>
 
             <!-- Key Metrics -->
             <div class="row g-3 mb-3">
@@ -1079,8 +1173,8 @@
                   <div class="small text-secondary">Duration</div>
                   <div class="fw-bold">${metrics.durationDays}</div>
                   <div class="small text-secondary">days</div>
-                </div>
-              </div>
+        </div>
+        </div>
               <div class="col-4">
                 <div class="border rounded p-2 text-center">
                   <div class="small text-secondary">Sprints</div>
@@ -1097,33 +1191,63 @@
               </div>
             </div>
 
-                        <!-- Timeline -->
+            <!-- Additional Insights -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <div class="border rounded p-2 text-center" style="height: 70px; display: flex; flex-direction: column; justify-content: center;">
+                  <div class="small text-secondary">Risk Level</div>
+                  <div class="mt-1">
+                    <span class="badge bg-${metrics.riskLevel === 'Critical' ? 'dark' : metrics.riskLevel === 'High' ? 'danger' : metrics.riskLevel === 'Medium' ? 'warning' : metrics.riskLevel === 'Low' ? 'info' : 'success'} fw-bold">
+                      ${metrics.riskLevel}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="border rounded p-2 text-center" style="height: 70px; display: flex; flex-direction: column; justify-content: center;">
+                  <div class="small text-secondary">Utilization</div>
+                  <div class="fw-bold">${metrics.resourceUtilization}%</div>
+                  <div class="small text-secondary">capacity</div>
+                </div>
+              </div>
+            </div>
+
+                        <!-- Effort Distribution -->
             <div class="mb-3">
               <div class="small text-secondary mb-1">
-                <i class="bi bi-calendar-range me-1"></i>
-                ${startStr} → ${endStr}
+                <i class="bi bi-bar-chart-line me-1"></i>
+                Effort Distribution by Specialty
               </div>
               <div class="border rounded p-2 bg-light">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div class="small fw-bold">Phase Progress</div>
-                  <div class="small text-secondary">${p.phaseIds.length} phases</div>
+                  <div class="small fw-bold">Work Breakdown</div>
+                  <div class="small text-secondary">${metrics.keys.length} specialties</div>
                 </div>
-                <div class="progress-stacked" style="height: 8px;">
+                <div class="d-flex gap-1" style="height: 24px;">
                   ${(() => {
-                    const totalPhases = p.phaseIds.length;
-                    const phaseWidth = 100 / totalPhases;
-                    return p.phaseIds.map((phId, i) => {
-                      const phase = getPhase(phId);
-                      const phaseColor = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'][i % 6];
-                      return `<div class="progress" style="width: ${phaseWidth}%;" role="progressbar">
-                        <div class="progress-bar bg-${phaseColor}" style="width: 100%;"
-                             title="${phase?.name || phId}"></div>
-                      </div>`;
+                    const total = Object.values(metrics.totals).reduce((sum, val) => sum + val, 0) || 1;
+                    return metrics.keys.map(key => {
+                      const percentage = (metrics.totals[key] / total) * 100;
+                      const color = effortTypeColor(key);
+                      return `<div class="rounded" style="width: ${percentage}%; min-width: 8px; height: 100%; background-color: ${color};"
+                           title="${effortTypeTitle(key)}: ${metrics.totals[key]} md (${percentage.toFixed(0)}%)"></div>`;
                     }).join('');
                   })()}
                 </div>
-                <div class="d-flex justify-content-between mt-1">
-                  <div class="small text-secondary">Complexity: <span class="badge bg-${metrics.complexity === 'High' ? 'danger' : metrics.complexity === 'Medium' ? 'warning' : 'success'}">${metrics.complexity}</span></div>
+                <div class="row row-cols-${Math.min(metrics.keys.length, 3)} g-1 mt-2">
+                  ${metrics.keys.map(key => `
+                    <div class="col">
+                      <div class="text-center">
+                        <div class="small fw-bold" style="color: ${effortTypeColor(key)}">${effortTypeTitle(key).substring(0, 3)}</div>
+                        <div class="small text-secondary">${metrics.totals[key]} md</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                  <div class="small text-secondary">
+                    Critical: <span class="fw-bold text-primary">${metrics.criticalPhaseName}</span>
+                  </div>
                   <div class="small text-secondary">Avg: ${metrics.avgDailyEffort} md/day</div>
                 </div>
               </div>
@@ -1147,9 +1271,9 @@
                 <button class="btn btn-sm btn-outline-secondary" data-action="edit" title="Edit Plan">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-info" data-action="effort" title="Edit Task Efforts">
-                  <i class="bi bi-bar-chart-line"></i>
-                </button>
+                                  <button class="btn btn-sm btn-outline-info" data-action="effort" title="Edit Task Efforts">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
                 <button class="btn btn-sm btn-outline-info" data-action="duplicate" title="Duplicate Plan">
                   <i class="bi bi-files"></i>
                 </button>
@@ -1193,24 +1317,55 @@
           const mm = new bootstrap.Modal(byId('manageModal'));
           mm.show();
           byId('tab-efforts').click();
-          byId('eff-proj').value = p.projectId;
-          byId('eff-proj').dispatchEvent(new Event('change'));
+          // Use setTimeout to ensure the modal is fully loaded before setting the value
+          setTimeout(() => {
+            const projectSelect = byId('eff-proj');
+            if (projectSelect) {
+              projectSelect.value = p.projectId;
+              projectSelect.dispatchEvent(new Event('change'));
+            }
+          }, 100);
         }
       };
 
       col.querySelector('[data-action=duplicate]').onclick = (e) => {
         e.stopPropagation();
+        // Prevent multiple clicks
+        const button = e.currentTarget;
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+
         duplicateEntity('plan', p.id);
-        // Refresh the plans listing to show the duplicated plan
-        setTimeout(() => refreshPlansListing(), 100);
+
+        // Refresh the plans listing after a longer delay to ensure duplication is complete
+        setTimeout(() => {
+          refreshPlansListing();
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }, 300);
       };
 
       col.querySelector('[data-action=delete]').onclick = (e) => {
         e.stopPropagation();
-        if (confirm(`Delete plan "${p.title}"?`)) {
+        if (confirm(`Delete plan "${p.title}"? This action cannot be undone.`)) {
+          // Prevent multiple clicks
+          const button = e.currentTarget;
+          const originalText = button.innerHTML;
+          button.disabled = true;
+          button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+
           state.proposals = state.proposals.filter(x => x.id !== p.id);
           save();
+
+          // Refresh the plans listing immediately
           refreshPlansListing();
+
+          // Re-enable button after a short delay
+          setTimeout(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+          }, 200);
         }
       };
 
