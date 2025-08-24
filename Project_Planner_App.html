@@ -65,6 +65,10 @@
     #phaseTaskMatrix th{position:sticky;top:0;background:var(--bs-body-bg)}
     #phaseTaskMatrix th:first-child{position:sticky;left:0;background:var(--bs-body-bg);z-index:2}
     #phaseTaskMatrix td:first-child{position:sticky;left:0;background:var(--bs-body-bg);z-index:1}
+    .specialty-field{background:var(--bs-light)!important; color:var(--bs-dark)!important; border:1px solid var(--bs-border-color)!important; min-height:38px; display:flex; align-items:center; font-weight:500; border-radius:0.375rem; box-shadow:inset 0 1px 2px rgba(0,0,0,.075); transition:border-color .15s ease-in-out,box-shadow .15s ease-in-out}
+    .capacity-indicator{transition:transform .15s ease-in-out}
+    .capacity-indicator:hover{transform:scale(1.2)}
+    .capacity-tooltip{pointer-events:none}
 
   </style>
 </head>
@@ -681,7 +685,11 @@
             { id: "assign-9", memberId: "member-9", specialty: "Online", startDate: "2025-08-13", endDate: null },
             { id: "assign-10", memberId: "member-10", specialty: "QA", startDate: "2025-08-13", endDate: null },
             { id: "assign-11", memberId: "member-11", specialty: "QA", startDate: "2025-08-13", endDate: null },
-            { id: "assign-12", memberId: "member-12", specialty: "QA", startDate: "2025-08-13", endDate: null }
+            { id: "assign-12", memberId: "member-12", specialty: "QA", startDate: "2025-08-13", endDate: null },
+            // Add some capacity changes for testing
+            { id: "assign-13", memberId: "member-13", specialty: "BE", startDate: "2025-09-15", endDate: null },
+            { id: "assign-14", memberId: "member-14", specialty: "iOS", startDate: "2025-09-20", endDate: null },
+            { id: "assign-15", memberId: "member-15", specialty: "Android", startDate: "2025-08-25", endDate: "2025-10-15" }
           ]
         },
         { 
@@ -1033,6 +1041,29 @@
         tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${teamSizes[k]||0}</td><td><small class="text-muted">engineers</small></td><td></td>`;
         tbTeam.appendChild(tr);
       });
+      
+      // Add capacity trend chart
+      if (team && team.memberAssignments && team.memberAssignments.length > 0) {
+        const chartContainer = document.createElement('div');
+        chartContainer.className = 'mt-3';
+        chartContainer.innerHTML = `
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0"><i class="bi bi-graph-up"></i> Capacity Trend Over Time</h6>
+            </div>
+            <div class="card-body">
+              <div id="capacity-chart" style="height: 200px; position: relative;"></div>
+            </div>
+          </div>
+        `;
+        
+        // Insert chart after the table
+        const teamTableContainer = byId('teamTable').closest('.table-responsive');
+        teamTableContainer.parentNode.insertBefore(chartContainer, teamTableContainer.nextSibling);
+        
+        // Generate capacity trend data and render chart
+        renderCapacityTrendChart(team, sched.chartStart, sched.chartEnd);
+      }
       const lf = byId('lane-menu');
       lf.innerHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" id="chkReleases"><label class="form-check-label" for="chkReleases"><span class="badge-lane"><span class="dot" style="background:#6f42c1"></span>Releases</span></label></div>`+
         `<div class="form-check"><input class="form-check-input" type="checkbox" id="chkSprints"><label class="form-check-label" for="chkSprints"><span class="badge-lane"><span class="dot" style="background:#dc3545"></span>Sprints</span></label></div>`+
@@ -1221,6 +1252,162 @@
         container.appendChild(lane);
       });
       drawRulerAndGrid(scroll, sched.chartStart, totalDays, pxPerDay, container.scrollHeight || 0);
+      
+      // Capacity change indicators on top of affected lanes
+      try {
+        // Remove any previous capacity indicators
+        scroll.querySelectorAll('.capacity-indicator,.capacity-tooltip').forEach(n => n.remove());
+        
+        // Get the current team from the plan
+        const currentTeam = getTeam(p.teamId);
+        if (!currentTeam || !currentTeam.memberAssignments) return;
+        
+        // Find all unique change dates from team member assignments
+        const changeDates = new Set();
+        currentTeam.memberAssignments.forEach(assignment => {
+          if (assignment.startDate) changeDates.add(assignment.startDate);
+          if (assignment.endDate) changeDates.add(assignment.endDate);
+        });
+        
+        if (changeDates.size === 0) return;
+        
+        // Sort dates and filter to only include dates within chart range
+        const sortedDates = Array.from(changeDates)
+          .map(date => new Date(date))
+          .filter(date => date >= sched.chartStart && date <= sched.chartEnd)
+          .sort((a, b) => a - b);
+        
+        if (sortedDates.length === 0) return;
+        
+        function getCapacityForDate(team, targetDate) {
+          if (!team || !team.memberAssignments) return {};
+          
+          const capacities = {};
+          const date = new Date(targetDate);
+          
+          team.memberAssignments.forEach(assignment => {
+            if (assignment.specialty && assignment.startDate) {
+              const startDate = new Date(assignment.startDate);
+              const endDate = assignment.endDate ? new Date(assignment.endDate) : null;
+              
+              // Only count members who are active on the target date
+              if (startDate <= date && (!endDate || date < endDate)) {
+                capacities[assignment.specialty] = (capacities[assignment.specialty] || 0) + 1;
+              }
+            }
+          });
+          
+          return capacities;
+        }
+        
+        function describeChange(prev, curr) {
+          const keys = new Set([...Object.keys(prev || {}), ...Object.keys(curr || {})]);
+          const adds = []; const removes = [];
+          keys.forEach(k => {
+            const d = (curr[k] || 0) - (prev[k] || 0);
+            if (d > 0) adds.push(`${d} ${k} ${d > 1 ? 'Engineers' : 'Engineer'} joining`);
+            else if (d < 0) removes.push(`${Math.abs(d)} ${k} ${Math.abs(d) > 1 ? 'Engineers' : 'Engineer'} leaving`);
+          });
+          const parts = [];
+          if (adds.length) parts.push(adds.join(', '));
+          if (removes.length) parts.push(removes.join(', '));
+          return parts.length ? parts.join(' and ') : 'No net change';
+        }
+        
+        // Create tooltip container
+        const tooltip = document.createElement('div');
+        tooltip.className = 'capacity-tooltip';
+        tooltip.style.position = 'absolute';
+        tooltip.style.background = '#1f2937';
+        tooltip.style.color = '#fff';
+        tooltip.style.border = '1px solid #111827';
+        tooltip.style.borderRadius = '.35rem';
+        tooltip.style.boxShadow = '0 8px 24px rgba(0,0,0,.25)';
+        tooltip.style.padding = '.4rem .6rem';
+        tooltip.style.fontSize = '0.78rem';
+        tooltip.style.lineHeight = '1.2';
+        tooltip.style.zIndex = '10';
+        tooltip.style.display = 'none';
+        tooltip.style.maxWidth = '300px';
+        tooltip.style.whiteSpace = 'nowrap';
+        scroll.appendChild(tooltip);
+        
+        // For each change date, create indicators per affected specialty
+        sortedDates.forEach(changeDate => {
+          // Get capacity before and after the change
+          const dayBefore = addBusinessDays(changeDate, -1);
+          const prevCap = getCapacityForDate(currentTeam, dayBefore);
+          const currCap = getCapacityForDate(currentTeam, changeDate);
+          
+          const keys = new Set([...Object.keys(prevCap || {}), ...Object.keys(currCap || {})]);
+          const sOff = Math.max(0, daysBetween(sched.chartStart, changeDate));
+          const leftPx = labelPad + sOff * pxPerDay;
+          
+          keys.forEach(k => {
+            const d = (currCap[k] || 0) - (prevCap[k] || 0);
+            if (d === 0) return; // No change for this specialty
+            
+            // Find the lane for this specialty
+            const laneEl = Array.from(container.querySelectorAll('.lane')).find(el => 
+              (el.dataset.lane || '') === k || 
+              el.querySelector('.lane-label')?.textContent === k || 
+              false
+            );
+            
+            if (!laneEl) return;
+            
+            // Get lane position and place indicator in the middle of the lane
+            const containerRectTop = container.getBoundingClientRect().top;
+            const laneRect = laneEl.getBoundingClientRect();
+            const laneTop = laneRect.top - containerRectTop;
+            const laneHeight = laneRect.height;
+            const laneMiddle = laneTop + (laneHeight / 2);
+            
+            // Create indicator positioned in the middle of the lane
+            const indicator = document.createElement('div');
+            indicator.className = 'capacity-indicator';
+            indicator.style.position = 'absolute';
+            indicator.style.left = (leftPx - 6) + 'px';
+            indicator.style.top = (laneMiddle - 6) + 'px';
+            indicator.style.width = '12px';
+            indicator.style.height = '12px';
+            indicator.style.borderRadius = '50%';
+            indicator.style.background = d > 0 ? '#28a745' : '#dc3545';
+            indicator.style.border = '2px solid #fff';
+            indicator.style.boxShadow = '0 2px 4px rgba(0,0,0,.3)';
+            indicator.style.cursor = 'pointer';
+            indicator.style.zIndex = '5';
+            indicator.title = `${Math.abs(d)} ${k} ${Math.abs(d) > 1 ? 'Engineers' : 'Engineer'} ${d > 0 ? 'joining' : 'leaving'}`;
+            
+            // Add click event for tooltip
+            indicator.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const changeDesc = describeChange(prevCap, currCap);
+              tooltip.textContent = changeDesc;
+              
+              // Position tooltip above the indicator, ensuring it's visible
+              const tooltipWidth = 300; // Approximate tooltip width
+              const scrollWidth = scroll.scrollWidth || container.scrollWidth || 0;
+              let tooltipLeft = leftPx + 8;
+              
+              // Adjust if tooltip would go off the right edge
+              if (tooltipLeft + tooltipWidth > scrollWidth) {
+                tooltipLeft = Math.max(8, leftPx - tooltipWidth - 8);
+              }
+              
+              tooltip.style.left = tooltipLeft + 'px';
+              tooltip.style.top = (laneMiddle - 40) + 'px';
+              tooltip.style.display = 'block';
+            });
+            
+            scroll.appendChild(indicator);
+          });
+        });
+        
+        // Hide tooltip on background click
+        scroll.addEventListener('click', () => { tooltip.style.display = 'none'; });
+      } catch (e) { /* non-fatal */ }
+      
       const zr = byId('zoomRange'), zm = byId('zoomMinus'), zp = byId('zoomPlus'), zf = byId('zoomFit');
       const fr = byId('fontRange'), fm = byId('fontMinus'), fp = byId('fontPlus');
       zr.oninput = (e)=>{ p.pxPerDay = +e.target.value; save(); openDetail(p.id); };
@@ -3207,6 +3394,162 @@
 
       }
     initApp();
+
+    // Capacity Trend Chart Function
+    window.renderCapacityTrendChart = function(team, chartStart, chartEnd) {
+      const chartContainer = byId('capacity-chart');
+      if (!chartContainer || !team || !team.memberAssignments) return;
+      
+      // Calculate daily capacity for each specialty over the chart period
+      const specialties = [...new Set(team.memberAssignments.map(a => a.specialty))];
+      const chartDays = Math.max(1, daysBetween(chartStart, addBusinessDays(chartEnd, 1)));
+      
+      // Generate daily capacity data
+      const capacityData = {};
+      specialties.forEach(specialty => {
+        capacityData[specialty] = [];
+        for (let day = 0; day <= chartDays; day++) {
+          const date = addBusinessDays(chartStart, day);
+          const capacity = getTeamSizesForDate(team, date)[specialty] || 0;
+          capacityData[specialty].push({
+            day: day,
+            date: date,
+            capacity: capacity
+          });
+        }
+      });
+      
+      // Create SVG chart
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.style.position = 'absolute';
+      svg.style.top = '0';
+      svg.style.left = '0';
+      
+      const chartWidth = chartContainer.offsetWidth - 40; // Account for padding
+      const chartHeight = 160;
+      const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+      const width = chartWidth - margin.left - margin.right;
+      const height = chartHeight - margin.top - margin.bottom;
+      
+      // Create chart group
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('transform', `translate(${margin.left}, ${margin.top})`);
+      
+      // Add chart background
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bg.setAttribute('width', width);
+      bg.setAttribute('height', height);
+      bg.setAttribute('fill', 'var(--bs-tertiary-bg)');
+      bg.setAttribute('stroke', 'var(--bs-border-color)');
+      bg.setAttribute('stroke-width', '1');
+      g.appendChild(bg);
+      
+      // Add grid lines
+      const maxCapacity = Math.max(...Object.values(capacityData).flatMap(data => data.map(d => d.capacity)));
+      const gridLines = Math.min(5, maxCapacity + 1);
+      
+      for (let i = 0; i <= gridLines; i++) {
+        const y = height - (i / gridLines) * height;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', '0');
+        line.setAttribute('y1', y);
+        line.setAttribute('x2', width);
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', 'var(--bs-border-color)');
+        line.setAttribute('stroke-width', '0.5');
+        line.setAttribute('opacity', '0.3');
+        g.appendChild(line);
+        
+        // Add Y-axis labels
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', '-5');
+        label.setAttribute('y', y + 3);
+        label.setAttribute('text-anchor', 'end');
+        label.setAttribute('font-size', '10');
+        label.setAttribute('fill', 'var(--bs-secondary-color)');
+        label.textContent = i;
+        g.appendChild(label);
+      }
+      
+      // Add X-axis grid lines (weekly)
+      for (let day = 0; day <= chartDays; day += 7) {
+        const x = (day / chartDays) * width;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x);
+        line.setAttribute('y1', '0');
+        line.setAttribute('x2', x);
+        line.setAttribute('y2', height);
+        line.setAttribute('stroke', 'var(--bs-border-color)');
+        line.setAttribute('stroke-width', '0.5');
+        line.setAttribute('opacity', '0.3');
+        g.appendChild(line);
+        
+        // Add X-axis labels
+        const date = addBusinessDays(chartStart, day);
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', x);
+        label.setAttribute('y', height + 15);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('font-size', '9');
+        label.setAttribute('fill', 'var(--bs-secondary-color)');
+        label.textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        g.appendChild(label);
+      }
+      
+      // Draw capacity lines for each specialty
+      const colors = {
+        'BE': '#9c755f',
+        'iOS': '#4e79a7',
+        'Android': '#59a14f',
+        'Online': '#f28e2c',
+        'QA': '#edc948'
+      };
+      
+      specialties.forEach(specialty => {
+        const data = capacityData[specialty];
+        if (!data || data.length < 2) return;
+        
+        // Create path for the line
+        let pathData = '';
+        data.forEach((point, index) => {
+          const x = (point.day / chartDays) * width;
+          const y = height - (point.capacity / maxCapacity) * height;
+          if (index === 0) {
+            pathData += `M ${x} ${y}`;
+          } else {
+            pathData += ` L ${x} ${y}`;
+          }
+        });
+        
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathData);
+        path.setAttribute('stroke', colors[specialty] || '#6c757d');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        g.appendChild(path);
+        
+        // Add specialty label
+        const lastPoint = data[data.length - 1];
+        const labelX = (lastPoint.day / chartDays) * width + 5;
+        const labelY = height - (lastPoint.capacity / maxCapacity) * height;
+        
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', labelX);
+        label.setAttribute('y', labelY + 3);
+        label.setAttribute('font-size', '11');
+        label.setAttribute('font-weight', '500');
+        label.setAttribute('fill', colors[specialty] || '#6c757d');
+        label.textContent = specialty;
+        g.appendChild(label);
+      });
+      
+      svg.appendChild(g);
+      chartContainer.appendChild(svg);
+    };
   </script>
 
 </body>
