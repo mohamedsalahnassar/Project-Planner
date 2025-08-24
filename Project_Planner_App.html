@@ -668,6 +668,8 @@
       import { aggregate, computeSchedule, calculateTaskDurationWithCapacityChanges } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, exportTeamJSON, importTeamJSON, exportTeamMemberJSON, importTeamMemberJSON, exportTeamMembersCSV, exportTeamsCSV, validateColumns } from './export.js';
       import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints, defaultPlanLanes, getTeamSizes, getTeamSizesForDate, createDefaultTeam, getAllTeamMembers, getTeamMember, addTeamMember, updateTeamMember, deleteTeamMember, createDefaultTeamMember } from './data.js';
+      import { aggregate, computeSchedule, duration, computeDailyCapacity, findCapacityChangePoints, businessDaysBetween } from './schedule.js';
+      import { exportStateJSON, importStateJSON, exportTeamMembersCSV, exportTeamsCSV, exportPlanJSON, importPlanJSON, exportTeamJSON, importTeamJSON, exportTeamMemberJSON, importTeamMemberJSON } from './export.js';
       load();
       ensureSprints();
     /* ===================== APP CODE (v20) ===================== */
