@@ -3968,212 +3968,284 @@
     };
   </script>
 
-  <!-- Export/Import Panel Modal -->
+  <!-- Data Management Panel Modal -->
   <div class="modal fade" id="exportImportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title"><i class="bi bi-database"></i> Data Management Panel</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-xl" style="max-width: 95vw; max-height: 95vh; margin-top: 2vh; margin-bottom: 2vh;">
+      <div class="modal-content" style="height: 91vh;">
+        <div class="modal-header bg-primary text-white">
+          <h4 class="modal-title mb-0">
+            <i class="bi bi-database me-2"></i>
+            Data Management Panel
+          </h4>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <div class="row">
-            <!-- Export Section -->
-            <div class="col-md-4">
-              <div class="card">
-                <div class="card-header">
-                  <h6 class="mb-0"><i class="bi bi-download"></i> Export Options</h6>
-                </div>
-                <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">Export Current Plan</label>
-                    <button class="btn btn-outline-primary w-100" id="export-current-plan">
-                      <i class="bi bi-file-earmark-code"></i> Export Plan JSON
-                    </button>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">Export Entire Application State</label>
-                    <button class="btn btn-outline-success w-100" id="export-full-state">
-                      <i class="bi bi-database"></i> Export Full State JSON
-                    </button>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">Export Teams & Members</label>
-                    <div class="d-grid gap-2">
-                      <button class="btn btn-outline-secondary" id="export-teams-csv">
-                        <i class="bi bi-file-earmark-text"></i> Export Teams CSV
-                      </button>
-                      <button class="btn btn-outline-secondary" id="export-members-csv">
-                        <i class="bi bi-file-earmark-text"></i> Export Team Members CSV
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">Export Individual Items</label>
-                    <div class="row g-2">
-                      <div class="col-6">
-                        <select class="form-select form-select-sm" id="team-select-export">
-                          <option value="">Select Team...</option>
-                        </select>
-                      </div>
-                      <div class="col-6">
-                        <button class="btn btn-outline-info btn-sm w-100" id="export-selected-team" disabled>
-                          <i class="bi bi-download"></i> Export Team
-                        </button>
-                      </div>
-                    </div>
-                    <div class="row g-2 mt-2">
-                      <div class="col-6">
-                        <select class="form-select form-select-sm" id="member-select-export">
-                          <option value="">Select Member...</option>
-                        </select>
-                      </div>
-                      <div class="col-6">
-                        <button class="btn btn-outline-info btn-sm w-100" id="export-selected-member" disabled>
-                          <i class="bi bi-download"></i> Export Member
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Import Section -->
-            <div class="col-md-4">
-              <div class="card">
-                <div class="card-header">
-                  <h6 class="mb-0"><i class="bi bi-upload"></i> Import Options</h6>
-                </div>
-                <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">Import Plan</label>
-                    <div class="input-group">
-                      <input type="file" class="form-control" id="import-plan-file" accept=".json">
-                      <button class="btn btn-outline-primary" id="import-plan-btn" disabled>
-                        <i class="bi bi-upload"></i> Import
-                      </button>
-                    </div>
-                    <small class="text-muted">Import a single plan JSON file</small>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">Import Full State</label>
-                    <div class="input-group">
-                      <input type="file" class="form-control" id="import-state-file" accept=".json">
-                      <button class="btn btn-outline-success" id="import-state-btn" disabled>
-                        <i class="bi bi-upload"></i> Import
-                      </button>
-                    </div>
-                    <small class="text-muted">Import complete application state</small>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">Import Team/Member Data</label>
-                    <div class="input-group">
-                      <input type="file" class="form-control" id="import-team-file" accept=".json">
-                      <button class="btn btn-outline-secondary" id="import-team-btn" disabled>
-                        <i class="bi bi-upload"></i> Import
-                      </button>
-                    </div>
-                    <small class="text-muted">Import team or member JSON files</small>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">Import Tasks (CSV/Excel)</label>
-                    <div class="input-group">
-                      <input type="file" class="form-control" id="import-tasks-file" accept=".csv,.xlsx,.xls">
-                      <button class="btn btn-outline-secondary" id="import-tasks-btn" disabled>
-                        <i class="bi bi-upload"></i> Import
-                      </button>
-                    </div>
-                    <small class="text-muted">Import tasks from CSV or Excel files</small>
-                  </div>
-                  
-                  <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Import Notes:</strong>
-                    <ul class="mb-0 mt-2">
-                      <li>Plans will be added to your existing proposals</li>
-                      <li>Full state import will replace current data</li>
-                      <li>Team/member imports will merge with existing data</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Data Management Section -->
-            <div class="col-md-4">
-              <div class="card">
-                <div class="card-header">
-                  <h6 class="mb-0"><i class="bi bi-gear"></i> Data Management</h6>
-                </div>
-                <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">Reset & Defaults</label>
-                    <button class="btn btn-outline-danger w-100" id="reset-to-defaults">
-                      <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
-                    </button>
-                    <small class="text-muted">Reset all data to initial state</small>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">Excel Export Options</label>
-                    <div class="d-grid gap-2">
-                      <button class="btn btn-outline-success" id="export-project-excel">
-                        <i class="bi bi-file-earmark-excel"></i> Export Project Excel
-                      </button>
-                      <button class="btn btn-outline-success" id="export-plan-excel">
-                        <i class="bi bi-file-earmark-excel"></i> Export Plan Excel
-                      </button>
-                      <button class="btn btn-outline-success" id="export-project-excel-styled">
-                        <i class="bi bi-file-earmark-excel"></i> Export Project Excel (Styled)
-                      </button>
-                      <button class="btn btn-outline-success" id="export-plan-excel-styled">
-                        <i class="bi bi-file-earmark-excel"></i> Export Plan Excel (Styled)
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">CSV Export Options</label>
-                    <div class="d-grid gap-2">
-                      <button class="btn btn-outline-secondary" id="export-tasks-csv">
-                        <i class="bi bi-file-earmark-text"></i> Export Tasks CSV
-                      </button>
-                      <button class="btn btn-outline-secondary" id="export-tasks-xlsx">
-                        <i class="bi bi-file-earmark-spreadsheet"></i> Export Tasks XLSX
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div class="mb-3">
-                    <label class="form-label">PDF Export Options</label>
-                    <div class="d-grid gap-2">
-                      <button class="btn btn-outline-primary" id="export-project-pdf">
-                        <i class="bi bi-file-earmark-pdf"></i> Export Project PDF
-                      </button>
-                      <button class="btn btn-outline-primary" id="export-plan-pdf">
-                        <i class="bi bi-file-earmark-pdf"></i> Export Plan PDF
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Warning:</strong> Reset operation will permanently delete all current data and cannot be undone.
+        <div class="modal-body" style="height: calc(91vh - 70px); overflow-y: auto;">
+          <!-- Overview Section -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="alert alert-info border-0 rounded-3">
+                <div class="d-flex align-items-start">
+                  <i class="bi bi-info-circle-fill me-3 mt-1" style="font-size: 1.2rem;"></i>
+                  <div>
+                    <h6 class="mb-2 fw-bold">Data Management Overview</h6>
+                    <p class="mb-0">Manage all your project data with comprehensive export, import, and reset capabilities. Choose from the organized sections below to perform specific operations.</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+          <div class="row g-4">
+            <!-- Export Section -->
+            <div class="col-lg-4">
+              <div class="card h-100 border-primary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                  <h6 class="mb-0">
+                    <i class="bi bi-download me-2"></i>
+                    Export Data
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <!-- Quick Export Options -->
+                  <div class="mb-4">
+                    <h6 class="text-primary mb-3">
+                      <i class="bi bi-lightning-charge me-1"></i>
+                      Quick Export
+                    </h6>
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-outline-primary d-flex align-items-center justify-content-start px-3 py-2" id="export-current-plan">
+                        <i class="bi bi-file-earmark-code me-3" style="width: 20px;"></i>
+                        <span>Export Current Plan (JSON)</span>
+                      </button>
+                      <button class="btn btn-outline-success d-flex align-items-center justify-content-start px-3 py-2" id="export-full-state">
+                        <i class="bi bi-database me-3" style="width: 20px;"></i>
+                        <span>Export Full Application State</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Team & Member Exports -->
+                  <div class="mb-4">
+                    <h6 class="text-primary mb-3">
+                      <i class="bi bi-people me-1"></i>
+                      Team & Member Data
+                    </h6>
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-outline-secondary d-flex align-items-center justify-content-start px-3 py-2" id="export-teams-csv">
+                        <i class="bi bi-file-earmark-text me-3" style="width: 20px;"></i>
+                        <span>Export Teams (CSV)</span>
+                      </button>
+                      <button class="btn btn-outline-secondary d-flex align-items-center justify-content-start px-3 py-2" id="export-members-csv">
+                        <i class="bi bi-file-earmark-text me-3" style="width: 20px;"></i>
+                        <span>Export Team Members (CSV)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Individual Item Export -->
+                  <div class="mb-4">
+                    <h6 class="text-primary mb-3">
+                      <i class="bi bi-search me-1"></i>
+                      Export Individual Items
+                    </h6>
+                    <div class="row g-3">
+                      <div class="col-sm-6">
+                        <label class="form-label small fw-bold">Select Team:</label>
+                        <select class="form-select form-select-sm" id="team-select-export">
+                          <option value="">Choose team...</option>
+                        </select>
+                        <button class="btn btn-outline-info btn-sm w-100 mt-2" id="export-selected-team" disabled>
+                          <i class="bi bi-download me-1"></i>
+                          Export Team
+                        </button>
+                      </div>
+                      <div class="col-sm-6">
+                        <label class="form-label small fw-bold">Select Member:</label>
+                        <select class="form-select form-select-sm" id="member-select-export">
+                          <option value="">Choose member...</option>
+                        </select>
+                        <button class="btn btn-outline-info btn-sm w-100 mt-2" id="export-selected-member" disabled>
+                          <i class="bi bi-download me-1"></i>
+                          Export Member
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Import Section -->
+            <div class="col-lg-4">
+              <div class="card h-100 border-success shadow-sm">
+                <div class="card-header bg-success text-white">
+                  <h6 class="mb-0">
+                    <i class="bi bi-upload me-2"></i>
+                    Import Data
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <!-- Project Data Import -->
+                  <div class="mb-4">
+                    <h6 class="text-success mb-3">
+                      <i class="bi bi-folder me-1"></i>
+                      Project Data
+                    </h6>
+                    <div class="mb-3">
+                      <label class="form-label small fw-bold">Import Plan (JSON)</label>
+                      <div class="input-group">
+                        <input type="file" class="form-control form-control-sm" id="import-plan-file" accept=".json">
+                        <button class="btn btn-outline-primary btn-sm" id="import-plan-btn" disabled>
+                          <i class="bi bi-upload me-1"></i>
+                          Import
+                        </button>
+                      </div>
+                      <small class="text-muted">Single plan JSON file</small>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label small fw-bold">Import Full State (JSON)</label>
+                      <div class="input-group">
+                        <input type="file" class="form-control form-control-sm" id="import-state-file" accept=".json">
+                        <button class="btn btn-outline-success btn-sm" id="import-state-btn" disabled>
+                          <i class="bi bi-upload me-1"></i>
+                          Import
+                        </button>
+                      </div>
+                      <small class="text-muted">Complete application state</small>
+                    </div>
+                  </div>
+
+                  <!-- Team & Member Import -->
+                  <div class="mb-4">
+                    <h6 class="text-success mb-3">
+                      <i class="bi bi-people me-1"></i>
+                      Team & Member Data
+                    </h6>
+                    <div class="mb-3">
+                      <label class="form-label small fw-bold">Import Team/Member Data (JSON)</label>
+                      <div class="input-group">
+                        <input type="file" class="form-control form-control-sm" id="import-team-file" accept=".json">
+                        <button class="btn btn-outline-secondary btn-sm" id="import-team-btn" disabled>
+                          <i class="bi bi-upload me-1"></i>
+                          Import
+                        </button>
+                      </div>
+                      <small class="text-muted">Team or member JSON files</small>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label small fw-bold">Import Tasks (CSV/Excel)</label>
+                      <div class="input-group">
+                        <input type="file" class="form-control form-control-sm" id="import-tasks-file" accept=".csv,.xlsx,.xls">
+                        <button class="btn btn-outline-secondary btn-sm" id="import-tasks-btn" disabled>
+                          <i class="bi bi-upload me-1"></i>
+                          Import
+                        </button>
+                      </div>
+                      <small class="text-muted">Task data from CSV or Excel</small>
+                    </div>
+                  </div>
+
+                  <!-- Import Notes -->
+                  <div class="alert alert-info border-0 rounded-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Import Notes:</strong>
+                    <ul class="mb-0 mt-2 small">
+                      <li>Plans are added to existing proposals</li>
+                      <li>Full state import replaces current data</li>
+                      <li>Team/member imports merge with existing data</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Advanced Export Options Section -->
+            <div class="col-lg-4">
+              <div class="card h-100 border-warning shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                  <h6 class="mb-0">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+                    Advanced Export Options
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <!-- Excel Exports -->
+                  <div class="mb-4">
+                    <h6 class="text-warning-emphasis mb-3">
+                      <i class="bi bi-file-earmark-excel me-1"></i>
+                      Excel Exports
+                    </h6>
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-outline-success btn-sm d-flex align-items-center justify-content-start px-3" id="export-project-excel">
+                        <i class="bi bi-file-earmark-excel me-3" style="width: 16px;"></i>
+                        <span>Project Excel (Basic)</span>
+                      </button>
+                      <button class="btn btn-outline-success btn-sm d-flex align-items-center justify-content-start px-3" id="export-plan-excel">
+                        <i class="bi bi-file-earmark-excel me-3" style="width: 16px;"></i>
+                        <span>Plan Excel (Basic)</span>
+                      </button>
+                      <button class="btn btn-outline-success btn-sm d-flex align-items-center justify-content-start px-3" id="export-project-excel-styled">
+                        <i class="bi bi-palette me-3" style="width: 16px;"></i>
+                        <span>Project Excel (Styled)</span>
+                      </button>
+                      <button class="btn btn-outline-success btn-sm d-flex align-items-center justify-content-start px-3" id="export-plan-excel-styled">
+                        <i class="bi bi-palette me-3" style="width: 16px;"></i>
+                        <span>Plan Excel (Styled)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- CSV & PDF Exports -->
+                  <div class="mb-4">
+                    <h6 class="text-warning-emphasis mb-3">
+                      <i class="bi bi-file-earmark-text me-1"></i>
+                      CSV & PDF
+                    </h6>
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-start px-3" id="export-tasks-csv">
+                        <i class="bi bi-file-earmark-text me-3" style="width: 16px;"></i>
+                        <span>Tasks CSV</span>
+                      </button>
+                      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-start px-3" id="export-tasks-xlsx">
+                        <i class="bi bi-file-earmark-spreadsheet me-3" style="width: 16px;"></i>
+                        <span>Tasks XLSX</span>
+                      </button>
+                      <button class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-start px-3" id="export-project-pdf">
+                        <i class="bi bi-file-earmark-pdf me-3" style="width: 16px;"></i>
+                        <span>Project PDF</span>
+                      </button>
+                      <button class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-start px-3" id="export-plan-pdf">
+                        <i class="bi bi-file-earmark-pdf me-3" style="width: 16px;"></i>
+                        <span>Plan PDF</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Data Management -->
+                  <div class="mb-4">
+                    <h6 class="text-warning-emphasis mb-3">
+                      <i class="bi bi-gear me-1"></i>
+                      Data Management
+                    </h6>
+                    <div class="d-grid gap-3">
+                      <button class="btn btn-outline-danger d-flex align-items-center justify-content-start px-3 py-2" id="reset-to-defaults">
+                        <i class="bi bi-arrow-counterclockwise me-3" style="width: 20px;"></i>
+                        <span>Reset to Defaults</span>
+                      </button>
+                      <div class="alert alert-warning border-0 rounded-3 p-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong>
+                        <br>
+                        <small>Reset permanently deletes all current data and cannot be undone.</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
