@@ -31,6 +31,153 @@
     .plans-action-btn:hover{transform:scale(1.05)}
     .seg{height:8px;flex:1 1 0}
     .gantt-wrap{border:1px solid var(--bs-border-color); border-radius:.75rem; overflow:hidden}
+
+    /* Phase 7: Enhanced Manage Modal Styling */
+    #manageModal .modal-content {
+      background: rgba(13, 17, 23, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    #manageModal .modal-header {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+    
+    #manageModal .modal-body {
+      padding: 1.5rem;
+      background: rgba(15, 23, 42, 0.3);
+    }
+    
+    #manageTabs {
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 1.5rem;
+    }
+    
+    #manageTabs .nav-link {
+      border: none;
+      border-radius: 0.5rem 0.5rem 0 0;
+      margin-right: 0.25rem;
+      padding: 0.75rem 1rem;
+      transition: all 0.2s ease-in-out;
+      color: rgba(255, 255, 255, 0.7);
+      background: transparent;
+    }
+    
+    #manageTabs .nav-link:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.9);
+      transform: translateY(-1px);
+    }
+    
+    #manageTabs .nav-link.active {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.3));
+      color: #ffffff;
+      border-bottom: 2px solid #3b82f6;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+    
+    .tab-pane {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Enhanced table styling in manage modal */
+    #manageModal .table {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    
+    #manageModal .table thead th {
+      background: rgba(30, 41, 59, 0.6);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 600;
+      padding: 1rem 0.75rem;
+    }
+    
+    #manageModal .table tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background-color 0.2s ease-in-out;
+    }
+    
+    #manageModal .table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    #manageModal .table td {
+      padding: 0.875rem 0.75rem;
+      vertical-align: middle;
+    }
+    
+    /* Enhanced form controls */
+    #manageModal .form-control, 
+    #manageModal .form-select {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      transition: all 0.2s ease-in-out;
+    }
+    
+    #manageModal .form-control:focus, 
+    #manageModal .form-select:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+    
+    #manageModal .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    /* Enhanced action buttons */
+    #manageModal .btn {
+      transition: all 0.2s ease-in-out;
+      border-radius: 0.375rem;
+    }
+    
+    #manageModal .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Enhanced cards */
+    #manageModal .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.75rem;
+      backdrop-filter: blur(5px);
+    }
+    
+    #manageModal .card-header {
+      background: rgba(30, 41, 59, 0.4);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 600;
+    }
+    
+    /* Enhanced search and filter controls */
+    #manageModal .input-group-text {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    /* Enhanced spacing */
+    #manageModal .tab-pane > .d-flex.justify-content-between {
+      margin-bottom: 1.5rem;
+    }
+    
+    #manageModal .table-responsive {
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
     .gantt-toolbar{position:sticky;top:0;z-index:2;background:var(--bs-body-bg);border-bottom:1px solid var(--bs-border-color)}
     .gantt{position:relative; height:540px; overflow:auto; cursor:grab}
     .gantt:active{cursor:grabbing}
