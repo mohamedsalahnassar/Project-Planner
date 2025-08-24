@@ -77,6 +77,9 @@
     .capacity-indicator{transition:transform .15s ease-in-out}
     .capacity-indicator:hover{transform:scale(1.2)}
     .capacity-tooltip{pointer-events:none}
+    /* Effort distribution styling (common style) */
+    .dist-bar{height:8px;background:var(--bs-tertiary-bg);border-radius:999px;overflow:hidden;display:flex}
+    .dist-seg{height:100%}
     
     /* Toast styling */
     #toast-container .toast {
@@ -1231,41 +1234,31 @@
 
                         <!-- Effort Distribution -->
             <div class="mb-3">
-              <div class="small text-secondary mb-1">
-                <i class="bi bi-bar-chart-line me-1"></i>
-                Effort Distribution by Specialty
+              <div class="small text-secondary mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-bar-chart-line"></i>
+                <span>Effort distribution</span>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-auto">${metrics.keys.length} specialties</span>
               </div>
-              <div class="border rounded p-2 bg-light">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div class="small fw-bold">Work Breakdown</div>
-                  <div class="small text-secondary">${metrics.keys.length} specialties</div>
-                </div>
-                <div class="d-flex gap-1" style="height: 24px;">
+              <div class="border rounded-3 p-2">
+                <div class="dist-bar">
                   ${(() => {
                     const total = Object.values(metrics.totals).reduce((sum, val) => sum + val, 0) || 1;
                     return metrics.keys.map(key => {
-                      const percentage = (metrics.totals[key] / total) * 100;
+                      const pct = (metrics.totals[key] / total) * 100;
                       const color = effortTypeColor(key);
-                      return `<div class="rounded" style="width: ${percentage}%; min-width: 8px; height: 100%; background-color: ${color};"
-                           title="${effortTypeTitle(key)}: ${metrics.totals[key]} md (${percentage.toFixed(0)}%)"></div>`;
+                      const title = `${effortTypeTitle(key)}: ${metrics.totals[key]} md (${pct.toFixed(0)}%)`;
+                      return `<div class="dist-seg" style="width:${pct}%; min-width:6px; background:${color}" title="${title}"></div>`;
                     }).join('');
                   })()}
                 </div>
-                <div class="row row-cols-${Math.min(metrics.keys.length, 3)} g-1 mt-2">
+                <div class="d-flex flex-wrap gap-2 mt-2">
                   ${metrics.keys.map(key => `
-                    <div class="col">
-                      <div class="text-center">
-                        <div class="small fw-bold" style="color: ${effortTypeColor(key)}">${effortTypeTitle(key).substring(0, 3)}</div>
-                        <div class="small text-secondary">${metrics.totals[key]} md</div>
-                      </div>
-                    </div>
+                    <span class="badge rounded-pill" style="background:${effortTypeColor(key)}; color:#000">${effortTypeTitle(key).substring(0,3)} <span class="opacity-75">${metrics.totals[key]} md</span></span>
                   `).join('')}
                 </div>
-                <div class="d-flex justify-content-between mt-2">
-                  <div class="small text-secondary">
-                    Critical: <span class="fw-bold text-primary">${metrics.criticalPhaseName}</span>
-                  </div>
-                  <div class="small text-secondary">Avg: ${metrics.avgDailyEffort} md/day</div>
+                <div class="d-flex justify-content-between align-items-center mt-2 small text-secondary">
+                  <span>Critical: <span class="fw-semibold text-primary">${metrics.criticalPhaseName}</span></span>
+                  <span>Avg: ${metrics.avgDailyEffort} md/day</span>
                 </div>
               </div>
             </div>
