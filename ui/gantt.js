@@ -211,6 +211,8 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
     sched.phaseWindows.forEach(pw => {
       const info = pw.lanes.find(l => l.key === lane.key);
       if(!info || !info.days) return;
+      // Add phaseId to the info for drag operations
+      info.phaseId = pw.ph;
       bars.push({ info, phase: pw.ph });
     });
 
@@ -235,11 +237,111 @@ export function renderGantt(plan, aggr, eff, getPhase, startDate, options={}){
       if(lane.color) bar.style.background = lane.color;
       bar.style.top = (lanePad + b.track * step) + 'px';
       bar.style.height = `${barHeight}px`;
+      
+      // Add drag-and-drop functionality
+      bar.draggable = true;
+      bar.style.cursor = 'grab';
+      bar.style.userSelect = 'none';
+      
+      // Store bar data for drag operations
+      bar.dataset.phaseId = b.info.phaseId || '';
+      bar.dataset.specialty = lane.key;
+      bar.dataset.originalStart = b.info.start.toISOString();
+      bar.dataset.originalDays = b.info.days;
+      
+      // Add drag event listeners
+      bar.addEventListener('dragstart', handleDragStart);
+      bar.addEventListener('dragend', handleDragEnd);
+      
       laneDiv.appendChild(bar);
     });
 
     root.appendChild(laneDiv);
   });
 
+  // Add drop zone for drag and drop operations
+  addDropZone(root, sched, pxPerDay, totalDays);
+
   return { element: root, schedule: sched };
+}
+
+// Drag and drop event handlers
+function handleDragStart(e) {
+  const bar = e.target;
+  e.dataTransfer.setData('text/plain', JSON.stringify({
+    phaseId: bar.dataset.phaseId,
+    specialty: bar.dataset.specialty,
+    originalStart: bar.dataset.originalStart,
+    originalDays: bar.dataset.originalDays
+  }));
+  
+  bar.style.cursor = 'grabbing';
+  bar.style.opacity = '0.7';
+}
+
+function handleDragEnd(e) {
+  const bar = e.target;
+  bar.style.cursor = 'grab';
+  bar.style.opacity = '1';
+}
+
+// Add drop zone functionality to the chart
+function addDropZone(root, sched, pxPerDay, totalDays) {
+  const dropZone = document.createElement('div');
+  dropZone.className = 'gantt-drop-zone';
+  dropZone.style.position = 'absolute';
+  dropZone.style.top = '0';
+  dropZone.style.left = '0';
+  dropZone.style.right = '0';
+  dropZone.style.bottom = '0';
+  dropZone.style.pointerEvents = 'none';
+  dropZone.style.zIndex = '1';
+  
+  // Make the drop zone active only when dragging
+  document.addEventListener('dragenter', () => {
+    dropZone.style.pointerEvents = 'auto';
+  });
+  
+  document.addEventListener('dragleave', (e) => {
+    if (!root.contains(e.relatedTarget)) {
+      dropZone.style.pointerEvents = 'none';
+    }
+  });
+  
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+  
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.style.pointerEvents = 'none';
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const rect = root.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const dayOffset = Math.round((x / rect.width) * totalDays);
+      
+      // Calculate new start date
+      const newStartDate = addBusinessDays(sched.chartStart, dayOffset);
+      
+      // Emit custom event for the parent to handle rescheduling
+      const rescheduleEvent = new CustomEvent('ganttBarRescheduled', {
+        detail: {
+          phaseId: data.phaseId,
+          specialty: data.specialty,
+          originalStart: data.originalStart,
+          newStartDate: newStartDate.toISOString(),
+          dayOffset: dayOffset
+        }
+      });
+      
+      root.dispatchEvent(rescheduleEvent);
+    } catch (error) {
+      console.error('Error processing drop:', error);
+    }
+  });
+  
+  root.appendChild(dropZone);
 }

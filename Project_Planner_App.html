@@ -974,7 +974,7 @@
           return team;
         };
         
-        const aggr = aggregate(p, state.tasks, getTeamWithDate);
+        const aggr = aggregateWithTeamMembers(p, state.tasks, getTeamWithDate);
         const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
         const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
       byId('detail-title').textContent = p.title;
@@ -1077,7 +1077,7 @@
             .filter(x=>!x.checked).map(x=>x.value);
           save();
           const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
-          const sched = computeSchedule(p, aggregate(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+          const sched = computeSchedule(p, aggregateWithTeamMembers(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
           drawGantt(p, sched);
           renderPhaseDatesTable(sched);
         };
@@ -1088,7 +1088,7 @@
         state.meta.showReleaseLane = chkRel.checked;
         save();
         const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
-        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        const sched = computeSchedule(p, aggregateWithTeamMembers(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
         drawGantt(p, sched);
         renderPhaseDatesTable(sched);
       };
@@ -1098,7 +1098,7 @@
         state.meta.showSprintLane = chkSpr.checked;
         save();
         const vis = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
-        const sched = computeSchedule(p, aggregate(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
+        const sched = computeSchedule(p, aggregateWithTeamMembers(p, state.tasks, getTeamWithDate), state.meta.efficiency, getPhase, state.meta.startDate, {lanes:vis});
         drawGantt(p, sched);
         renderPhaseDatesTable(sched);
       };
@@ -1496,21 +1496,43 @@
       scroll.addEventListener('mousemove', handleHover);
       scroll.addEventListener('mouseleave', hideHover);
     }
-    function makeDraggableBar(bar, plan, sched, daysLen){
-      let startX=0, origLeft=0, dragging=false;
-      bar.addEventListener('mousedown', (e)=>{ dragging=true; startX=e.pageX; origLeft=parseInt(bar.style.left); document.body.style.userSelect='none'; });
-      window.addEventListener('mousemove', (e)=>{ if(!dragging) return; const dx = e.pageX - startX; bar.style.left = (origLeft + dx) + 'px'; });
-      window.addEventListener('mouseup', ()=>{
-        if(!dragging) return; dragging=false; document.body.style.userSelect='';
-        const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
-        const left = parseInt(bar.style.left);
-        const offsetPx = left - labelPad;
-        const days = Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18));
-        const newDate = addBusinessDays(sched.chartStart, days);
-        plan.overrides ||= {}; plan.overrides[bar.dataset.phase] ||= {}; plan.overrides[bar.dataset.phase][bar.dataset.lane] = iso(newDate);
-        save(); openDetail(plan.id);
-      });
-    }
+          function makeDraggableBar(bar, plan, sched, daysLen){
+        let startX=0, origLeft=0, dragging=false;
+        bar.addEventListener('mousedown', (e)=>{ dragging=true; startX=e.pageX; origLeft=parseInt(bar.style.left); document.body.style.userSelect='none'; });
+        window.addEventListener('mousemove', (e)=>{ if(!dragging) return; const dx = e.pageX - startX; bar.style.left = (origLeft + dx) + 'px'; });
+        window.addEventListener('mouseup', ()=>{
+          if(!dragging) return; dragging=false; document.body.style.userSelect='';
+          const labelPad = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-pad'));
+          const left = parseInt(bar.style.left);
+          const offsetPx = left - labelPad;
+          const days = Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18));
+          const newDate = addBusinessDays(sched.chartStart, days);
+          
+          // Update plan overrides
+          plan.overrides ||= {}; 
+          plan.overrides[bar.dataset.phase] ||= {}; 
+          plan.overrides[bar.dataset.phase][bar.dataset.lane] = iso(newDate);
+          
+          // Save and recalculate with capacity-aware scheduling
+          save();
+          
+          // Recalculate the schedule considering capacity changes
+          const aggr = aggregateWithTeamMembers(plan, state.tasks, getTeamWithDate);
+          const newSched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
+          
+          // Redraw the chart with the new schedule
+          drawGantt(plan, newSched);
+          
+          // Update related tables
+          renderPhaseDatesTable(newSched);
+          renderPhaseBreakdownTables(plan);
+          
+          // Show notification
+          const specialty = bar.dataset.lane;
+          const phaseName = getPhase(bar.dataset.phase)?.name || bar.dataset.phase;
+          alert(`Rescheduled ${specialty} work in ${phaseName} to start on ${newDate.toLocaleDateString()}`);
+        });
+      }
     function renderPhaseDatesTable(sched){
       const lanes = sched.lanes;
       const thead = byId('phaseDatesTable').querySelector('thead');
@@ -1774,7 +1796,7 @@
           return team;
         };
         
-        const aggr = aggregate(p, state.tasks, getTeamWithDate);
+        const aggr = aggregateWithTeamMembers(p, state.tasks, getTeamWithDate);
         const visLanes = (p.lanes||[]).filter(l=> !(p.hiddenLanes||[]).includes(l.key));
         const sched = computeSchedule(p, aggr, state.meta.efficiency, getPhase, state.meta.startDate, {lanes:visLanes});
         const totals = Object.fromEntries(effortTypes().map(k=>[k,0]));
@@ -1802,7 +1824,7 @@
         return team;
       };
       
-      const aggr = aggregate(plan, state.tasks, getTeamWithDate);
+      const aggr = aggregateWithTeamMembers(plan, state.tasks, getTeamWithDate);
       const sched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
       const overview = [
         ["Delivery Plan", plan.title],
@@ -3538,6 +3560,28 @@
       
       svg.appendChild(g);
       chartContainer.appendChild(svg);
+    };
+
+    // Global function to get team with date context for capacity calculations
+    window.getTeamWithDate = function(teamId, targetDate = null) {
+      const team = getTeam(teamId);
+      if (!team) return null;
+      
+      // If no target date, return the team as-is
+      if (!targetDate) return team;
+      
+      // Return a team object with capacity calculated for the specific date
+      return {
+        ...team,
+        getCapacityForDate: function(date) {
+          return getTeamSizesForDate(team, date);
+        }
+      };
+    };
+    
+    // Helper function to call aggregate with team members data
+    window.aggregateWithTeamMembers = function(plan, tasks, getTeam, targetDate = null) {
+      return aggregate(plan, tasks, getTeam, targetDate, state.teamMembers);
     };
   </script>
 
