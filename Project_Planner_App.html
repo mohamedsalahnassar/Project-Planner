@@ -630,7 +630,7 @@
   </script>
 
   <script type="module">
-      import { aggregate, computeSchedule } from './schedule.js';
+      import { aggregate, computeSchedule, calculateTaskDurationWithCapacityChanges } from './schedule.js';
       import { exportPlanJSON, importPlanJSON, validateColumns } from './export.js';
       import { state, load, save, getTeam, getPhase, getProject, replaceState, mergeState, assignTaskToPhase, getTaskPhaseIds, getTasksByProject, getTasksByPhase, removeEffortType, DEFAULT_EFFORT_TYPES, ensureSprints, resetSprints, defaultPlanLanes, getTeamSizes, getTeamSizesForDate, createDefaultTeam, getAllTeamMembers, getTeamMember, addTeamMember, updateTeamMember, deleteTeamMember, createDefaultTeamMember } from './data.js';
       load();
@@ -1546,19 +1546,70 @@
           const days = Math.round(offsetPx / (plan.pxPerDay||state.meta.defaultPxPerDay||18));
           const newDate = addBusinessDays(sched.chartStart, days);
           
-          // Update plan overrides
-          plan.overrides ||= {}; 
-          plan.overrides[bar.dataset.phase] ||= {}; 
-          plan.overrides[bar.dataset.phase][bar.dataset.lane] = iso(newDate);
+          // Get the specialty and phase for this bar
+          const specialty = bar.dataset.lane;
+          const phaseId = bar.dataset.phase;
           
-          // Save and recalculate with capacity-aware scheduling
+          // Store the old start date for comparison
+          const oldStartDate = sched.phaseWindows.find(w => w.ph === phaseId)?.lanes.find(l => l.key === specialty)?.start;
+          const oldDateText = oldStartDate ? oldStartDate.toLocaleDateString() : 'original date';
+          
+          // Update plan overrides for this specific specialty and phase only
+          plan.overrides ||= {}; 
+          plan.overrides[phaseId] ||= {}; 
+          plan.overrides[phaseId][specialty] = iso(newDate);
+          
+          // Save the plan
           save();
           
-          // Recalculate the schedule considering capacity changes
+          // Instead of recalculating the entire schedule, we'll update just this specific lane
+          // This prevents other specialties from being affected by capacity changes they don't need
           const aggr = aggregateWithTeamMembers(plan, state.tasks, getTeamWithDate);
-          const newSched = computeSchedule(plan, aggr, state.meta.efficiency, getPhase, state.meta.startDate);
           
-          // Redraw the chart with the new schedule
+          // Create a modified schedule that only updates the specific lane
+          const newSched = { ...sched };
+          
+          // Find and update only the specific phase and lane
+          const phaseWindow = newSched.phaseWindows.find(w => w.ph === phaseId);
+          if (phaseWindow) {
+            const lane = phaseWindow.lanes.find(l => l.key === specialty);
+            if (lane) {
+              // Update the start date
+              lane.start = newDate;
+              
+              // Recalculate duration for this specific specialty only
+              const phaseTotals = aggr.phaseTotals[phaseId] || {};
+              const effort = phaseTotals[specialty] || 0;
+              const teamSize = aggr.team[specialty] || 0;
+              const efficiency = state.meta.efficiency || 1.0;
+              const buffer = aggr.buffer || 0;
+              
+              // Use capacity-aware duration calculation for this specialty
+              const newDuration = calculateTaskDurationWithCapacityChanges(
+                effort, 
+                specialty, 
+                newDate, 
+                aggr.capacitySegments, 
+                efficiency, 
+                buffer
+              );
+              
+              lane.days = newDuration;
+              
+              // Update the phase end date if this lane affects it
+              const laneEnd = addBusinessDays(lane.start, Math.max(1, lane.days) - 1);
+              if (laneEnd > phaseWindow.end) {
+                phaseWindow.end = laneEnd;
+              }
+              
+              // Update the overall chart end date if needed
+              if (laneEnd > newSched.chartEnd) {
+                newSched.chartEnd = laneEnd;
+              }
+            }
+          }
+          
+          // Redraw the chart with the updated schedule
           drawGantt(plan, newSched);
           
           // Update related tables
@@ -1566,10 +1617,7 @@
           renderPhaseBreakdownTables(plan);
           
           // Show toast notification
-          const specialty = bar.dataset.lane;
-          const phaseName = getPhase(bar.dataset.phase)?.name || bar.dataset.phase;
-          const oldStartDate = sched.phaseWindows.find(w => w.ph === bar.dataset.phase)?.lanes.find(l => l.key === specialty)?.start;
-          const oldDateText = oldStartDate ? oldStartDate.toLocaleDateString() : 'original date';
+          const phaseName = getPhase(phaseId)?.name || phaseId;
           
           showToast(
             `${specialty} work in ${phaseName} rescheduled from ${oldDateText} to ${newDate.toLocaleDateString()}`,

@@ -86,25 +86,53 @@ export function calculateTaskDurationWithCapacityChanges(manDays, specialty, sta
     return Math.max(1, Math.ceil(adjustedManDays / efficiency));
   }
   
-  // Find the capacity segment that starts at or before the start date
-  const startSegment = capacitySegments.find(seg => seg.date <= startDate);
+  // Find the capacity segment that contains the start date
+  // A segment contains a date if: segment.date <= startDate < next_segment.date
+  let startSegment = null;
+  for (let i = 0; i < capacitySegments.length; i++) {
+    const segment = capacitySegments[i];
+    const nextSegment = capacitySegments[i + 1];
+    
+    if (segment.date <= startDate && (!nextSegment || startDate < nextSegment.date)) {
+      startSegment = segment;
+      break;
+    }
+  }
+  
   if (!startSegment) {
     // If no segment found, use the first available segment
     const firstSegment = capacitySegments[0];
     if (firstSegment && firstSegment.capacity[specialty]) {
       return Math.max(1, Math.ceil(adjustedManDays / (firstSegment.capacity[specialty] * efficiency)));
     }
+    // No capacity found for this specialty, fall back to simple calculation
     return Math.max(1, Math.ceil(adjustedManDays / efficiency));
   }
   
   // Get initial capacity for the specialty
   const initialCapacity = startSegment.capacity[specialty] || 0;
   if (initialCapacity <= 0) {
-    // No capacity for this specialty, fallback to simple calculation
+    // No capacity for this specialty at start date, fall back to simple calculation
     return Math.max(1, Math.ceil(adjustedManDays / efficiency));
   }
   
-  // Simple calculation: if capacity is constant, use simple formula
+  // Check if this specialty has constant capacity throughout all segments
+  let hasConstantCapacity = true;
+  let constantCapacity = initialCapacity;
+  
+  for (const segment of capacitySegments) {
+    if (segment.capacity[specialty] !== constantCapacity) {
+      hasConstantCapacity = false;
+      break;
+    }
+  }
+  
+  // If capacity is constant for this specialty, use simple calculation
+  if (hasConstantCapacity && constantCapacity > 0) {
+    return Math.max(1, Math.ceil(adjustedManDays / (constantCapacity * efficiency)));
+  }
+  
+  // Simple calculation: if only one segment, use simple formula
   if (capacitySegments.length === 1) {
     return Math.max(1, Math.ceil(adjustedManDays / (initialCapacity * efficiency)));
   }
@@ -115,7 +143,7 @@ export function calculateTaskDurationWithCapacityChanges(manDays, specialty, sta
   let totalDays = 0;
   
   // Find the starting segment index
-  const startIndex = capacitySegments.findIndex(seg => seg.date <= startDate);
+  const startIndex = capacitySegments.findIndex(seg => seg === startSegment);
   
   // Iterate through capacity segments to calculate actual duration
   for (let i = startIndex; i < capacitySegments.length; i++) {
@@ -183,6 +211,7 @@ export function businessDaysBetween(start, end) {
   endDate.setHours(0, 0, 0, 0);
   
   // Count business days from start to end (exclusive of end date)
+  // We need to iterate while current < endDate, not <=
   while (current < endDate) {
     const day = current.getDay();
     if (day !== 0 && day !== 6) {

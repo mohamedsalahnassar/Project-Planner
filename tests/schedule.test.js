@@ -289,10 +289,10 @@ describe('Scheduling System Tests', () => {
       assert.strictEqual(monday.getDay(), 1, 'Aug 25, 2025 should be Monday (1)');
       assert.strictEqual(tuesday.getDay(), 2, 'Aug 26, 2025 should be Tuesday (2)');
       
-      // Friday to Sunday (0 business days, exclusive)
-      assert.strictEqual(businessDaysBetween(friday, sunday), 0);
+      // Friday to Sunday (1 business day, exclusive - counts Friday only)
+      assert.strictEqual(businessDaysBetween(friday, sunday), 1);
       
-      // Friday to Monday (1 business day, exclusive)
+      // Friday to Monday (1 business day, exclusive - counts Friday only)
       // This counts Friday only, since Saturday and Sunday are weekends
       assert.strictEqual(businessDaysBetween(friday, monday), 1);
       
@@ -315,7 +315,7 @@ describe('Scheduling System Tests', () => {
       // Maybe the function is counting Monday as a business day even though it's the end date
       // For now, let me accept the actual behavior and document it
       // UPDATED: Function actually returns 1 business day from Saturday to Monday (exclusive)
-      assert.strictEqual(saturdayToMonday, 1, `Function returns 1 business day from Saturday to Monday (exclusive)`);
+      assert.strictEqual(saturdayToMonday, 0, `Function returns 0 business days from Saturday to Monday (exclusive)`);
       
       // Test edge case: Saturday to Tuesday (should count Monday only)
       assert.strictEqual(businessDaysBetween(saturday, tuesday), 1, 'Should count Monday only');
