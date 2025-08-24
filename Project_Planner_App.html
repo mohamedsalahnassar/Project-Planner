@@ -65,6 +65,7 @@
     #phaseTaskMatrix th{position:sticky;top:0;background:var(--bs-body-bg)}
     #phaseTaskMatrix th:first-child{position:sticky;left:0;background:var(--bs-body-bg);z-index:2}
     #phaseTaskMatrix td:first-child{position:sticky;left:0;background:var(--bs-body-bg);z-index:1}
+
   </style>
 </head>
 <body>
@@ -218,7 +219,6 @@
         <div class="card-body" id="teamCapacity-content">
           <div class="table-responsive">
             <table id="teamTable" class="table table-sm table-bordered mb-0 align-middle">
-              <thead class="table-dark"><tr><th>Role</th><th>Engineers</th><th>Details</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -632,48 +632,81 @@
     const DEFAULT_DATA = {
       meta: { version: 20, startDate: "2025-08-13", efficiency: 0.8, theme: "Dark", rtl: false, defaultPxPerDay: 18, effortTypes: DEFAULT_EFFORT_TYPES.map(e=> ({...e})) },
       projects: [{ id: "proj-sample", name: "Sample Project", description: "Generic project" }],
+      teamMembers: [
+        { id: "member-1", name: "John Doe", specialty: "BE" },
+        { id: "member-2", name: "Jane Smith", specialty: "BE" },
+        { id: "member-3", name: "Bob Johnson", specialty: "BE" },
+        { id: "member-4", name: "Alice Brown", specialty: "iOS" },
+        { id: "member-5", name: "Charlie Wilson", specialty: "iOS" },
+        { id: "member-6", name: "Diana Davis", specialty: "Android" },
+        { id: "member-7", name: "Eve Evans", specialty: "Android" },
+        { id: "member-8", name: "Frank Foster", specialty: "Online" },
+        { id: "member-9", name: "Grace Green", specialty: "Online" },
+        { id: "member-10", name: "Henry Hill", specialty: "QA" },
+        { id: "member-11", name: "Ivy Irving", specialty: "QA" },
+        { id: "member-12", name: "Jack Jackson", specialty: "QA" },
+        { id: "member-13", name: "Kate King", specialty: "BE" },
+        { id: "member-14", name: "Liam Lee", specialty: "BE" },
+        { id: "member-15", name: "Mia Miller", specialty: "BE" },
+        { id: "member-16", name: "Noah Nelson", specialty: "iOS" },
+        { id: "member-17", name: "Olivia Olson", specialty: "iOS" },
+        { id: "member-18", name: "Paul Parker", specialty: "iOS" },
+        { id: "member-19", name: "Quinn Quinn", specialty: "iOS" },
+        { id: "member-20", name: "Ruby Rose", specialty: "Android" },
+        { id: "member-21", name: "Sam Smith", specialty: "Android" },
+        { id: "member-22", name: "Tom Taylor", specialty: "Android" },
+        { id: "member-23", name: "Uma Underwood", specialty: "Android" },
+        { id: "member-24", name: "Victor Vega", specialty: "Online" },
+        { id: "member-25", name: "Wendy White", specialty: "Online" },
+        { id: "member-26", name: "Xander Xavier", specialty: "Online" },
+        { id: "member-27", name: "Yara Young", specialty: "Online" },
+        { id: "member-28", name: "Zoe Zimmerman", specialty: "QA" },
+        { id: "member-29", name: "Adam Adams", specialty: "QA" },
+        { id: "member-30", name: "Betty Baker", specialty: "QA" },
+        { id: "member-31", name: "Carl Carter", specialty: "QA" }
+      ],
       teams: [
         { 
           id:"team-base", 
           name:"Base Squad", 
-          members: [
-            { id: "member-1", name: "John Doe", specialty: "BE", startDate: "2025-08-13" },
-            { id: "member-2", name: "Jane Smith", specialty: "BE", startDate: "2025-08-13" },
-            { id: "member-3", name: "Bob Johnson", specialty: "BE", startDate: "2025-08-13" },
-            { id: "member-4", name: "Alice Brown", specialty: "iOS", startDate: "2025-08-13" },
-            { id: "member-5", name: "Charlie Wilson", specialty: "iOS", startDate: "2025-08-13" },
-            { id: "member-6", name: "Diana Davis", specialty: "Android", startDate: "2025-08-13" },
-            { id: "member-7", name: "Eve Evans", specialty: "Android", startDate: "2025-08-13" },
-            { id: "member-8", name: "Frank Foster", specialty: "Online", startDate: "2025-08-13" },
-            { id: "member-9", name: "Grace Green", specialty: "Online", startDate: "2025-08-13" },
-            { id: "member-10", name: "Henry Hill", specialty: "QA", startDate: "2025-08-13" },
-            { id: "member-11", name: "Ivy Irving", specialty: "QA", startDate: "2025-08-13" },
-            { id: "member-12", name: "Jack Jackson", specialty: "QA", startDate: "2025-08-13" }
+          memberAssignments: [
+            { id: "assign-1", memberId: "member-1", specialty: "BE", startDate: "2025-08-13", endDate: null },
+            { id: "assign-2", memberId: "member-2", specialty: "BE", startDate: "2025-08-13", endDate: null },
+            { id: "assign-3", memberId: "member-3", specialty: "BE", startDate: "2025-08-13", endDate: null },
+            { id: "assign-4", memberId: "member-4", specialty: "iOS", startDate: "2025-08-13", endDate: null },
+            { id: "assign-5", memberId: "member-5", specialty: "iOS", startDate: "2025-08-13", endDate: null },
+            { id: "assign-6", memberId: "member-6", specialty: "Android", startDate: "2025-08-13", endDate: null },
+            { id: "assign-7", memberId: "member-7", specialty: "Android", startDate: "2025-08-13", endDate: null },
+            { id: "assign-8", memberId: "member-8", specialty: "Online", startDate: "2025-08-13", endDate: null },
+            { id: "assign-9", memberId: "member-9", specialty: "Online", startDate: "2025-08-13", endDate: null },
+            { id: "assign-10", memberId: "member-10", specialty: "QA", startDate: "2025-08-13", endDate: null },
+            { id: "assign-11", memberId: "member-11", specialty: "QA", startDate: "2025-08-13", endDate: null },
+            { id: "assign-12", memberId: "member-12", specialty: "QA", startDate: "2025-08-13", endDate: null }
           ]
         },
         { 
           id:"team-scaled", 
           name:"Scaled Squad", 
-          members: [
-            { id: "member-13", name: "Kate King", specialty: "BE", startDate: "2025-08-13" },
-            { id: "member-14", name: "Liam Lee", specialty: "BE", startDate: "2025-08-13" },
-            { id: "member-15", name: "Mia Miller", specialty: "BE", startDate: "2025-08-13" },
-            { id: "member-16", name: "Noah Nelson", specialty: "iOS", startDate: "2025-08-13" },
-            { id: "member-17", name: "Olivia Olson", specialty: "iOS", startDate: "2025-08-13" },
-            { id: "member-18", name: "Paul Parker", specialty: "iOS", startDate: "2025-08-13" },
-            { id: "member-19", name: "Quinn Quinn", specialty: "iOS", startDate: "2025-08-13" },
-            { id: "member-20", name: "Ruby Rose", specialty: "Android", startDate: "2025-08-13" },
-            { id: "member-21", name: "Sam Smith", specialty: "Android", startDate: "2025-08-13" },
-            { id: "member-22", name: "Tom Taylor", specialty: "Android", startDate: "2025-08-13" },
-            { id: "member-23", name: "Uma Underwood", specialty: "Android", startDate: "2025-08-13" },
-            { id: "member-24", name: "Victor Vega", specialty: "Online", startDate: "2025-08-13" },
-            { id: "member-25", name: "Wendy White", specialty: "Online", startDate: "2025-08-13" },
-            { id: "member-26", name: "Xander Xavier", specialty: "Online", startDate: "2025-08-13" },
-            { id: "member-27", name: "Yara Young", specialty: "Online", startDate: "2025-08-13" },
-            { id: "member-28", name: "Zoe Zimmerman", specialty: "QA", startDate: "2025-08-13" },
-            { id: "member-29", name: "Adam Adams", specialty: "QA", startDate: "2025-08-13" },
-            { id: "member-30", name: "Betty Baker", specialty: "QA", startDate: "2025-08-13" },
-            { id: "member-31", name: "Carl Carter", specialty: "QA", startDate: "2025-08-13" }
+          memberAssignments: [
+            { id: "assign-13", memberId: "member-13", specialty: "BE", startDate: "2025-08-13", endDate: null },
+            { id: "assign-14", memberId: "member-14", specialty: "BE", startDate: "2025-08-13", endDate: null },
+            { id: "assign-15", memberId: "member-15", specialty: "BE", startDate: "2025-08-13", endDate: null },
+            { id: "assign-16", memberId: "member-16", specialty: "iOS", startDate: "2025-08-13", endDate: null },
+            { id: "assign-17", memberId: "member-17", specialty: "iOS", startDate: "2025-08-13", endDate: null },
+            { id: "assign-18", memberId: "member-18", specialty: "iOS", startDate: "2025-08-13", endDate: null },
+            { id: "assign-19", memberId: "member-19", specialty: "iOS", startDate: "2025-08-13", endDate: null },
+            { id: "assign-20", memberId: "member-20", specialty: "Android", startDate: "2025-08-13", endDate: null },
+            { id: "assign-21", memberId: "member-21", specialty: "Android", startDate: "2025-08-13", endDate: null },
+            { id: "assign-22", memberId: "member-22", specialty: "Android", startDate: "2025-08-13", endDate: null },
+            { id: "assign-23", memberId: "member-23", specialty: "Android", startDate: "2025-08-13", endDate: null },
+            { id: "assign-24", memberId: "member-24", specialty: "Online", startDate: "2025-08-13", endDate: null },
+            { id: "assign-25", memberId: "member-25", specialty: "Online", startDate: "2025-08-13", endDate: null },
+            { id: "assign-26", memberId: "member-26", specialty: "Online", startDate: "2025-08-13", endDate: null },
+            { id: "assign-27", memberId: "member-27", specialty: "Online", startDate: "2025-08-13", endDate: null },
+            { id: "assign-28", memberId: "member-28", specialty: "QA", startDate: "2025-08-13", endDate: null },
+            { id: "assign-29", memberId: "member-29", specialty: "QA", startDate: "2025-08-13", endDate: null },
+            { id: "assign-30", memberId: "member-30", specialty: "QA", startDate: "2025-08-13", endDate: null },
+            { id: "assign-31", memberId: "member-31", specialty: "QA", startDate: "2025-08-13", endDate: null }
           ]
         }
       ],
@@ -957,37 +990,47 @@
       // Add team member details
       if (team && team.memberAssignments && team.memberAssignments.length > 0) {
         const headerRow = document.createElement('tr');
-        headerRow.innerHTML = `<th colspan="3" class="table-info">Team Members (${team.memberAssignments.length})</th>`;
+        headerRow.innerHTML = `<th colspan="4" class="table-info">Team Members (${team.memberAssignments.length})</th>`;
         tbTeam.appendChild(headerRow);
+        
+        const subHeaderRow = document.createElement('tr');
+        subHeaderRow.innerHTML = `
+          <th>Member</th>
+          <th>Specialty</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+        `;
+        tbTeam.appendChild(subHeaderRow);
         
         team.memberAssignments.forEach(assignment => {
           const member = getTeamMember(assignment.memberId);
           if (member) {
             const tr = document.createElement('tr');
-            const endDateText = assignment.endDate ? ` - ${assignment.endDate}` : '';
+            const endDateText = assignment.endDate ? assignment.endDate : 'Ongoing';
             const specialtyColor = effortTypeColor(assignment.specialty) || '#6c757d';
             tr.innerHTML = `
               <td><i class="bi bi-person-circle"></i> ${escapeHtml(member.name)}</td>
               <td><span class="badge" style="background-color: ${specialtyColor}; color: white;">${assignment.specialty}</span></td>
-              <td><small class="text-muted">${assignment.startDate}${endDateText}</small></td>
+              <td><small class="text-muted">${assignment.startDate}</small></td>
+              <td><small class="text-muted">${endDateText}</small></td>
             `;
             tbTeam.appendChild(tr);
           }
         });
         
         const separatorRow = document.createElement('tr');
-        separatorRow.innerHTML = `<td colspan="3" class="table-light"><hr class="my-1"></td>`;
+        separatorRow.innerHTML = `<td colspan="4" class="table-light"><hr class="my-1"></td>`;
         tbTeam.appendChild(separatorRow);
       }
       
       // Add capacity summary
       const summaryRow = document.createElement('tr');
-      summaryRow.innerHTML = `<th colspan="3" class="table-info">Current Capacity</th>`;
+      summaryRow.innerHTML = `<th colspan="4" class="table-info">Current Capacity</th>`;
       tbTeam.appendChild(summaryRow);
       
       effortTypes().forEach(k=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${teamSizes[k]||0}</td><td><small class="text-muted">engineers</small></td>`;
+        tr.innerHTML = `<td>${effortTypeTitle(k)}</td><td>${teamSizes[k]||0}</td><td><small class="text-muted">engineers</small></td><td></td>`;
         tbTeam.appendChild(tr);
       });
       const lf = byId('lane-menu');
@@ -2467,28 +2510,32 @@
         const assignmentsList = data.memberAssignments.map((assignment, index) => {
           const member = getTeamMember(assignment.memberId);
           const memberName = member ? member.name : 'Unknown Member';
+          const specialtyText = member ? member.specialty : 'N/A';
           return `
             <div class="member-assignment-row border rounded p-2 mb-2" data-index="${index}">
               <div class="row g-2">
-                <div class="col-md-3">
+                <div class="col-md-4">
+                  <label class="form-label small text-muted mb-1">Team Member</label>
                   <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'memberId', this.value)">
                     <option value="">Select Member</option>
                     ${getAllTeamMembers().map(m => `<option value="${m.id}" ${assignment.memberId === m.id ? 'selected' : ''}>${m.name} (${m.specialty})</option>`).join('')}
                   </select>
                 </div>
                 <div class="col-md-2">
-                  <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'specialty', this.value)">
-                    ${effortTypes().map(k => `<option value="${k}" ${assignment.specialty === k ? 'selected' : ''}>${effortTypeTitle(k)}</option>`).join('')}
-                  </select>
+                  <label class="form-label small text-muted mb-1">Specialty</label>
+                  <input class="form-control form-control-sm" type="text" value="${specialtyText}" readonly style="background-color: #f8f9fa; color: #6c757d;">
                 </div>
                 <div class="col-md-2">
+                  <label class="form-label small text-muted mb-1">Start Date</label>
                   <input class="form-control form-control-sm" type="date" value="${assignment.startDate || ''}" onchange="updateAssignmentField(${index}, 'startDate', this.value)">
                 </div>
                 <div class="col-md-2">
+                  <label class="form-label small text-muted mb-1">End Date</label>
                   <input class="form-control form-control-sm" type="date" value="${assignment.endDate || ''}" onchange="updateAssignmentField(${index}, 'endDate', this.value)">
                 </div>
-                <div class="col-md-1">
-                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${index})">
+                <div class="col-md-1 d-flex align-items-end">
+                  <label class="form-label small text-muted mb-1">&nbsp;</label>
+                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${index})" style="margin-top: 24px;">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -2937,7 +2984,7 @@
       const newAssignment = {
         id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
         memberId: '',
-        specialty: 'BE',
+        specialty: '',
         startDate: new Date().toISOString().slice(0, 10),
         endDate: null
       };
@@ -2955,6 +3002,15 @@
     window.updateAssignmentField = function(index, field, value) {
       if (!window.currentTeamData.memberAssignments || !window.currentTeamData.memberAssignments[index]) return;
       window.currentTeamData.memberAssignments[index][field] = value;
+      
+      // Auto-update specialty when member is selected
+      if (field === 'memberId' && value) {
+        const member = getTeamMember(value);
+        if (member) {
+          window.currentTeamData.memberAssignments[index].specialty = member.specialty;
+          refreshAssignmentsList();
+        }
+      }
     };
 
     window.validateAssignment = function(assignment) {
@@ -2985,28 +3041,32 @@
       const assignmentsList = assignments.map((assignment, index) => {
         const member = getTeamMember(assignment.memberId);
         const memberName = member ? member.name : 'Unknown Member';
+        const specialtyText = member ? member.specialty : 'N/A';
         return `
           <div class="member-assignment-row border rounded p-2 mb-2" data-index="${index}">
             <div class="row g-2">
-              <div class="col-md-3">
+              <div class="col-md-4">
+                <label class="form-label small text-muted mb-1">Team Member</label>
                 <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'memberId', this.value)">
                   <option value="">Select Member</option>
                   ${getAllTeamMembers().map(m => `<option value="${m.id}" ${assignment.memberId === m.id ? 'selected' : ''}>${m.name} (${m.specialty})</option>`).join('')}
                 </select>
               </div>
               <div class="col-md-2">
-                <select class="form-select form-select-sm" onchange="updateAssignmentField(${index}, 'specialty', this.value)">
-                  ${effortTypes().map(k => `<option value="${k}" ${assignment.specialty === k ? 'selected' : ''}>${effortTypeTitle(k)}</option>`).join('')}
-                </select>
+                <label class="form-label small text-muted mb-1">Specialty</label>
+                <input class="form-control form-control-sm" type="text" value="${specialtyText}" readonly style="background-color: #f8f9fa; color: #6c757d;">
               </div>
               <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">Start Date</label>
                 <input class="form-control form-control-sm" type="date" value="${assignment.startDate || ''}" onchange="updateAssignmentField(${index}, 'startDate', this.value)">
               </div>
               <div class="col-md-2">
+                <label class="form-label small text-muted mb-1">End Date</label>
                 <input class="form-control form-control-sm" type="date" value="${assignment.endDate || ''}" onchange="updateAssignmentField(${index}, 'endDate', this.value)">
               </div>
-              <div class="col-md-1">
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${index})">
+              <div class="col-md-1 d-flex align-items-end">
+                <label class="form-label small text-muted mb-1">&nbsp;</label>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${index})" style="margin-top: 24px;">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
