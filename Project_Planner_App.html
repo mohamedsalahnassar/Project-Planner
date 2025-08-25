@@ -2154,15 +2154,55 @@
               
               lane.days = newDuration;
               
-              // Update the phase end date if this lane affects it
-              const laneEnd = addBusinessDays(lane.start, Math.max(1, lane.days) - 1);
-              if (laneEnd > phaseWindow.end) {
-                phaseWindow.end = laneEnd;
+              // Recalculate the entire phase start and end dates based on all lanes
+              const allLaneStarts = phaseWindow.lanes.map(l => l.start);
+              const allLaneEnds = phaseWindow.lanes.map(l => addBusinessDays(l.start, Math.max(1, l.days) - 1));
+              
+              // Update phase start to be the earliest lane start
+              phaseWindow.start = allLaneStarts.reduce((min, start) => start < min ? start : min, allLaneStarts[0]);
+              
+              // Update phase end to be the latest lane end
+              phaseWindow.end = allLaneEnds.reduce((max, end) => end > max ? end : max, allLaneEnds[0]);
+              
+              // Update the overall chart start and end dates if needed
+              if (phaseWindow.start < newSched.chartStart) {
+                newSched.chartStart = phaseWindow.start;
+              }
+              if (phaseWindow.end > newSched.chartEnd) {
+                newSched.chartEnd = phaseWindow.end;
               }
               
-              // Update the overall chart end date if needed
-              if (laneEnd > newSched.chartEnd) {
-                newSched.chartEnd = laneEnd;
+              // Check if subsequent phases need to be repositioned
+              const currentPhaseIndex = newSched.phaseWindows.findIndex(w => w.ph === phaseId);
+              if (currentPhaseIndex !== -1 && currentPhaseIndex < newSched.phaseWindows.length - 1) {
+                // Update subsequent phases to start after the current phase ends
+                let prevEnd = phaseWindow.end;
+                
+                for (let i = currentPhaseIndex + 1; i < newSched.phaseWindows.length; i++) {
+                  const nextPhase = newSched.phaseWindows[i];
+                  const nextStart = addBusinessDays(prevEnd, 1);
+                  
+                  // Calculate the offset needed to move this phase
+                  const offset = businessDaysBetween(nextPhase.start, nextStart);
+                  
+                  if (offset !== 0) {
+                    // Update all lanes in the next phase
+                    nextPhase.lanes.forEach(l => {
+                      l.start = addBusinessDays(l.start, offset);
+                    });
+                    
+                    // Update the phase start and end dates
+                    nextPhase.start = nextStart;
+                    nextPhase.end = addBusinessDays(nextPhase.end, offset);
+                    
+                    // Update chart end if needed
+                    if (nextPhase.end > newSched.chartEnd) {
+                      newSched.chartEnd = nextPhase.end;
+                    }
+                  }
+                  
+                  prevEnd = nextPhase.end;
+                }
               }
             }
           }
